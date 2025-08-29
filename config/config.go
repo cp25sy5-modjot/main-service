@@ -8,8 +8,24 @@ import (
 )
 
 type Config struct {
-	AppPort     string
-	DatabaseURL string
+	PostgreSQL *PostgreSQL
+	App        *Fiber
+}
+
+type Fiber struct {
+	Host string
+	Port string
+}
+
+// Database
+type PostgreSQL struct {
+	Host     string
+	Port     string
+	Protocol string
+	Username string
+	Password string
+	Database string
+	SSLMode  string
 }
 
 func LoadConfig() *Config {
@@ -18,8 +34,19 @@ func LoadConfig() *Config {
 	}
 
 	return &Config{
-		AppPort:     getEnv("APP_PORT", "8080"),
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://appuser:apppass@localhost:5432/appdb?sslmode=disable"),
+		App: &Fiber{
+			Host: getEnv("FIBER_HOST", "localhost"),
+			Port: getEnv("FIBER_PORT", "8080"),
+		},
+		PostgreSQL: &PostgreSQL{
+			Host:     getEnv("DB_HOST", "localhost"),
+			Port:     getEnv("DB_PORT", "5432"),
+			Protocol: getEnv("DB_PROTOCOL", "tcp"),
+			Username: getEnv("DB_USERNAME", "appuser"),
+			Password: getEnv("DB_PASSWORD", "apppass"),
+			Database: getEnv("DB_DATABASE", "modjot"),
+			SSLMode:  getEnv("DB_SSL_MODE", "disable"),
+		},
 	}
 }
 

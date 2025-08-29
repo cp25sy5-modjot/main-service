@@ -1,7 +1,7 @@
 package database
 
 import (
-	"modjot/internal/receipt"
+	"modjot/modules/receipt"
 
 	"gorm.io/gorm"
 )
