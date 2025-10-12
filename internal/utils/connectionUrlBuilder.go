@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	"modjot/config"
+	"modjot/internal/config"
 )
 
 func PostgresUrlBuilder(cfg *config.Config) (string, error) {

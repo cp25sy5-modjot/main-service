@@ -4,8 +4,8 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"modjot/config"
-	"modjot/utils"
+	"modjot/internal/config"
+	"modjot/internal/utils"
 	"sync"
 )
 

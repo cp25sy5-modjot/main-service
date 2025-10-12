@@ -1,7 +1,7 @@
 package database
 
 import (
-	"modjot/modules/receipt"
+	"modjot/internal/transaction"
 
 	"gorm.io/gorm"
 )
@@ -9,6 +9,6 @@ import (
 // AutoMigrate runs GORM's automigrate for all entities
 func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
-		&receipt.Receipt{},
+		&transaction.Transaction{},
 	)
 }

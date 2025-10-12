@@ -1,0 +1,41 @@
+services:
+  postgres-db:
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  main-service:
+    build: ./
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    env_file:
+      - .env
+
+  kong:
+    image: kong:3.6
+    container_name: kong
+    depends_on:
+      - main-service
+    environment:
+      - KONG_DATABASE=off
+      - KONG_DECLARATIVE_CONFIG=/etc/kong/kong.yml
+      - KONG_PROXY_LISTEN=0.0.0.0:8000
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001
+    volumes:
+      - ./kong/kong.yml:/etc/kong/kong.yml:ro
+    ports:
+      - "8080:8000"
+      - "8001:8001"
+
+volumes:
+  dbdata:

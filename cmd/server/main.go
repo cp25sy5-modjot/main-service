@@ -1,9 +1,9 @@
 package main
 
 import (
-	"modjot/config"
-	"modjot/database"
-	"modjot/server"
+	"modjot/internal/config"
+	"modjot/internal/database"
+	server "modjot/internal/httpapi"
 )
 
 func main() {
