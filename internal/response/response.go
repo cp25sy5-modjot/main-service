@@ -1,4 +1,4 @@
-package middleware
+package response
 
 import (
 	"time"
@@ -18,14 +18,9 @@ type Envelope struct {
 }
 
 type ErrorBody struct {
-	Type   string        `json:"type,omitempty"`
-	Detail string        `json:"detail,omitempty"`
-	Fields []FieldError  `json:"fields,omitempty"`
-}
-
-type FieldError struct {
-	Field string `json:"field"`
-	Msg   string `json:"msg"`
+	Type   string       `json:"type,omitempty"`
+	Detail string       `json:"detail,omitempty"`
+	Fields []FieldError `json:"fields,omitempty"`
 }
 
 func WriteSuccess(c *fiber.Ctx, status int, data any, msg string) error {

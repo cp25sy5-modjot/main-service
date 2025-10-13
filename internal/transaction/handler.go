@@ -3,7 +3,7 @@ package transaction
 import (
 	"strconv"
 
-	mw "modjot/internal/middleware"
+	r "modjot/internal/response"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jinzhu/copier"
@@ -21,70 +21,76 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) Create(c *fiber.Ctx) error {
 	var req TransactionReq
 	if err := c.BodyParser(&req); err != nil {
-		return mw.WriteError(c, fiber.StatusBadRequest, "Invalid request", "bad_request", err.Error(), nil)
-	}
-	if err := h.service.Create(&req); err != nil {
-		return mw.WriteError(c, fiber.StatusInternalServerError, "Internal Server Error", "internal_error", err.Error(), nil)
+		return r.BadRequest(c, "Invalid JSON body")
 	}
 
-	return mw.WriteSuccess(c, fiber.StatusCreated, nil, "Transaction created successfully")
+	// validate struct
+	if err := r.Validator().Struct(req); err != nil {
+		return r.UnprocessableEntity(c, "Validation Failed", r.MapValidationErrors(err)...)
+
+	}
+	if err := h.service.Create(&req); err != nil {
+		return r.InternalError(c, "Failed to create transaction")
+	}
+
+	return r.Created(c, nil, "Transaction created successfully")
 }
 
 // GET /transactions
 func (h *Handler) GetAll(c *fiber.Ctx) error {
 	transactions, err := h.service.GetAll()
 	if err != nil {
-		return mw.WriteError(c, fiber.StatusInternalServerError, "Internal Server Error", "internal_error", err.Error(), nil)
+		return r.InternalError(c, err.Error())
 	}
 	var resp []TransactionRes
 	_ = copier.Copy(&resp, &transactions)
-	return mw.WriteSuccess(c, fiber.StatusOK, resp, "Transactions retrieved successfully")
+	return r.OK(c, resp, "Transactions retrieved successfully")
 }
 
 // GET /transactions/:id
 func (h *Handler) GetByID(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return mw.WriteError(c, fiber.StatusBadRequest, "Invalid ID", "bad_request", err.Error(), nil)
+		return r.BadRequest(c, err.Error())
 	}
 	transaction, err := h.service.GetByID(uint(id))
 	if err != nil {
-		return mw.WriteError(c, fiber.StatusNotFound, "Transaction not found", "not_found", err.Error(), nil)
+		return r.NotFound(c, err.Error())
 	}
 	var resp TransactionRes
 	_ = copier.Copy(&resp, &transaction)
-	return mw.WriteSuccess(c, fiber.StatusOK, resp, "Transaction retrieved successfully")
+	return r.OK(c, resp, "Transaction retrieved successfully")
 }
 
 // PUT /transactions/:id
 func (h *Handler) Update(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return mw.WriteError(c, fiber.StatusBadRequest, "Invalid ID", "bad_request", err.Error(), nil)
+		return r.BadRequest(c, err.Error())
 	}
 
 	var req Transaction
 	if err := c.BodyParser(&req); err != nil {
-		return mw.WriteError(c, fiber.StatusBadRequest, "Invalid request", "bad_request", err.Error(), nil)
+		return r.BadRequest(c, err.Error())
 	}
 	req.ID = uint(id)
 
 	if err := h.service.Update(&req); err != nil {
-		return mw.WriteError(c, fiber.StatusInternalServerError, "Internal Server Error", "internal_error", err.Error(), nil)
+		return r.InternalError(c, err.Error())
 	}
 	var resp TransactionRes
 	_ = copier.Copy(&resp, &req)
-	return mw.WriteSuccess(c, fiber.StatusOK, resp, "Transaction updated successfully")
+	return r.OK(c, resp, "Transaction updated successfully")
 }
 
 // DELETE /transactions/:id
 func (h *Handler) Delete(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return mw.WriteError(c, fiber.StatusBadRequest, "Invalid ID", "bad_request", err.Error(), nil)
+		return r.BadRequest(c, err.Error())
 	}
 	if err := h.service.Delete(uint(id)); err != nil {
-		return mw.WriteError(c, fiber.StatusInternalServerError, "Internal Server Error", "internal_error", err.Error(), nil)
+		return r.InternalError(c, err.Error())
 	}
-	return mw.WriteSuccess(c, fiber.StatusNoContent, nil, "Transaction deleted successfully")
+	return r.OK(c, nil, "Transaction deleted successfully")
 }

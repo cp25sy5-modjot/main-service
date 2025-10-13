@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -9,22 +10,8 @@ import (
 type Config struct {
 	PostgreSQL *PostgreSQL
 	App        *Fiber
-}
-
-type Fiber struct {
-	Host string
-	Port string
-}
-
-// Database
-type PostgreSQL struct {
-	Host     string
-	Port     string
-	Protocol string
-	Username string
-	Password string
-	Database string
-	SSLMode  string
+	Auth       *Auth
+	Google     *Google
 }
 
 func LoadConfig() *Config {
@@ -45,5 +32,23 @@ func LoadConfig() *Config {
 			Database: os.Getenv("POSTGRES_DB"),
 			SSLMode:  os.Getenv("POSTGRES_SSL_MODE"),
 		},
+		Auth: &Auth{
+			AccessTokenExpireMinutes:  parseEnvToInt64("JWT_ACCESS_TOKEN_EXPIRE_MINUTES"),
+			RefreshTokenExpireMinutes: parseEnvToInt64("JWT_REFRESH_TOKEN_EXPIRE_MINUTES"),
+			SecretKey:                 os.Getenv("JWT_SECRET"),
+			Issuer:                    os.Getenv("JWT_ISSUER"),
+		},
+		Google: &Google{
+			ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+			ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+			RedirectURL:  os.Getenv("GOOGLE_REDIRECT_URL"),
+		},
 	}
+}
+
+func parseEnvToInt64(key string) int64 {
+	valueStr := os.Getenv(key)
+	var value int64
+	fmt.Sscan(valueStr, &value)
+	return value
 }

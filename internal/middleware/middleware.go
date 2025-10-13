@@ -25,23 +25,28 @@ func LoggerMiddleware(c *fiber.Ctx) error {
 }
 
 // Central error handler for all Fiber errors
-func GlobalErrorHandler(c *fiber.Ctx, err error) error {
-	code := fiber.StatusInternalServerError
-	msg := "Internal Server Error"
-	typ := "internal_error"
+// func GlobalErrorHandler(c *fiber.Ctx, err error) error {
+// 	code := fiber.StatusInternalServerError
 
-	if fe, ok := err.(*fiber.Error); ok {
-		code = fe.Code
-		msg = fe.Message
-		switch code {
-		case fiber.StatusNotFound:
-			typ = "not_found"
-		case fiber.StatusUnauthorized:
-			typ = "unauthorized"
-		case fiber.StatusBadRequest:
-			typ = "bad_request"
-		}
-	}
+// 	if fe, ok := err.(*fiber.Error); ok {
+// 		code = fe.Code
+// 		switch code {
+// 		case fiber.StatusNotFound:
+// 			return r.NotFound(c, fe.Message)
+// 		case fiber.StatusUnauthorized:
+// 			return r.Unauthorized(c, fe.Message)
+// 		case fiber.StatusBadRequest:
+// 			return r.BadRequest(c, fe.Message)
+// 		case fiber.StatusForbidden:
+// 			return r.Forbidden(c, fe.Message)
+// 		case fiber.StatusConflict:
+// 			return r.Conflict(c, fe.Message)
+// 		case fiber.StatusUnprocessableEntity:
+// 			return r.UnprocessableEntity(c, fe.Message)
+// 		case fiber.StatusTooManyRequests:
+// 			return r.TooManyRequests(c, fe.Message)
+// 		}
 
-	return WriteError(c, code, msg, typ, err.Error(), nil)
-}
+// 	}
+// 	return r.InternalError(c, err.Error())
+// }

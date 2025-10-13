@@ -1,7 +1,7 @@
 package httpapi
 
 import (
-	mw "modjot/internal/middleware"
+	r "modjot/internal/response"
 	"modjot/internal/transaction"
 
 	"github.com/gofiber/fiber/v2"
@@ -31,6 +31,6 @@ func initializeTransactionRoutes(s *fiberServer) {
 
 func initializeHealthCheck(s *fiberServer) {
 	s.app.Get("/health", func(c *fiber.Ctx) error {
-		return mw.WriteSuccess(c, fiber.StatusOK, nil, "OK")
+		return r.OK(c, nil, "Health check passed")
 	})
 }
