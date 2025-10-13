@@ -20,9 +20,9 @@ func (r *Repository) FindAll() ([]Transaction, error) {
 	return transactions, err
 }
 
-func (r *Repository) FindByID(id uint) (*Transaction, error) {
+func (r *Repository) FindByID(tx_id string, prod_id string) (*Transaction, error) {
 	var transaction Transaction
-	err := r.db.First(&transaction, id).Error
+	err := r.db.First(&transaction, "transaction_id = ? AND product_id = ?", tx_id, prod_id).Error
 	return &transaction, err
 }
 
@@ -30,6 +30,6 @@ func (r *Repository) Update(transaction *Transaction) error {
 	return r.db.Save(transaction).Error
 }
 
-func (r *Repository) Delete(id uint) error {
-	return r.db.Delete(&Transaction{}, id).Error
+func (r *Repository) Delete(tx_id string, prod_id string) error {
+	return r.db.Delete(&Transaction{}, "transaction_id = ? AND product_id = ?", tx_id, prod_id).Error
 }

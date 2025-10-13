@@ -48,5 +48,5 @@ func LoggerMiddleware(c *fiber.Ctx) error {
 // 		}
 
 // 	}
-// 	return r.InternalError(c, err.Error())
+// 	return r.InternalServerError(c, err.Error())
 // }

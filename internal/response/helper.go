@@ -6,10 +6,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// -----------------------------------------------------------------------------
-// ✅ SUCCESS HELPERS (2xx)
-// -----------------------------------------------------------------------------
-
 // OK → 200
 func OK(c *fiber.Ctx, data any, msg ...string) error {
 	m := firstOrEmpty(msg, "OK")
@@ -48,10 +44,6 @@ func OKWithMeta(c *fiber.Ctx, data any, meta map[string]any, msg ...string) erro
 	return c.Status(fiber.StatusOK).JSON(env)
 }
 
-// -----------------------------------------------------------------------------
-// ❌ ERROR HELPERS (4xx, 5xx)
-// -----------------------------------------------------------------------------
-
 // BadRequest → 400
 func BadRequest(c *fiber.Ctx, detail string, fields ...FieldError) error {
 	return WriteError(c, fiber.StatusBadRequest, "Bad Request", "bad_request", detail, fields)
@@ -87,8 +79,8 @@ func TooManyRequests(c *fiber.Ctx, detail string) error {
 	return WriteError(c, fiber.StatusTooManyRequests, "Too Many Requests", "rate_limited", detail, nil)
 }
 
-// InternalError → 500
-func InternalError(c *fiber.Ctx, detail string) error {
+// InternalServerError → 500
+func InternalServerError(c *fiber.Ctx, detail string) error {
 	return WriteError(c, fiber.StatusInternalServerError, "Internal Server Error", "internal_error", detail, nil)
 }
 
@@ -102,10 +94,7 @@ func GatewayTimeout(c *fiber.Ctx, detail string) error {
 	return WriteError(c, fiber.StatusGatewayTimeout, "Gateway Timeout", "gateway_timeout", detail, nil)
 }
 
-// -----------------------------------------------------------------------------
-// 🔧 Utility
-// -----------------------------------------------------------------------------
-
+// Utility
 func firstOrEmpty(msg []string, fallback string) string {
 	if len(msg) > 0 && msg[0] != "" {
 		return msg[0]

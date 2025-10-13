@@ -50,7 +50,7 @@ func GlobalErrorHandler(c *fiber.Ctx, err error) error {
 		return r.GatewayTimeout(c, "Upstream timeout")
 	}
 
-	return r.InternalError(c, safeDetail(err))
+	return r.InternalServerError(c, safeDetail(err))
 }
 
 func safeDetail(err error) string {
