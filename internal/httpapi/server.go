@@ -25,6 +25,7 @@ func NewFiberServer(conf *config.Config, db database.Database) Server {
 		ErrorHandler: middleware.GlobalErrorHandler,
 	})
 
+	// Middlewares
 	app.Use(middleware.RequestIDMiddleware)
 	app.Use(middleware.LoggerMiddleware)
 

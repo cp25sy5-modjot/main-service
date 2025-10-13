@@ -4,11 +4,16 @@ import (
 	"time"
 )
 
+type SearchParams struct {
+	TransactionID string `json:"transaction_id" validate:"required"`
+	ProductID     string `json:"product_id" validate:"required"`
+	UserID        string `json:"user_id" validate:"required"`
+}
+
 type TransactionInsertReq struct {
 	Title    string  `json:"title" validate:"required,min=2,max=50"`
 	Price    float64 `json:"price" validate:"required"`
 	Amount   float64 `json:"amount" validate:"required"`
-	Type     string  `json:"type" validate:"required,oneof=manual upload"`
 	Category string  `json:"category"`
 }
 
@@ -16,7 +21,6 @@ type TransactionUpdateReq struct {
 	Title    string  `json:"title" validate:"min=2,max=50"`
 	Price    float64 `json:"price" validate:"omitempty"`
 	Amount   float64 `json:"amount" validate:"omitempty"`
-	Type     string  `json:"type" validate:"omitempty,oneof=manual upload"`
 	Category string  `json:"category"`
 	Date     string  `json:"date"`
 }

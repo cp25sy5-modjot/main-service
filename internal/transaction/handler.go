@@ -1,9 +1,8 @@
 package transaction
 
 import (
-	"strconv"
-
 	r "modjot/internal/response"
+	"modjot/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jinzhu/copier"
@@ -23,13 +22,20 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		return r.BadRequest(c, "Invalid JSON body")
 	}
-
 	// validate struct
 	if err := r.Validator().Struct(req); err != nil {
 		return r.UnprocessableEntity(c, "Validation Failed", r.MapValidationErrors(err)...)
 
 	}
-	if err := h.service.Create(&req); err != nil {
+	var tx Transaction
+	_ = copier.Copy(&tx, &req)
+	userID, err := getUserID(c)
+	if err != nil {
+		return err
+	}
+	tx.UserID = userID
+	tx.Type = "manual"
+	if err := h.service.Create(&tx); err != nil {
 		return r.InternalServerError(c, "Failed to create transaction")
 	}
 
@@ -38,7 +44,11 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 
 // GET /transactions
 func (h *Handler) GetAll(c *fiber.Ctx) error {
-	transactions, err := h.service.GetAll()
+	userID, err := getUserID(c)
+	if err != nil {
+		return err
+	}
+	transactions, err := h.service.GetAllByUserID(userID)
 	if err != nil {
 		return r.InternalServerError(c, "Failed to retrieve transactions")
 	}
@@ -49,12 +59,7 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 
 // GET /transactions/:transaction_id/product/:product_id
 func (h *Handler) GetByID(c *fiber.Ctx) error {
-	tx_id := c.Params("transaction_id")
-	prod_id := c.Params("")
-	if tx_id == "" || prod_id == "" {
-		return r.BadRequest(c, "ID parameter is required")
-	}
-	transaction, err := h.service.GetByID(tx_id, prod_id)
+	transaction, err := h.service.GetByID(createSearchParams(c))
 	if err != nil {
 		return r.NotFound(c, "Transaction not found")
 	}
@@ -65,12 +70,13 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 
 // PUT /transactions/:transaction_id/product/:product_id
 func (h *Handler) Update(c *fiber.Ctx) error {
-
-	tx_id := c.Params("transaction_id")
-	prod_id := c.Params("product_id")
-
-	if tx_id == "" || prod_id == "" {
-		return r.BadRequest(c, "ID parameter is required")
+	tx_id, prod_id, err := getTxIDAndProdID(c)
+	if err != nil {
+		return err
+	}
+	userID, err := getUserID(c)
+	if err != nil {
+		return err
 	}
 
 	var req Transaction
@@ -79,6 +85,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	}
 	req.TransactionID = tx_id
 	req.ProductID = prod_id
+	req.UserID = userID
 
 	if err := h.service.Update(&req); err != nil {
 		return r.InternalServerError(c, "Failed to update transaction")
@@ -90,13 +97,36 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 
 // DELETE /transactions/:transaction_id/product/:product_id
 func (h *Handler) Delete(c *fiber.Ctx) error {
+	if err := h.service.Delete(createSearchParams(c)); err != nil {
+		return r.InternalServerError(c, "Failed to delete transaction")
+	}
+	return r.OK(c, nil, "Transaction deleted successfully")
+}
+
+// utils
+func getTxIDAndProdID(c *fiber.Ctx) (string, string, error) {
 	tx_id := c.Params("transaction_id")
 	prod_id := c.Params("product_id")
 	if tx_id == "" || prod_id == "" {
-		return r.BadRequest(c, "ID parameter is required")
+		return "", "", fiber.NewError(fiber.StatusBadRequest, "ID parameter is required")
 	}
-	if err := h.service.Delete(tx_id, prod_id); err != nil {
-		return r.InternalServerError(c, "Failed to delete transaction: "+strconv.Itoa(err.(*fiber.Error).Code))
+	return tx_id, prod_id, nil
+}
+
+func getUserID(c *fiber.Ctx) (string, error) {
+	userID := utils.GetUserIDFromClaims(c)
+	if userID == "" {
+		return "", r.InternalServerError(c, "Failed to get user ID from claims")
 	}
-	return r.OK(c, nil, "Transaction deleted successfully")
+	return userID, nil
+}
+
+func createSearchParams(c *fiber.Ctx) *SearchParams {
+	tx_id, prod_id, _ := getTxIDAndProdID(c)
+	userID, _ := getUserID(c)
+	return &SearchParams{
+		TransactionID: tx_id,
+		ProductID:     prod_id,
+		UserID:        userID,
+	}
 }

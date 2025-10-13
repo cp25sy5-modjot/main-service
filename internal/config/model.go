@@ -1,5 +1,12 @@
 package config
 
+type Config struct {
+	PostgreSQL *PostgreSQL
+	App        *Fiber
+	Auth       *Auth
+	Google     *Google
+}
+
 type Fiber struct {
 	Host string
 	Port string
@@ -17,10 +24,11 @@ type PostgreSQL struct {
 }
 
 type Auth struct {
-	AccessTokenExpireMinutes  int64
-	RefreshTokenExpireMinutes int64
-	SecretKey                 string
-	Issuer                    string
+	AccessTokenSecret  string
+	RefreshTokenSecret string
+	AccessTokenTTL     string
+	RefreshTokenTTL    string
+	Issuer             string
 }
 
 type Google struct {

@@ -1,6 +1,7 @@
 package response
 
 import (
+	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -32,6 +33,7 @@ func WriteSuccess(c *fiber.Ctx, status int, data any, msg string) error {
 		TraceID:   getTraceID(c),
 		Timestamp: time.Now().UTC(),
 	}
+	log.Println(env)
 	return c.Status(status).JSON(env)
 }
 
@@ -48,6 +50,7 @@ func WriteError(c *fiber.Ctx, status int, msg, typ, detail string, fields []Fiel
 		TraceID:   getTraceID(c),
 		Timestamp: time.Now().UTC(),
 	}
+	log.Println(env)
 	return c.Status(status).JSON(env)
 }
 

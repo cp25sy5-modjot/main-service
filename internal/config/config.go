@@ -1,18 +1,10 @@
 package config
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
 )
-
-type Config struct {
-	PostgreSQL *PostgreSQL
-	App        *Fiber
-	Auth       *Auth
-	Google     *Google
-}
 
 func LoadConfig() *Config {
 	if _, err := os.Stat(".env"); err == nil {
@@ -33,10 +25,11 @@ func LoadConfig() *Config {
 			SSLMode:  os.Getenv("POSTGRES_SSL_MODE"),
 		},
 		Auth: &Auth{
-			AccessTokenExpireMinutes:  parseEnvToInt64("JWT_ACCESS_TOKEN_EXPIRE_MINUTES"),
-			RefreshTokenExpireMinutes: parseEnvToInt64("JWT_REFRESH_TOKEN_EXPIRE_MINUTES"),
-			SecretKey:                 os.Getenv("JWT_SECRET"),
-			Issuer:                    os.Getenv("JWT_ISSUER"),
+			AccessTokenSecret:  os.Getenv("ACCESS_TOKEN_SECRET"),
+			RefreshTokenSecret: os.Getenv("REFRESH_TOKEN_SECRET"),
+			AccessTokenTTL:     os.Getenv("ACCESS_TOKEN_TTL"),
+			RefreshTokenTTL:    os.Getenv("REFRESH_TOKEN_TTL"),
+			Issuer:             os.Getenv("JWT_ISSUER"),
 		},
 		Google: &Google{
 			ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
@@ -46,9 +39,10 @@ func LoadConfig() *Config {
 	}
 }
 
-func parseEnvToInt64(key string) int64 {
-	valueStr := os.Getenv(key)
-	var value int64
-	fmt.Sscan(valueStr, &value)
-	return value
-}
+// func getEnv(key, defaultValue string) string {
+// 	if value, exists := os.LookupEnv(key); exists {
+// 		return value
+// 	}
+// 	log.Printf("Warning: %s not set, using default value", key)
+// 	return defaultValue
+// }

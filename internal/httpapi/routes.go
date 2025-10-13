@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"modjot/internal/auth"
 	r "modjot/internal/response"
 	"modjot/internal/transaction"
 
@@ -12,6 +13,7 @@ func RegisterRoutes(
 ) {
 	initializeHealthCheck(s)
 	initializeTransactionRoutes(s)
+	initializeAuthRoutes(s)
 }
 
 func initializeTransactionRoutes(s *fiberServer) {
@@ -22,6 +24,8 @@ func initializeTransactionRoutes(s *fiberServer) {
 
 	// Register routes
 	api := s.app.Group("/transactions")
+	api.Use(auth.Protected(s.conf.Auth.AccessTokenSecret))
+
 	api.Post("", transactionHandler.Create)
 	api.Get("", transactionHandler.GetAll)
 	api.Get("/:transaction_id/:product_id", transactionHandler.GetByID)
@@ -43,6 +47,14 @@ func initializeAuthRoutes(s *fiberServer) {
 
 	// Register routes
 	api := s.app.Group("/auth")
+	// Mock login route for testing purposes
+	api.Post("/login", func(c *fiber.Ctx) error {
+		return auth.LoginHandler(c, s.conf.Auth)
+	})
+	api.Post("/refresh", func(c *fiber.Ctx) error {
+		return auth.RefreshHandler(c, s.conf.Auth)
+	})
+	// Google OAuth routes (placeholders)
 	api.Get("/google", func(c *fiber.Ctx) error {
 		return r.OK(c, nil, "Google login endpoint")
 	})

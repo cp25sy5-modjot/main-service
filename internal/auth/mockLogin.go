@@ -1,0 +1,34 @@
+package auth
+
+import (
+	"modjot/internal/config"
+	r "modjot/internal/response"
+
+	"github.com/gofiber/fiber/v2"
+)
+
+func LoginHandler(c *fiber.Ctx, config *config.Auth) error {
+	userID := c.FormValue("userID")
+	userName := c.FormValue("userName")
+
+	if userID == "" || userName == "" {
+		return r.Unauthorized(c, "Invalid credentials")
+	}
+
+	// For a real app, userID would come from your database.
+
+	userInfo := &UserInfo{
+		UserID: userID,
+		Name:   userName,
+	}
+	// Generate both access and refresh tokens.
+	accessToken, refreshToken, err := GenerateTokens(userInfo, config)
+	if err != nil {
+		return r.InternalServerError(c, "Failed to generate tokens")
+	}
+
+	return r.OK(c, fiber.Map{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	}, "Login successful")
+}

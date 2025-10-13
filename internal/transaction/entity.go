@@ -3,15 +3,15 @@ package transaction
 import "time"
 
 type Transaction struct {
-	TransactionID string    `gorm:"primaryKey;autoIncrement:false" json:"transaction_id"`
-	ProductID     string    `gorm:"primaryKey;autoIncrement:false" json:"product_id"`
-	UserID        string    `json:"user_id"`
-	Title         string    `json:"title"`
-	Price         float64   `json:"price"`
-	Amount        float64   `json:"amount"`
-	Date          time.Time `json:"date"`
-	Type          string    `json:"type"`
-	Category      string    `json:"category"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	TransactionID string    `gorm:"primaryKey;autoIncrement:false" json:"transaction_id" validate:"required"`
+	ProductID     string    `gorm:"primaryKey;autoIncrement:false" json:"product_id" validate:"required"`
+	UserID        string    `json:"user_id" validate:"required"`
+	Title         string    `json:"title" validate:"required"`
+	Price         float64   `json:"price" validate:"required"`
+	Amount        float64   `json:"amount" validate:"required"`
+	Date          time.Time `json:"date" validate:"required"`
+	Type          string    `json:"type" validate:"required"`
+	Category      string    `json:"category" validate:"required"`
+	CreatedAt     time.Time `json:"created_at" validate:"required"`
+	UpdatedAt     time.Time `json:"updated_at" validate:"required"`
 }
