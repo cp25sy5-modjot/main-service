@@ -29,13 +29,14 @@ services:
     environment:
       - KONG_DATABASE=off
       - KONG_DECLARATIVE_CONFIG=/etc/kong/kong.yml
-      - KONG_PROXY_LISTEN=0.0.0.0:8000
+      - KONG_PROXY_LISTEN=0.0.0.0:8000, 0.0.0.0:8443 ssl
       - KONG_ADMIN_LISTEN=0.0.0.0:8001
     volumes:
       - ./kong/kong.yml:/etc/kong/kong.yml:ro
     ports:
       - "8080:8000"
       - "8001:8001"
+      - "443:8443"
 
 volumes:
   dbdata:
