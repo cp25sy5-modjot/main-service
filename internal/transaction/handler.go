@@ -20,16 +20,16 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) Create(c *fiber.Ctx) error {
 	var req TransactionInsertReq
 	if err := c.BodyParser(&req); err != nil {
-		return r.BadRequest(c, "Invalid JSON body")
+		return r.BadRequest(c, "Invalid JSON body", err)
 	}
 	// validate struct
 	if err := r.Validator().Struct(req); err != nil {
-		return r.UnprocessableEntity(c, "Validation Failed", r.MapValidationErrors(err)...)
+		return r.UnprocessableEntity(c, "Validation Failed", err)
 
 	}
 	var tx Transaction
 	_ = copier.Copy(&tx, &req)
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromClaims(c)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 
 // GET /transactions
 func (h *Handler) GetAll(c *fiber.Ctx) error {
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromClaims(c)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,11 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 
 // GET /transactions/:transaction_id/product/:product_id
 func (h *Handler) GetByID(c *fiber.Ctx) error {
-	transaction, err := h.service.GetByID(createSearchParams(c))
+	searchParams, err := createSearchParams(c)
+	if err != nil {
+		return err
+	}
+	transaction, err := h.service.GetByID(searchParams)
 	if err != nil {
 		return r.NotFound(c, "Transaction not found")
 	}
@@ -74,14 +78,14 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	userID, err := getUserID(c)
+	userID, err := utils.GetUserIDFromClaims(c)
 	if err != nil {
 		return err
 	}
 
 	var req Transaction
 	if err := c.BodyParser(&req); err != nil {
-		return r.BadRequest(c, "Invalid JSON body")
+		return r.BadRequest(c, "Invalid JSON body", err)
 	}
 	req.TransactionID = tx_id
 	req.ProductID = prod_id
@@ -97,7 +101,11 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 
 // DELETE /transactions/:transaction_id/product/:product_id
 func (h *Handler) Delete(c *fiber.Ctx) error {
-	if err := h.service.Delete(createSearchParams(c)); err != nil {
+	searchParams, err := createSearchParams(c)
+	if err != nil {
+		return err
+	}
+	if err := h.service.Delete(searchParams); err != nil {
 		return r.InternalServerError(c, "Failed to delete transaction")
 	}
 	return r.OK(c, nil, "Transaction deleted successfully")
@@ -108,25 +116,23 @@ func getTxIDAndProdID(c *fiber.Ctx) (string, string, error) {
 	tx_id := c.Params("transaction_id")
 	prod_id := c.Params("product_id")
 	if tx_id == "" || prod_id == "" {
-		return "", "", fiber.NewError(fiber.StatusBadRequest, "ID parameter is required")
+		return "", "", r.BadRequest(c, "transaction_id and product_id parameters are required", nil)
 	}
 	return tx_id, prod_id, nil
 }
 
-func getUserID(c *fiber.Ctx) (string, error) {
-	userID := utils.GetUserIDFromClaims(c)
-	if userID == "" {
-		return "", r.InternalServerError(c, "Failed to get user ID from claims")
+func createSearchParams(c *fiber.Ctx) (*SearchParams, error) {
+	tx_id, prod_id, err := getTxIDAndProdID(c)
+	if err != nil {
+		return nil, err
 	}
-	return userID, nil
-}
-
-func createSearchParams(c *fiber.Ctx) *SearchParams {
-	tx_id, prod_id, _ := getTxIDAndProdID(c)
-	userID, _ := getUserID(c)
+	userID, err := utils.GetUserIDFromClaims(c)
+	if err != nil {
+		return nil, err
+	}
 	return &SearchParams{
 		TransactionID: tx_id,
 		ProductID:     prod_id,
 		UserID:        userID,
-	}
+	}, nil
 }

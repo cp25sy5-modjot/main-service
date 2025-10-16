@@ -19,12 +19,12 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) Create(c *fiber.Ctx) error {
 	var req UserInsertReq
 	if err := c.BodyParser(&req); err != nil {
-		return r.BadRequest(c, "Invalid JSON body")
+		return r.BadRequest(c, "Invalid JSON body", err)
 	}
 
 	// validate struct
 	if err := r.Validator().Struct(req); err != nil {
-		return r.UnprocessableEntity(c, "Validation Failed", r.MapValidationErrors(err)...)
+		return r.UnprocessableEntity(c, "Validation Failed", err)
 	}
 
 	if err := h.service.Create(&req); err != nil {
@@ -38,17 +38,17 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 func (h *Handler) Update(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if id == "" {
-		return r.BadRequest(c, "ID parameter is required")
+		return r.BadRequest(c, "ID parameter is required", nil)
 	}
 
 	var req UserUpdateReq
 	if err := c.BodyParser(&req); err != nil {
-		return r.BadRequest(c, "Invalid JSON body")
+		return r.BadRequest(c, "Invalid JSON body", err)
 	}
 
 	// validate struct
 	if err := r.Validator().Struct(req); err != nil {
-		return r.UnprocessableEntity(c, "Validation Failed", r.MapValidationErrors(err)...)
+		return r.UnprocessableEntity(c, "Validation Failed", err)
 	}
 	var entity User
 	_ = copier.Copy(&entity, &req)
@@ -65,7 +65,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 func (h *Handler) Delete(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if id == "" {
-		return r.BadRequest(c, "ID parameter is required")
+		return r.BadRequest(c, "ID parameter is required",nil)
 	}
 	if err := h.service.Delete(id); err != nil {
 		return r.InternalServerError(c, err.Error())

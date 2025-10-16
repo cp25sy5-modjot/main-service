@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func LoginHandler(c *fiber.Ctx, config *config.Auth) error {
+func MockLoginHandler(c *fiber.Ctx, config *config.Auth) error {
 	userID := c.FormValue("userID")
 	userName := c.FormValue("userName")
 
@@ -27,8 +27,8 @@ func LoginHandler(c *fiber.Ctx, config *config.Auth) error {
 		return r.InternalServerError(c, "Failed to generate tokens")
 	}
 
-	return r.OK(c, fiber.Map{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+	return r.OK(c, TokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	}, "Login successful")
 }

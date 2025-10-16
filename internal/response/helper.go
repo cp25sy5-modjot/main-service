@@ -32,7 +32,7 @@ func NoContent(c *fiber.Ctx) error {
 // OKWithMeta → 200 + meta (เช่น pagination)
 func OKWithMeta(c *fiber.Ctx, data any, meta map[string]any, msg ...string) error {
 	m := firstOrEmpty(msg, "OK")
-	env := Envelope{
+	env := Response{
 		Status:    "success",
 		Code:      fiber.StatusOK,
 		Message:   m,
@@ -45,8 +45,8 @@ func OKWithMeta(c *fiber.Ctx, data any, meta map[string]any, msg ...string) erro
 }
 
 // BadRequest → 400
-func BadRequest(c *fiber.Ctx, detail string, fields ...FieldError) error {
-	return WriteError(c, fiber.StatusBadRequest, "Bad Request", "bad_request", detail, fields)
+func BadRequest(c *fiber.Ctx, detail string, err error) error {
+	return WriteError(c, fiber.StatusBadRequest, "Bad Request", "bad_request", detail, MapValidationErrors(err))
 }
 
 // Unauthorized → 401
@@ -70,8 +70,8 @@ func Conflict(c *fiber.Ctx, detail string) error {
 }
 
 // UnprocessableEntity → 422 (validation error)
-func UnprocessableEntity(c *fiber.Ctx, detail string, fields ...FieldError) error {
-	return WriteError(c, fiber.StatusUnprocessableEntity, "Validation Failed", "validation_error", detail, fields)
+func UnprocessableEntity(c *fiber.Ctx, detail string, err error) error {
+	return WriteError(c, fiber.StatusUnprocessableEntity, "Validation Failed", "validation_error", detail, MapValidationErrors(err))
 }
 
 // TooManyRequests -> 429 (rate limit)
@@ -82,6 +82,11 @@ func TooManyRequests(c *fiber.Ctx, detail string) error {
 // InternalServerError → 500
 func InternalServerError(c *fiber.Ctx, detail string) error {
 	return WriteError(c, fiber.StatusInternalServerError, "Internal Server Error", "internal_error", detail, nil)
+}
+
+// BadGateway → 502
+func BadGateway(c *fiber.Ctx, detail string) error {
+	return WriteError(c, fiber.StatusBadGateway, "Bad Gateway", "bad_gateway", detail, nil)
 }
 
 // ServiceUnavailable → 503

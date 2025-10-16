@@ -34,7 +34,7 @@ services:
     volumes:
       - ./kong/kong.yml:/etc/kong/kong.yml:ro
     ports:
-      - "8080:8000"
+      - "80:8000"
       - "8001:8001"
       - "443:8443"
 

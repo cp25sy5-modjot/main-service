@@ -15,8 +15,11 @@ func NewService(repo *Repository) *Service {
 }
 
 func (s *Service) Create(user *UserInsertReq) error {
+	if user.UserID == "" {
+		user.UserID = uuid.New().String()
+	}
 	u := &User{
-		UserID:    uuid.New().String(),
+		UserID:    user.UserID,
 		Email:     user.Email,
 		Name:      user.Name,
 		DOB:       user.DOB,
@@ -32,6 +35,10 @@ func (s *Service) GetAll() ([]User, error) {
 
 func (s *Service) GetByEmail(email string) (*User, error) {
 	return s.repo.FindByEmail(email)
+}
+
+func (s *Service) GetByID(user_id string) (*User, error) {
+	return s.repo.FindByID(user_id)
 }
 
 func (s *Service) Update(user *User) error {

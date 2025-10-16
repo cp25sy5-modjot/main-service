@@ -7,6 +7,7 @@ import (
 	"modjot/internal/middleware"
 	"modjot/internal/utils"
 
+	// "github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -26,8 +27,7 @@ func NewFiberServer(conf *config.Config, db database.Database) Server {
 	})
 
 	// Middlewares
-	app.Use(middleware.RequestIDMiddleware)
-	app.Use(middleware.LoggerMiddleware)
+	initMiddleware(app)
 
 	return &fiberServer{
 		app:  app,
@@ -42,4 +42,10 @@ func (s *fiberServer) Start() {
 	url, _ := utils.AppUrlBuilder(s.conf)
 	log.Printf("🚀 Server running on %s", url)
 	log.Fatal(s.app.Listen(":" + s.conf.App.Port))
+}
+
+func initMiddleware(app *fiber.App) {
+	app.Use(middleware.RequestIDMiddleware)
+	app.Use(middleware.LoggerMiddleware)
+	// app.Use(swagger.New(swagger.ConfigDefault))
 }

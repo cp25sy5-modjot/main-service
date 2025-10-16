@@ -4,6 +4,7 @@ import (
 	"modjot/internal/auth"
 	r "modjot/internal/response"
 	"modjot/internal/transaction"
+	"modjot/internal/user"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -23,14 +24,14 @@ func initializeTransactionRoutes(s *fiberServer) {
 	transactionHandler := transaction.NewHandler(transactionService)
 
 	// Register routes
-	api := s.app.Group("/transactions")
+	api := s.app.Group("/v1/transactions")
 	api.Use(auth.Protected(s.conf.Auth.AccessTokenSecret))
 
-	api.Post("", transactionHandler.Create)
+	api.Post("/manual", transactionHandler.Create)
 	api.Get("", transactionHandler.GetAll)
-	api.Get("/:transaction_id/:product_id", transactionHandler.GetByID)
-	api.Put("/:transaction_id/:product_id", transactionHandler.Update)
-	api.Delete("/:transaction_id/:product_id", transactionHandler.Delete)
+	api.Get("/transaction/:transaction_id/product/:product_id", transactionHandler.GetByID)
+	api.Put("/transaction/:transaction_id/product/:product_id", transactionHandler.Update)
+	api.Delete("/transaction/:transaction_id/product/:product_id", transactionHandler.Delete)
 }
 
 func initializeHealthCheck(s *fiberServer) {
@@ -40,23 +41,25 @@ func initializeHealthCheck(s *fiberServer) {
 }
 
 func initializeAuthRoutes(s *fiberServer) {
-	// Initialize all layers
-	// authRepo := auth.NewRepository(s.db.GetDb())
-	// authService := auth.NewService(authRepo, s.conf)
-	// authHandler := auth.NewHandler(authService)
+	userRepo := user.NewRepository(s.db.GetDb())
+	userService := user.NewService(userRepo)
+	userHandler := user.NewHandler(userService)
 
-	// Register routes
-	api := s.app.Group("/auth")
-	// Mock login route for testing purposes
-	api.Post("/login", func(c *fiber.Ctx) error {
-		return auth.LoginHandler(c, s.conf.Auth)
+	// Register user routes
+	userApi := s.app.Group("/v1/user")
+	userApi.Use(auth.Protected(s.conf.Auth.AccessTokenSecret))
+	userApi.Put("/:id", userHandler.Update)
+	userApi.Delete("/:id", userHandler.Delete)
+
+	authApi := s.app.Group("/v1/auth")
+	authApi.Post("/mock-login", func(c *fiber.Ctx) error {
+		return auth.MockLoginHandler(c, s.conf.Auth)
 	})
-	api.Post("/refresh", func(c *fiber.Ctx) error {
+	authApi.Post("/refresh-token", func(c *fiber.Ctx) error {
 		return auth.RefreshHandler(c, s.conf.Auth)
 	})
-	// Google OAuth routes (placeholders)
-	api.Get("/google", func(c *fiber.Ctx) error {
-		return r.OK(c, nil, "Google login endpoint")
+	authApi.Get("/google", func(c *fiber.Ctx) error {
+		return auth.HandleGoogleTokenExchange(c,userService, s.conf)
 	})
-	// api.Post("/google/callback", authHandler.GoogleCallback)
+
 }

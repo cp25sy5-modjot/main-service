@@ -13,7 +13,7 @@ import (
 func RefreshHandler(c *fiber.Ctx, config *config.Auth) error {
 	req := new(RefreshRequest)
 	if err := c.BodyParser(req); err != nil {
-		return r.BadRequest(c, "Invalid JSON body")
+		return r.BadRequest(c, "Invalid JSON body",err)
 	}
 
 	// Parse and validate the refresh token.

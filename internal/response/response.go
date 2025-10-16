@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type Envelope struct {
+type Response struct {
 	Status    string         `json:"status"`
 	Code      int            `json:"code"`
 	Message   string         `json:"message,omitempty"`
@@ -25,7 +25,7 @@ type ErrorBody struct {
 }
 
 func WriteSuccess(c *fiber.Ctx, status int, data any, msg string) error {
-	env := Envelope{
+	resp := Response{
 		Status:    "success",
 		Code:      status,
 		Message:   msg,
@@ -33,12 +33,11 @@ func WriteSuccess(c *fiber.Ctx, status int, data any, msg string) error {
 		TraceID:   getTraceID(c),
 		Timestamp: time.Now().UTC(),
 	}
-	log.Println(env)
-	return c.Status(status).JSON(env)
+	return c.Status(status).JSON(resp)
 }
 
 func WriteError(c *fiber.Ctx, status int, msg, typ, detail string, fields []FieldError) error {
-	env := Envelope{
+	resp := Response{
 		Status:  "error",
 		Code:    status,
 		Message: msg,
@@ -50,8 +49,8 @@ func WriteError(c *fiber.Ctx, status int, msg, typ, detail string, fields []Fiel
 		TraceID:   getTraceID(c),
 		Timestamp: time.Now().UTC(),
 	}
-	log.Println(env)
-	return c.Status(status).JSON(env)
+	log.Println(resp)
+	return c.Status(status).JSON(resp)
 }
 
 func getTraceID(c *fiber.Ctx) string {

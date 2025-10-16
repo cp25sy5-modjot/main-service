@@ -26,13 +26,13 @@ func GlobalErrorHandler(c *fiber.Ctx, err error) error {
 		case fiber.StatusUnauthorized:
 			return r.Unauthorized(c, fe.Message)
 		case fiber.StatusBadRequest:
-			return r.BadRequest(c, fe.Message)
+			return r.BadRequest(c, fe.Message, err)
 		case fiber.StatusForbidden:
 			return r.Forbidden(c, fe.Message)
 		case fiber.StatusConflict:
 			return r.Conflict(c, fe.Message)
 		case fiber.StatusUnprocessableEntity:
-			return r.UnprocessableEntity(c, fe.Message, r.MapValidationErrors(err)...)
+			return r.UnprocessableEntity(c, fe.Message, err)
 		case fiber.StatusTooManyRequests:
 			return r.TooManyRequests(c, fe.Message)
 		default:
