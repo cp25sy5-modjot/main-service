@@ -1,9 +1,10 @@
 package auth
 
 import (
-	"modjot/internal/config"
-	r "modjot/internal/response"
 	"time"
+
+	"github.com/cp25sy5-modjot/main-service/internal/config"
+	r "github.com/cp25sy5-modjot/main-service/internal/response"
 
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"

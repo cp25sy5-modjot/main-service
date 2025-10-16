@@ -1,19 +1,18 @@
 package auth
 
 import (
-	"modjot/internal/config"
-	r "modjot/internal/response"
+	"github.com/cp25sy5-modjot/main-service/internal/config"
+	r "github.com/cp25sy5-modjot/main-service/internal/response"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-
 // RefreshHandler validates a refresh token and issues a new access token.
 func RefreshHandler(c *fiber.Ctx, config *config.Auth) error {
 	req := new(RefreshRequest)
 	if err := c.BodyParser(req); err != nil {
-		return r.BadRequest(c, "Invalid JSON body",err)
+		return r.BadRequest(c, "Invalid JSON body", err)
 	}
 
 	// Parse and validate the refresh token.

@@ -1,11 +1,11 @@
 package utils
 
 import (
-	"modjot/internal/auth"
+	"github.com/cp25sy5-modjot/main-service/internal/auth"
 
+	r "github.com/cp25sy5-modjot/main-service/internal/response"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	r "modjot/internal/response"
 )
 
 func GetUserIDFromClaims(c *fiber.Ctx) (string, error) {

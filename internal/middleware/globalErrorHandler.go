@@ -7,7 +7,8 @@ import (
 	"os"
 
 	"database/sql"
-	r "modjot/internal/response"
+
+	r "github.com/cp25sy5-modjot/main-service/internal/response"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"

@@ -1,8 +1,8 @@
 package auth
 
 import (
-	"modjot/internal/config"
-	r "modjot/internal/response"
+	"github.com/cp25sy5-modjot/main-service/internal/config"
+	r "github.com/cp25sy5-modjot/main-service/internal/response"
 
 	"github.com/gofiber/fiber/v2"
 )

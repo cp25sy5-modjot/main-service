@@ -1,10 +1,10 @@
 package httpapi
 
 import (
-	"modjot/internal/auth"
-	r "modjot/internal/response"
-	"modjot/internal/transaction"
-	"modjot/internal/user"
+	"github.com/cp25sy5-modjot/main-service/internal/auth"
+	r "github.com/cp25sy5-modjot/main-service/internal/response"
+	"github.com/cp25sy5-modjot/main-service/internal/transaction"
+	"github.com/cp25sy5-modjot/main-service/internal/user"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -59,7 +59,7 @@ func initializeAuthRoutes(s *fiberServer) {
 		return auth.RefreshHandler(c, s.conf.Auth)
 	})
 	authApi.Get("/google", func(c *fiber.Ctx) error {
-		return auth.HandleGoogleTokenExchange(c,userService, s.conf)
+		return auth.HandleGoogleTokenExchange(c, userService, s.conf)
 	})
 
 }

@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-	"modjot/internal/config"
 	"net/http"
 	"net/url"
 
-	r "modjot/internal/response"
-	u "modjot/internal/user"
+	"github.com/cp25sy5-modjot/main-service/internal/config"
+
+	r "github.com/cp25sy5-modjot/main-service/internal/response"
+	u "github.com/cp25sy5-modjot/main-service/internal/user"
 
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/api/idtoken"

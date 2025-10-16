@@ -1,7 +1,7 @@
 package database
 
 import (
-	"modjot/internal/transaction"
+	"github.com/cp25sy5-modjot/main-service/internal/transaction"
 
 	"gorm.io/gorm"
 )

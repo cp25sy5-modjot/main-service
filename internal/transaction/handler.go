@@ -1,8 +1,8 @@
 package transaction
 
 import (
-	r "modjot/internal/response"
-	"modjot/internal/utils"
+	r "github.com/cp25sy5-modjot/main-service/internal/response"
+	"github.com/cp25sy5-modjot/main-service/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jinzhu/copier"

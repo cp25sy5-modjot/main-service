@@ -1,4 +1,4 @@
-module modjot
+module github.com/cp25sy5-modjot/main-service
 
 go 1.24.6
 

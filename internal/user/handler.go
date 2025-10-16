@@ -1,7 +1,7 @@
 package user
 
 import (
-	r "modjot/internal/response"
+	r "github.com/cp25sy5-modjot/main-service/internal/response"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jinzhu/copier"
@@ -65,7 +65,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 func (h *Handler) Delete(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if id == "" {
-		return r.BadRequest(c, "ID parameter is required",nil)
+		return r.BadRequest(c, "ID parameter is required", nil)
 	}
 	if err := h.service.Delete(id); err != nil {
 		return r.InternalServerError(c, err.Error())

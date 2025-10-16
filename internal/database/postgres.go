@@ -4,9 +4,10 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"modjot/internal/config"
-	"modjot/internal/utils"
 	"sync"
+
+	"github.com/cp25sy5-modjot/main-service/internal/config"
+	"github.com/cp25sy5-modjot/main-service/internal/utils"
 )
 
 type postgresDatabase struct {

@@ -2,10 +2,11 @@ package httpapi
 
 import (
 	"log"
-	"modjot/internal/config"
-	"modjot/internal/database"
-	"modjot/internal/middleware"
-	"modjot/internal/utils"
+
+	"github.com/cp25sy5-modjot/main-service/internal/config"
+	"github.com/cp25sy5-modjot/main-service/internal/database"
+	"github.com/cp25sy5-modjot/main-service/internal/middleware"
+	"github.com/cp25sy5-modjot/main-service/internal/utils"
 
 	// "github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"

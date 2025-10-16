@@ -3,7 +3,7 @@ package transaction
 import (
 	"time"
 
-	r "modjot/internal/response"
+	r "github.com/cp25sy5-modjot/main-service/internal/response"
 
 	"github.com/google/uuid"
 )
