@@ -1,11 +1,11 @@
 package transaction
 
 import (
-	r "github.com/cp25sy5-modjot/main-service/internal/response"
+	"github.com/cp25sy5-modjot/main-service/internal/auth"
+	successResp "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/jinzhu/copier"
 )
 
 type Handler struct {
@@ -19,42 +19,38 @@ func NewHandler(service *Service) *Handler {
 // POST /transactions
 func (h *Handler) Create(c *fiber.Ctx) error {
 	var req TransactionInsertReq
-	if err := c.BodyParser(&req); err != nil {
-		return r.BadRequest(c, "Invalid JSON body", err)
+	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
+		return err
 	}
-	// validate struct
-	if err := r.Validator().Struct(req); err != nil {
-		return r.UnprocessableEntity(c, "Validation Failed", err)
 
-	}
 	var tx Transaction
-	_ = copier.Copy(&tx, &req)
-	userID, err := utils.GetUserIDFromClaims(c)
+	_ = utils.MapStructs(c, &req, &tx)
+	userID, err := auth.GetUserIDFromClaims(c)
 	if err != nil {
 		return err
 	}
 	tx.UserID = userID
 	tx.Type = "manual"
 	if err := h.service.Create(&tx); err != nil {
-		return r.InternalServerError(c, "Failed to create transaction")
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	return r.Created(c, nil, "Transaction created successfully")
+	return successResp.Created(c, nil, "Transaction created successfully")
 }
 
 // GET /transactions
 func (h *Handler) GetAll(c *fiber.Ctx) error {
-	userID, err := utils.GetUserIDFromClaims(c)
+	userID, err := auth.GetUserIDFromClaims(c)
 	if err != nil {
 		return err
 	}
 	transactions, err := h.service.GetAllByUserID(userID)
 	if err != nil {
-		return r.InternalServerError(c, "Failed to retrieve transactions")
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve transactions")
 	}
 	var resp []TransactionRes
-	_ = copier.Copy(&resp, &transactions)
-	return r.OK(c, resp, "Transactions retrieved successfully")
+	_ = utils.MapStructs(c, &transactions, &resp)
+	return successResp.OK(c, resp, "Transactions retrieved successfully")
 }
 
 // GET /transactions/:transaction_id/product/:product_id
@@ -65,38 +61,29 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 	}
 	transaction, err := h.service.GetByID(searchParams)
 	if err != nil {
-		return r.NotFound(c, "Transaction not found")
+		return fiber.NewError(fiber.StatusNotFound, "Transaction not found")
 	}
 	var resp TransactionRes
-	_ = copier.Copy(&resp, &transaction)
-	return r.OK(c, resp, "Transaction retrieved successfully")
+	_ = utils.MapStructs(c, &transaction, &resp)
+	return successResp.OK(c, resp, "Transaction retrieved successfully")
 }
 
 // PUT /transactions/:transaction_id/product/:product_id
 func (h *Handler) Update(c *fiber.Ctx) error {
-	tx_id, prod_id, err := getTxIDAndProdID(c)
+	var req TransactionUpdateReq
+	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
+		return err
+	}
+	searchParams, err := createSearchParams(c)
 	if err != nil {
 		return err
 	}
-	userID, err := utils.GetUserIDFromClaims(c)
-	if err != nil {
-		return err
-	}
-
-	var req Transaction
-	if err := c.BodyParser(&req); err != nil {
-		return r.BadRequest(c, "Invalid JSON body", err)
-	}
-	req.TransactionID = tx_id
-	req.ProductID = prod_id
-	req.UserID = userID
-
-	if err := h.service.Update(&req); err != nil {
-		return r.InternalServerError(c, "Failed to update transaction")
+	if err := h.service.Update(searchParams, &req); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to update transaction")
 	}
 	var resp TransactionRes
-	_ = copier.Copy(&resp, &req)
-	return r.OK(c, resp, "Transaction updated successfully")
+	_ = utils.MapStructs(c, &req, &resp)
+	return successResp.OK(c, resp, "Transaction updated successfully")
 }
 
 // DELETE /transactions/:transaction_id/product/:product_id
@@ -106,9 +93,9 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 		return err
 	}
 	if err := h.service.Delete(searchParams); err != nil {
-		return r.InternalServerError(c, "Failed to delete transaction")
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to delete transaction")
 	}
-	return r.OK(c, nil, "Transaction deleted successfully")
+	return successResp.OK(c, nil, "Transaction deleted successfully")
 }
 
 // utils
@@ -116,7 +103,7 @@ func getTxIDAndProdID(c *fiber.Ctx) (string, string, error) {
 	tx_id := c.Params("transaction_id")
 	prod_id := c.Params("product_id")
 	if tx_id == "" || prod_id == "" {
-		return "", "", r.BadRequest(c, "transaction_id and product_id parameters are required", nil)
+		return "", "", fiber.NewError(fiber.StatusBadRequest, "transaction_id and product_id parameters are required")
 	}
 	return tx_id, prod_id, nil
 }
@@ -126,7 +113,7 @@ func createSearchParams(c *fiber.Ctx) (*SearchParams, error) {
 	if err != nil {
 		return nil, err
 	}
-	userID, err := utils.GetUserIDFromClaims(c)
+	userID, err := auth.GetUserIDFromClaims(c)
 	if err != nil {
 		return nil, err
 	}

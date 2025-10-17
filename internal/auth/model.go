@@ -21,7 +21,7 @@ type UserInfo struct {
 }
 
 type RefreshRequest struct {
-	RefreshToken string `json:"refresh_token"`
+	RefreshToken string `json:"refresh_token" validate:"required"`
 }
 
 type TokenResponse struct {

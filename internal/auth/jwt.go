@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/cp25sy5-modjot/main-service/internal/config"
-	r "github.com/cp25sy5-modjot/main-service/internal/response"
 
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
@@ -23,11 +22,11 @@ func Protected(AccessTokenSecret string) fiber.Handler {
 func jwtErrorHandler(c *fiber.Ctx, err error) error {
 	// Check for a specific error type, like an expired token.
 	if err.Error() == "token is expired" {
-		return r.Unauthorized(c, "Token has expired")
+		return fiber.NewError(fiber.StatusUnauthorized, "Token has expired")
 	}
 
 	// For all other errors (missing, malformed, invalid signature)
-	return r.Unauthorized(c, "Invalid or malformed token")
+	return fiber.NewError(fiber.StatusUnauthorized, "Invalid or malformed token")
 }
 
 // GenerateTokens creates and returns new access and refresh tokens.
@@ -75,4 +74,13 @@ func parseTime(timeStr string) time.Duration {
 		return 0
 	}
 	return duration
+}
+
+func GetUserIDFromClaims(c *fiber.Ctx) (string, error) {
+	user := c.Locals("user").(*jwt.Token)
+	claims := user.Claims.(*Claims)
+	if claims == nil || claims.Subject == "" {
+		return "", fiber.NewError(fiber.StatusUnauthorized, "Failed to get user ID from claims")
+	}
+	return claims.Subject, nil
 }

@@ -2,7 +2,8 @@ package auth
 
 import (
 	"github.com/cp25sy5-modjot/main-service/internal/config"
-	r "github.com/cp25sy5-modjot/main-service/internal/response"
+	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
+	"github.com/cp25sy5-modjot/main-service/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -10,23 +11,23 @@ import (
 
 // RefreshHandler validates a refresh token and issues a new access token.
 func RefreshHandler(c *fiber.Ctx, config *config.Auth) error {
-	req := new(RefreshRequest)
-	if err := c.BodyParser(req); err != nil {
-		return r.BadRequest(c, "Invalid JSON body", err)
+	var req RefreshRequest
+	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
+		return err
 	}
 
-	// Parse and validate the refresh token.
+	// Parse and validate the refresh token claims.
 	token, err := jwt.ParseWithClaims(req.RefreshToken, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(config.RefreshTokenSecret), nil
 	})
 
 	if err != nil || !token.Valid {
-		return r.Unauthorized(c, "Invalid or expired refresh token")
+		return fiber.NewError(fiber.StatusUnauthorized, "Invalid refresh token")
 	}
 
 	claims, ok := token.Claims.(*Claims)
 	if !ok {
-		return r.InternalServerError(c, "Failed to parse claims")
+		return fiber.NewError(fiber.StatusUnauthorized, "Invalid token claims")
 	}
 
 	userInfo := &UserInfo{
@@ -36,10 +37,10 @@ func RefreshHandler(c *fiber.Ctx, config *config.Auth) error {
 	// Generate a new access token only.
 	newAccessToken, _, err := GenerateTokens(userInfo, config)
 	if err != nil {
-		return r.InternalServerError(c, "Failed to generate new access token")
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to generate access token")
 	}
 
-	return r.OK(c, fiber.Map{
-		"access_token": newAccessToken,
-	})
+	return r.OK(c, &TokenResponse{
+		AccessToken: newAccessToken,
+	}, "Token refreshed successfully")
 }

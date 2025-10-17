@@ -9,36 +9,36 @@ import (
 
 	"github.com/cp25sy5-modjot/main-service/internal/config"
 
-	r "github.com/cp25sy5-modjot/main-service/internal/response"
+	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	u "github.com/cp25sy5-modjot/main-service/internal/user"
+	"github.com/cp25sy5-modjot/main-service/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/api/idtoken"
 )
 
 func HandleGoogleTokenExchange(c *fiber.Ctx, service *u.Service, config *config.Config) error {
-	var reqData GoogleTokenRequest
-	if err := c.BodyParser(&reqData); err != nil {
-		log.Printf("Error parsing request body: %v", err)
-		return r.BadRequest(c, "Cannot parse request body", err)
+	var req GoogleTokenRequest
+	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
+		return err
 	}
 
-	idToken, errMsg := exchangeToken(reqData, config)
+	idToken, errMsg := exchangeToken(req, config)
 	if errMsg != "" {
-		return r.InternalServerError(c, errMsg)
+		return fiber.NewError(fiber.StatusInternalServerError, errMsg)
 	}
 
 	payload, err := validateIDToken(idToken, config.Google)
 	if err != nil {
 		log.Printf("Error validating ID token: %v", err)
-		return r.Unauthorized(c, "Invalid ID token")
+		return fiber.NewError(fiber.StatusUnauthorized, "Invalid ID token")
 	}
 
 	userInfo := getUserInfoFromPayload(payload, service)
 
 	accessToken, refreshToken, err := GenerateTokens(userInfo, config.Auth)
 	if err != nil {
-		return r.InternalServerError(c, "Failed to generate tokens")
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to generate tokens")
 	}
 
 	return r.OK(c, TokenResponse{

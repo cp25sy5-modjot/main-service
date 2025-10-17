@@ -1,4 +1,4 @@
-package response
+package validator
 
 import (
 	"fmt"
@@ -40,12 +40,12 @@ func Validator() *validator.Validate {
 	return v
 }
 
-// MapValidationErrors แปลง validator.ValidationErrors → []FieldError (สำหรับ response)
 type FieldError struct {
 	Field string `json:"field"`
 	Msg   string `json:"msg"`
 }
 
+// MapValidationErrors แปลง validator.ValidationErrors → []FieldError (สำหรับ response)
 func MapValidationErrors(err error) []FieldError {
 	if err == nil {
 		return nil

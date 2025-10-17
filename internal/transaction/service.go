@@ -3,8 +3,8 @@ package transaction
 import (
 	"time"
 
-	r "github.com/cp25sy5-modjot/main-service/internal/response"
-
+	r "github.com/cp25sy5-modjot/main-service/internal/response/error"
+	"github.com/cp25sy5-modjot/main-service/internal/utils"
 	"github.com/google/uuid"
 )
 
@@ -41,20 +41,18 @@ func (s *Service) GetByID(params *SearchParams) (*Transaction, error) {
 	return s.repo.FindByID(params)
 }
 
-func (s *Service) Update(transaction *Transaction) error {
-	params := &SearchParams{
-		TransactionID: transaction.TransactionID,
-		ProductID:     transaction.ProductID,
-		UserID:        transaction.UserID,
-	}
+func (s *Service) Update(params *SearchParams, transaction *TransactionUpdateReq) error {
 	exists, err := s.repo.FindByID(params)
 	if err != nil {
 		return err
 	}
-	if err := validateTransactionOwnership(exists, transaction.UserID); err != nil {
+	if err := validateTransactionOwnership(exists, params.UserID); err != nil {
 		return err
 	}
-	return s.repo.Update(transaction)
+	_ = utils.MapNonNilStructs(nil, transaction, exists)
+	exists.UpdatedAt = time.Now()
+
+	return s.repo.Update(exists)
 }
 
 func (s *Service) Delete(params *SearchParams) error {

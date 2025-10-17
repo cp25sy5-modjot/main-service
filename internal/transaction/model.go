@@ -14,15 +14,12 @@ type TransactionInsertReq struct {
 	Title    string  `json:"title" validate:"required,min=2,max=50"`
 	Price    float64 `json:"price" validate:"required"`
 	Amount   float64 `json:"amount" validate:"required"`
-	Category string  `json:"category"`
+	Category string  `json:"category" validate:"required"`
 }
 
 type TransactionUpdateReq struct {
-	Title    string  `json:"title" validate:"min=2,max=50"`
-	Price    float64 `json:"price" validate:"omitempty"`
-	Amount   float64 `json:"amount" validate:"omitempty"`
-	Category string  `json:"category"`
-	Date     string  `json:"date"`
+	TransactionInsertReq
+	Date string `json:"date" validate:"required"`
 }
 
 type TransactionRes struct {

@@ -4,25 +4,9 @@ import (
 	"log"
 	"time"
 
+	v "github.com/cp25sy5-modjot/main-service/internal/validator"
 	"github.com/gofiber/fiber/v2"
 )
-
-type Response struct {
-	Status    string         `json:"status"`
-	Code      int            `json:"code"`
-	Message   string         `json:"message,omitempty"`
-	Data      any            `json:"data,omitempty"`
-	Error     *ErrorBody     `json:"error,omitempty"`
-	Meta      map[string]any `json:"meta,omitempty"`
-	TraceID   string         `json:"trace_id,omitempty"`
-	Timestamp time.Time      `json:"timestamp"`
-}
-
-type ErrorBody struct {
-	Type   string       `json:"type,omitempty"`
-	Detail string       `json:"detail,omitempty"`
-	Fields []FieldError `json:"fields,omitempty"`
-}
 
 func WriteSuccess(c *fiber.Ctx, status int, data any, msg string) error {
 	resp := Response{
@@ -36,7 +20,7 @@ func WriteSuccess(c *fiber.Ctx, status int, data any, msg string) error {
 	return c.Status(status).JSON(resp)
 }
 
-func WriteError(c *fiber.Ctx, status int, msg, typ, detail string, fields []FieldError) error {
+func WriteError(c *fiber.Ctx, status int, msg, typ, detail string, fields []v.FieldError) error {
 	resp := Response{
 		Status:  "error",
 		Code:    status,

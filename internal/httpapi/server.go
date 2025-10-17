@@ -5,6 +5,7 @@ import (
 
 	"github.com/cp25sy5-modjot/main-service/internal/config"
 	"github.com/cp25sy5-modjot/main-service/internal/database"
+	"github.com/cp25sy5-modjot/main-service/internal/globalHandler"
 	"github.com/cp25sy5-modjot/main-service/internal/middleware"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
 
@@ -24,7 +25,7 @@ type fiberServer struct {
 
 func NewFiberServer(conf *config.Config, db database.Database) Server {
 	app := fiber.New(fiber.Config{
-		ErrorHandler: middleware.GlobalErrorHandler,
+		ErrorHandler: globalHandler.GlobalErrorHandler,
 	})
 
 	// Middlewares
