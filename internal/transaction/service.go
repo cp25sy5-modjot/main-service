@@ -49,7 +49,7 @@ func (s *Service) Update(params *SearchParams, transaction *TransactionUpdateReq
 	if err := validateTransactionOwnership(exists, params.UserID); err != nil {
 		return err
 	}
-	_ = utils.MapNonNilStructs(nil, transaction, exists)
+	_ = utils.MapNonNilStructs(transaction, exists)
 	exists.UpdatedAt = time.Now()
 
 	return s.repo.Update(exists)

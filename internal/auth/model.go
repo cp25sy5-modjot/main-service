@@ -5,8 +5,7 @@ import (
 )
 
 type GoogleTokenRequest struct {
-	Code         string `json:"code" validate:"required"`
-	CodeVerifier string `json:"code_verifier" validate:"required,min=43,max=128"`
+	IdToken      string `form:"id_token" validate:"required"`
 }
 
 // Claims is a custom struct that embeds jwt.RegisteredClaims and adds custom fields.

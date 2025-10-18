@@ -4,7 +4,6 @@ import (
 	successResp "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
 	"github.com/gofiber/fiber/v2"
-	"github.com/jinzhu/copier"
 )
 
 type Handler struct {
@@ -41,7 +40,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		return err
 	}
 	var entity User
-	_ = copier.Copy(&entity, &req)
+	utils.MapNonNilStructs(&req, &entity)
 	entity.UserID = id
 
 	if err := h.service.Update(&entity); err != nil {

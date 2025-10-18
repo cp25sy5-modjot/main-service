@@ -2,10 +2,7 @@ package auth
 
 import (
 	"context"
-	"encoding/json"
 	"log"
-	"net/http"
-	"net/url"
 
 	"github.com/cp25sy5-modjot/main-service/internal/config"
 
@@ -23,12 +20,7 @@ func HandleGoogleTokenExchange(c *fiber.Ctx, service *u.Service, config *config.
 		return err
 	}
 
-	idToken, errMsg := exchangeToken(req, config)
-	if errMsg != "" {
-		return fiber.NewError(fiber.StatusInternalServerError, errMsg)
-	}
-
-	payload, err := validateIDToken(idToken, config.Google)
+	payload, err := validateIDToken(req.IdToken, config.Google)
 	if err != nil {
 		log.Printf("Error validating ID token: %v", err)
 		return fiber.NewError(fiber.StatusUnauthorized, "Invalid ID token")
@@ -45,37 +37,6 @@ func HandleGoogleTokenExchange(c *fiber.Ctx, service *u.Service, config *config.
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, "Login successful")
-}
-
-func requestBuilder(reqData GoogleTokenRequest, config *config.Google) url.Values {
-	formData := url.Values{}
-	formData.Set("code", reqData.Code)
-	formData.Set("code_verifier", reqData.CodeVerifier)
-	formData.Set("client_id", config.ClientID)
-	formData.Set("redirect_uri", config.RedirectURL)
-	formData.Set("grant_type", "authorization_code")
-	return formData
-}
-
-func exchangeToken(reqData GoogleTokenRequest, config *config.Config) (string, string) {
-	formData := requestBuilder(reqData, config.Google)
-
-	resp, err := http.PostForm("https://oauth2.googleapis.com/token", formData)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		return "", "Failed to exchange token with Google"
-	}
-	defer resp.Body.Close()
-
-	var tokenResponse map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
-		return "", "failed to parse Google's response"
-	}
-
-	idTokenString, ok := tokenResponse["id_token"].(string)
-	if !ok {
-		return "", "id_token not found in response"
-	}
-	return idTokenString, ""
 }
 
 func validateIDToken(idToken string, config *config.Google) (*idtoken.Payload, error) {

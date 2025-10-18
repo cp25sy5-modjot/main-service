@@ -24,7 +24,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	}
 
 	var tx Transaction
-	_ = utils.MapStructs(c, &req, &tx)
+	_ = utils.MapStructs(&req, &tx)
 	userID, err := auth.GetUserIDFromClaims(c)
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve transactions")
 	}
 	var resp []TransactionRes
-	_ = utils.MapStructs(c, &transactions, &resp)
+	_ = utils.MapStructs(&transactions, &resp)
 	return successResp.OK(c, resp, "Transactions retrieved successfully")
 }
 
@@ -64,7 +64,7 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Transaction not found")
 	}
 	var resp TransactionRes
-	_ = utils.MapStructs(c, &transaction, &resp)
+	_ = utils.MapStructs(&transaction, &resp)
 	return successResp.OK(c, resp, "Transaction retrieved successfully")
 }
 
@@ -82,7 +82,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to update transaction")
 	}
 	var resp TransactionRes
-	_ = utils.MapStructs(c, &req, &resp)
+	_ = utils.MapStructs(&req, &resp)
 	return successResp.OK(c, resp, "Transaction updated successfully")
 }
 
