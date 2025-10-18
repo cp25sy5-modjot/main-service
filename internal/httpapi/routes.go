@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	"github.com/cp25sy5-modjot/main-service/internal/auth"
 	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	"github.com/cp25sy5-modjot/main-service/internal/transaction"
@@ -25,7 +26,7 @@ func initializeTransactionRoutes(s *fiberServer) {
 
 	// Register routes
 	api := s.app.Group("/v1/transaction")
-	api.Use(auth.Protected(s.conf.Auth.AccessTokenSecret))
+	api.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
 
 	api.Post("/manual", transactionHandler.Create)
 	api.Get("", transactionHandler.GetAll)
@@ -47,10 +48,10 @@ func initializeAuthRoutes(s *fiberServer) {
 
 	// Register user routes
 	userApi := s.app.Group("/v1/user")
-	userApi.Use(auth.Protected(s.conf.Auth.AccessTokenSecret))
+	userApi.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
 
-	userApi.Put("/:id", userHandler.Update)
-	userApi.Delete("/:id", userHandler.Delete)
+	userApi.Put("", userHandler.Update)
+	userApi.Delete("", userHandler.Delete)
 
 	authApi := s.app.Group("/v1/auth")
 	authApi.Post("/mock-login", func(c *fiber.Ctx) error {

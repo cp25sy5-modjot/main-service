@@ -1,7 +1,7 @@
 package transaction
 
 import (
-	"github.com/cp25sy5-modjot/main-service/internal/auth"
+	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	successResp "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
 
@@ -25,7 +25,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 
 	var tx Transaction
 	_ = utils.MapStructs(&req, &tx)
-	userID, err := auth.GetUserIDFromClaims(c)
+	userID, err := jwt.GetUserIDFromClaims(c)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 
 // GET /transactions
 func (h *Handler) GetAll(c *fiber.Ctx) error {
-	userID, err := auth.GetUserIDFromClaims(c)
+	userID, err := jwt.GetUserIDFromClaims(c)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func createSearchParams(c *fiber.Ctx) (*SearchParams, error) {
 	if err != nil {
 		return nil, err
 	}
-	userID, err := auth.GetUserIDFromClaims(c)
+	userID, err := jwt.GetUserIDFromClaims(c)
 	if err != nil {
 		return nil, err
 	}

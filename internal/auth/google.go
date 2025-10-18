@@ -6,6 +6,7 @@ import (
 
 	"github.com/cp25sy5-modjot/main-service/internal/config"
 
+	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	u "github.com/cp25sy5-modjot/main-service/internal/user"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
@@ -28,7 +29,7 @@ func HandleGoogleTokenExchange(c *fiber.Ctx, service *u.Service, config *config.
 
 	userInfo := getUserInfoFromPayload(payload, service)
 
-	accessToken, refreshToken, err := GenerateTokens(userInfo, config.Auth)
+	accessToken, refreshToken, err := jwt.GenerateTokens(userInfo, config.Auth)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to generate tokens")
 	}
@@ -48,7 +49,7 @@ func validateIDToken(idToken string, config *config.Google) (*idtoken.Payload, e
 	return payload, nil
 }
 
-func getUserInfoFromPayload(payload *idtoken.Payload, service *u.Service) *UserInfo {
+func getUserInfoFromPayload(payload *idtoken.Payload, service *u.Service) *jwt.UserInfo {
 	userID := payload.Subject
 
 	user, err := service.GetByID(userID)
@@ -66,7 +67,7 @@ func getUserInfoFromPayload(payload *idtoken.Payload, service *u.Service) *UserI
 		user, _ = service.GetByID(userID)
 	}
 
-	return &UserInfo{
+	return &jwt.UserInfo{
 		UserID: user.UserID,
 		Name:   user.Name,
 	}

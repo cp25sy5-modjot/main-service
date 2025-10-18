@@ -2,6 +2,7 @@ package auth
 
 import (
 	"github.com/cp25sy5-modjot/main-service/internal/config"
+	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,14 +16,12 @@ func MockLoginHandler(c *fiber.Ctx, config *config.Auth) error {
 		return fiber.NewError(fiber.StatusBadRequest, "userID and userName are required")
 	}
 
-	// For a real app, userID would come from your database.
-
-	userInfo := &UserInfo{
+	userInfo := &jwt.UserInfo{
 		UserID: userID,
 		Name:   userName,
 	}
-	// Generate both access and refresh tokens.
-	accessToken, refreshToken, err := GenerateTokens(userInfo, config)
+
+	accessToken, refreshToken, err := jwt.GenerateTokens(userInfo, config)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to generate tokens")
 	}

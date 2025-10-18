@@ -1,6 +1,7 @@
 package user
 
 import (
+	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	successResp "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
 	"github.com/gofiber/fiber/v2"
@@ -30,18 +31,20 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 
 // PUT /users/:id
 func (h *Handler) Update(c *fiber.Ctx) error {
-	id := c.Params("id")
-	if id == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "ID parameter is required")
-	}
 
 	var req UserUpdateReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
+
+	userID, err := jwt.GetUserIDFromClaims(c)
+	if err != nil {
+		return err
+	}
+
 	var entity User
 	utils.MapNonNilStructs(&req, &entity)
-	entity.UserID = id
+	entity.UserID = userID
 
 	if err := h.service.Update(&entity); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
@@ -52,11 +55,12 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 
 // DELETE /users/:id
 func (h *Handler) Delete(c *fiber.Ctx) error {
-	id := c.Params("id")
-	if id == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "ID parameter is required")
+	userID, err := jwt.GetUserIDFromClaims(c)
+	if err != nil {
+		return err
 	}
-	if err := h.service.Delete(id); err != nil {
+
+	if err := h.service.Delete(userID); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 	return successResp.OK(c, nil, "User deleted successfully")

@@ -27,8 +27,6 @@ func (s *Service) Create(transaction *Transaction) error {
 		Price:         transaction.Price,
 		Category:      transaction.Category,
 		Date:          time.Now(),
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
 	}
 	return s.repo.Create(tx)
 }
@@ -50,7 +48,6 @@ func (s *Service) Update(params *SearchParams, transaction *TransactionUpdateReq
 		return err
 	}
 	_ = utils.MapNonNilStructs(transaction, exists)
-	exists.UpdatedAt = time.Now()
 
 	return s.repo.Update(exists)
 }

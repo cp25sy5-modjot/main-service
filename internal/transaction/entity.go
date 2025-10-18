@@ -12,6 +12,4 @@ type Transaction struct {
 	Date          time.Time `json:"date" validate:"required"`
 	Type          string    `json:"type" validate:"required"`
 	Category      string    `json:"category" validate:"required"`
-	CreatedAt     time.Time `json:"created_at" validate:"required"`
-	UpdatedAt     time.Time `json:"updated_at" validate:"required"`
 }

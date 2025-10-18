@@ -19,17 +19,13 @@ var isProd = os.Getenv("APP_ENV") == "prod"
 func GlobalErrorHandler(c *fiber.Ctx, err error) error {
 	log.Printf("Error caught by global handler: (%T) %v", err, err)
 
-	// Handle our custom validation error
 	var valErr *utils.ValidationError
 	if errors.As(err, &valErr) {
-		// Now you can pass the original error to be mapped
 		return r.WriteError(c, fiber.StatusUnprocessableEntity, valErr.Message, "validation_failed", valErr.Message, v.MapValidationErrors(valErr.OriginalErr))
 	}
 
-	// Handle standard fiber errors
 	var fe *fiber.Error
 	if errors.As(err, &fe) {
-		// The switch now works as intended!
 		switch fe.Code {
 		case fiber.StatusBadRequest:
 			return errorResp.BadRequest(c, fe.Message, nil)
@@ -56,13 +52,11 @@ func GlobalErrorHandler(c *fiber.Ctx, err error) error {
 			return r.WriteError(c, fe.Code, "Error", "error", safeDetail(err), nil)
 		}
 	}
-
-	// Handle GORM errors
+	
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return errorResp.NotFound(c, "Resource not found")
 	}
 
-	// Fallback for any other unexpected error
 	log.Println("Unhandled error fell through to fallback")
 	return errorResp.InternalServerError(c, "An unexpected error occurred")
 }

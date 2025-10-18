@@ -2,6 +2,7 @@ package auth
 
 import (
 	"github.com/cp25sy5-modjot/main-service/internal/config"
+	internaljwt "github.com/cp25sy5-modjot/main-service/internal/jwt"
 	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
 
@@ -17,7 +18,7 @@ func RefreshHandler(c *fiber.Ctx, config *config.Auth) error {
 	}
 
 	// Parse and validate the refresh token claims.
-	token, err := jwt.ParseWithClaims(req.RefreshToken, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(req.RefreshToken, &internaljwt.Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(config.RefreshTokenSecret), nil
 	})
 
@@ -25,17 +26,17 @@ func RefreshHandler(c *fiber.Ctx, config *config.Auth) error {
 		return fiber.NewError(fiber.StatusUnauthorized, "Invalid refresh token")
 	}
 
-	claims, ok := token.Claims.(*Claims)
+	claims, ok := token.Claims.(*internaljwt.Claims)
 	if !ok {
 		return fiber.NewError(fiber.StatusUnauthorized, "Invalid token claims")
 	}
 
-	userInfo := &UserInfo{
+	userInfo := &internaljwt.UserInfo{
 		UserID: claims.Subject,
 		Name:   claims.Name,
 	}
 	// Generate a new access token only.
-	newAccessToken, _, err := GenerateTokens(userInfo, config)
+	newAccessToken, _, err := internaljwt.GenerateTokens(userInfo, config)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to generate access token")
 	}
