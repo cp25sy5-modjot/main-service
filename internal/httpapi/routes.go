@@ -1,0 +1,67 @@
+package httpapi
+
+import (
+	"github.com/cp25sy5-modjot/main-service/internal/jwt"
+	"github.com/cp25sy5-modjot/main-service/internal/auth"
+	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
+	"github.com/cp25sy5-modjot/main-service/internal/transaction"
+	"github.com/cp25sy5-modjot/main-service/internal/user"
+
+	"github.com/gofiber/fiber/v2"
+)
+
+func RegisterRoutes(
+	s *fiberServer,
+) {
+	initializeHealthCheck(s)
+	initializeTransactionRoutes(s)
+	initializeAuthRoutes(s)
+}
+
+func initializeTransactionRoutes(s *fiberServer) {
+	// Initialize all layers
+	transactionRepo := transaction.NewRepository(s.db.GetDb())
+	transactionService := transaction.NewService(transactionRepo)
+	transactionHandler := transaction.NewHandler(transactionService)
+
+	// Register routes
+	api := s.app.Group("/v1/transaction")
+	api.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
+
+	api.Post("/manual", transactionHandler.Create)
+	api.Get("", transactionHandler.GetAll)
+	api.Get("/:transaction_id/product/:product_id", transactionHandler.GetByID)
+	api.Put("/:transaction_id/product/:product_id", transactionHandler.Update)
+	api.Delete("/:transaction_id/product/:product_id", transactionHandler.Delete)
+}
+
+func initializeHealthCheck(s *fiberServer) {
+	s.app.Get("/v1/health", func(c *fiber.Ctx) error {
+		return r.OK(c, nil, "Health check passed")
+	})
+}
+
+func initializeAuthRoutes(s *fiberServer) {
+	userRepo := user.NewRepository(s.db.GetDb())
+	userService := user.NewService(userRepo)
+	userHandler := user.NewHandler(userService)
+
+	// Register user routes
+	userApi := s.app.Group("/v1/user")
+	userApi.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
+
+	userApi.Put("", userHandler.Update)
+	userApi.Delete("", userHandler.Delete)
+
+	authApi := s.app.Group("/v1/auth")
+	authApi.Post("/mock-login", func(c *fiber.Ctx) error {
+		return auth.MockLoginHandler(c, s.conf.Auth)
+	})
+	authApi.Post("/refresh-token", func(c *fiber.Ctx) error {
+		return auth.RefreshHandler(c, s.conf.Auth)
+	})
+	authApi.Post("/google", func(c *fiber.Ctx) error {
+		return auth.HandleGoogleTokenExchange(c, userService, s.conf)
+	})
+
+}

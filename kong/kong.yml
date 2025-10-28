@@ -1,0 +1,25 @@
+_format_version: '3.0'
+
+services:
+    - name: main-service
+      url: http://main-service:8081
+      routes:
+          - name: main-service-route
+            paths:
+                - /api/main-service
+            strip_path: true
+
+    # - name: ai-wrapper-service
+    #   url: http://ai-wrapper-service:8082
+    #   routes:
+    #       - name: ai-wrapper-service-route
+    #         paths:
+    #             - /api/ai-wrapper-service
+    #         strip_path: true
+    # - name: kong-admin
+    #   url: http://kong:8001
+    #   routes:
+    #       - name: kong-admin-route
+    #         paths:
+    #             - /kong-admin
+    #         strip_path: true
