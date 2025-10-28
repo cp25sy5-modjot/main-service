@@ -50,21 +50,20 @@ func validateIDToken(idToken string, config *config.Google) (*idtoken.Payload, e
 }
 
 func getUserInfoFromPayload(payload *idtoken.Payload, service *u.Service) *jwt.UserInfo {
-	userID := payload.Subject
+	googleID := payload.Subject
 
-	user, err := service.GetByID(userID)
+	user, err := service.GetByID(googleID)
 	if err != nil {
 		name := payload.Claims["given_name"].(string)
 		if name == "" {
 			name = payload.Claims["name"].(string)
 		}
 		service.Create(&u.UserInsertReq{
-			UserID: userID,
-			Email:  payload.Claims["email"].(string),
-			Name:   name,
+			Email: payload.Claims["email"].(string),
+			Name:  name,
 		})
 		log.Printf("Created new user!")
-		user, _ = service.GetByID(userID)
+		user, _ = service.GetByID(googleID)
 	}
 
 	return &jwt.UserInfo{

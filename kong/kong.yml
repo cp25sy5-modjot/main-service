@@ -16,3 +16,10 @@ services:
     #         paths:
     #             - /api/ai-wrapper-service
     #         strip_path: true
+    # - name: kong-admin
+    #   url: http://kong:8001
+    #   routes:
+    #       - name: kong-admin-route
+    #         paths:
+    #             - /kong-admin
+    #         strip_path: true

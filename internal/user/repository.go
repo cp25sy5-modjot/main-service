@@ -32,6 +32,24 @@ func (r *Repository) FindByID(user_id string) (*User, error) {
 	return &user, err
 }
 
+func (r *Repository) FindByGoogleID(google_id string) (*User, error) {
+	var user User
+	err := r.db.Where("google_id = ?", google_id).First(&user).Error
+	return &user, err
+}
+
+func (r *Repository) FindByFacebookID(facebook_id string) (*User, error) {
+	var user User
+	err := r.db.Where("facebook_id = ?", facebook_id).First(&user).Error
+	return &user, err
+}
+
+func (r *Repository) FindByAppleID(apple_id string) (*User, error) {
+	var user User
+	err := r.db.Where("apple_id = ?", apple_id).First(&user).Error
+	return &user, err
+}
+
 func (r *Repository) Update(user *User) error {
 	return r.db.Save(user).Error
 }

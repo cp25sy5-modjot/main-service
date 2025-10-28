@@ -5,10 +5,10 @@ import (
 )
 
 type UserInsertReq struct {
-	UserID string    `json:"user_id"`
-	Name   string    `json:"name" validate:"required,min=2,max=100"`
-	Email  string    `json:"email" validate:"required,email"`
-	DOB    time.Time `json:"dob"`
+	UserBinding UserBinding `json:"user_binding"`
+	Name        string      `json:"name" validate:"required,min=2,max=100"`
+	Email       string      `json:"email" validate:"required,email"`
+	DOB         time.Time   `json:"dob"`
 }
 
 type UserUpdateReq struct {
