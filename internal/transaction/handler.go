@@ -1,6 +1,9 @@
 package transaction
 
 import (
+	"log"
+	"strings"
+
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	successResp "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
@@ -36,6 +39,46 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	}
 
 	return successResp.Created(c, nil, "Transaction created successfully")
+}
+
+func (h *Handler) UploadImage(c *fiber.Ctx) error {
+	// Parse the uploaded image
+	image, err := c.FormFile("image")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Failed to upload image")
+	}
+
+	contentType := image.Header.Get("Content-Type")
+	if !strings.HasPrefix(contentType, "image/") {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "File is not an image",
+		})
+	}
+
+	file, err := image.Open()
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to process uploaded image")
+	}
+	defer file.Close()
+
+	imageData := make([]byte, image.Size)
+	_, err = file.Read(imageData)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to read uploaded image")
+	}
+
+	// Get user ID from JWT claims
+	userID, err := jwt.GetUserIDFromClaims(c)
+	if err != nil {
+		return err
+	}
+
+	if err := h.service.ProcessUploadedFile(imageData, userID); err != nil {
+		log.Printf("Failed to process uploaded file: %v", err)
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to process the uploaded file")
+	}
+
+	return successResp.Created(c, nil, "File uploaded and processed successfully")
 }
 
 // GET /transactions

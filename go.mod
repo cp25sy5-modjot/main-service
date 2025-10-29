@@ -4,6 +4,7 @@ go 1.24.6
 
 require (
 	dario.cat/mergo v1.0.2
+	github.com/cp25sy5-modjot/proto v0.1.8
 	github.com/go-playground/validator/v10 v10.28.0
 	github.com/gofiber/contrib/jwt v1.1.2
 	github.com/gofiber/fiber/v2 v2.52.9
@@ -11,6 +12,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	google.golang.org/api v0.252.0
+	google.golang.org/grpc v1.75.1
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.1
 )
@@ -38,7 +40,6 @@ require (
 	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/oauth2 v0.31.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251002232023-7c0ddcbb5797 // indirect
-	google.golang.org/grpc v1.75.1 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 )
 

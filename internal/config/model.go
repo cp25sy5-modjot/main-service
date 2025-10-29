@@ -32,7 +32,5 @@ type Auth struct {
 }
 
 type Google struct {
-	ClientID     string
-	ClientSecret string
-	RedirectURL  string
+	ClientID string
 }
