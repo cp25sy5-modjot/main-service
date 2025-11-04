@@ -39,7 +39,7 @@ func (s *Service) ProcessUploadedFile(fileData []byte, userID string) error {
 
 	req := &pb.BuildTransactionFromImageRequest{
 		ImageData:  fileData,
-		Categories: []string{"food", "transportation", "utilities", "entertainment", "health", "other"},
+		Categories: []string{"food", "transportation", "utilities", "entertainment", "health", "other"},//mock categories
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second) // 15 sec timeout for upload

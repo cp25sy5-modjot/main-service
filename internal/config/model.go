@@ -5,6 +5,7 @@ type Config struct {
 	App        *Fiber
 	Auth       *Auth
 	Google     *Google
+	AIService  *AIService
 }
 
 type Fiber struct {
@@ -33,4 +34,8 @@ type Auth struct {
 
 type Google struct {
 	ClientID string
+}
+
+type AIService struct {
+	Url string
 }

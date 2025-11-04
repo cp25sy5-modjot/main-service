@@ -16,7 +16,7 @@ func main() {
 	db := database.NewPostgresDatabase(conf)
 	database.AutoMigrate(db.GetDb())
 
-	grpcConn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcConn, err := grpc.Dial(conf.AIService.Url, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server: %v", err)
 	}

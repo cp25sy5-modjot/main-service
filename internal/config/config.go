@@ -34,6 +34,9 @@ func LoadConfig() *Config {
 		Google: &Google{
 			ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 		},
+		AIService: &AIService{
+			Url: os.Getenv("AI_WRAPPER_ADDR"),
+		},
 	}
 }
 

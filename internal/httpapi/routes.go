@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/cp25sy5-modjot/main-service/internal/auth"
@@ -48,7 +49,7 @@ func initializeHealthCheck(s *fiberServer) {
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second) // 15 sec timeout for upload
 		defer cancel()
-
+		log.Println("Performing gRPC health check...")
 		resp, err := s.aiClient.Check(ctx, &pb.HealthCheckRequest{Name: "main-service"})
 		if err != nil {
 			return err
