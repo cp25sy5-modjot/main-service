@@ -1,11 +1,16 @@
 package httpapi
 
 import (
-	"github.com/cp25sy5-modjot/main-service/internal/jwt"
+	"context"
+	"log"
+	"time"
+
 	"github.com/cp25sy5-modjot/main-service/internal/auth"
+	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	"github.com/cp25sy5-modjot/main-service/internal/transaction"
 	"github.com/cp25sy5-modjot/main-service/internal/user"
+	pb "github.com/cp25sy5-modjot/proto/gen/ai/v1"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -21,7 +26,7 @@ func RegisterRoutes(
 func initializeTransactionRoutes(s *fiberServer) {
 	// Initialize all layers
 	transactionRepo := transaction.NewRepository(s.db.GetDb())
-	transactionService := transaction.NewService(transactionRepo)
+	transactionService := transaction.NewService(transactionRepo, s.aiClient)
 	transactionHandler := transaction.NewHandler(transactionService)
 
 	// Register routes
@@ -29,6 +34,7 @@ func initializeTransactionRoutes(s *fiberServer) {
 	api.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
 
 	api.Post("/manual", transactionHandler.Create)
+	api.Post("/upload", transactionHandler.UploadImage)
 	api.Get("", transactionHandler.GetAll)
 	api.Get("/:transaction_id/product/:product_id", transactionHandler.GetByID)
 	api.Put("/:transaction_id/product/:product_id", transactionHandler.Update)
@@ -38,6 +44,17 @@ func initializeTransactionRoutes(s *fiberServer) {
 func initializeHealthCheck(s *fiberServer) {
 	s.app.Get("/v1/health", func(c *fiber.Ctx) error {
 		return r.OK(c, nil, "Health check passed")
+	})
+	s.app.Get("/v1/health/grpc", func(c *fiber.Ctx) error {
+
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second) // 15 sec timeout for upload
+		defer cancel()
+		log.Println("Performing gRPC health check...")
+		resp, err := s.aiClient.Check(ctx, &pb.HealthCheckRequest{Name: "main-service"})
+		if err != nil {
+			return err
+		}
+		return r.OK(c, resp, "gRPC health check passed")
 	})
 }
 

@@ -33,8 +33,9 @@ func LoadConfig() *Config {
 		},
 		Google: &Google{
 			ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
-			ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-			RedirectURL:  os.Getenv("GOOGLE_REDIRECT_URL"),
+		},
+		AIService: &AIService{
+			Url: os.Getenv("AI_WRAPPER_ADDR"),
 		},
 	}
 }

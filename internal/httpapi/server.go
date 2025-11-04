@@ -8,6 +8,7 @@ import (
 	"github.com/cp25sy5-modjot/main-service/internal/globalHandler"
 	"github.com/cp25sy5-modjot/main-service/internal/middleware"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
+	pb "github.com/cp25sy5-modjot/proto/gen/ai/v1"
 
 	// "github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
@@ -21,9 +22,10 @@ type fiberServer struct {
 	app  *fiber.App
 	db   database.Database
 	conf *config.Config
+	aiClient   pb.AiWrapperServiceClient
 }
 
-func NewFiberServer(conf *config.Config, db database.Database) Server {
+func NewFiberServer(conf *config.Config, db database.Database, aiClient pb.AiWrapperServiceClient) Server {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: globalHandler.GlobalErrorHandler,
 	})
@@ -35,6 +37,7 @@ func NewFiberServer(conf *config.Config, db database.Database) Server {
 		app:  app,
 		db:   db,
 		conf: conf,
+		aiClient:   aiClient,
 	}
 }
 

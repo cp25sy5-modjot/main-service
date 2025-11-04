@@ -3,31 +3,55 @@ package transaction
 import (
 	"time"
 
+	"context"
+
 	r "github.com/cp25sy5-modjot/main-service/internal/response/error"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
+	pb "github.com/cp25sy5-modjot/proto/gen/ai/v1"
 	"github.com/google/uuid"
 )
 
 type Service struct {
-	repo *Repository
+	repo     *Repository
+	aiClient pb.AiWrapperServiceClient
 }
 
-func NewService(repo *Repository) *Service {
-	return &Service{repo}
+func NewService(repo *Repository, aiClient pb.AiWrapperServiceClient) *Service {
+	return &Service{repo, aiClient}
 }
 
 func (s *Service) Create(transaction *Transaction) error {
 	tx := &Transaction{
 		TransactionID: uuid.New().String(),
-		ProductID:     uuid.New().String(),
+		ItemID:        uuid.New().String(),
 		UserID:        transaction.UserID,
 		Type:          transaction.Type,
-		Amount:        transaction.Amount,
+		Quantity:      transaction.Quantity,
 		Title:         transaction.Title,
 		Price:         transaction.Price,
 		Category:      transaction.Category,
 		Date:          time.Now(),
 	}
+	return s.repo.Create(tx)
+}
+
+func (s *Service) ProcessUploadedFile(fileData []byte, userID string) error {
+
+	req := &pb.BuildTransactionFromImageRequest{
+		ImageData:  fileData,
+		Categories: []string{"food", "transportation", "utilities", "entertainment", "health", "other"},//mock categories
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second) // 15 sec timeout for upload
+	defer cancel()
+
+	tResponse, err := s.aiClient.BuildTransactionFromImage(ctx, req)
+	if err != nil {
+		return err
+	}
+	tx := &Transaction{}
+	utils.MapNonNilStructs(tResponse, tx)
+
 	return s.repo.Create(tx)
 }
 
