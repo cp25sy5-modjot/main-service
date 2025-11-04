@@ -144,15 +144,15 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 // utils
 func getTxIDAndProdID(c *fiber.Ctx) (string, string, error) {
 	tx_id := c.Params("transaction_id")
-	prod_id := c.Params("product_id")
-	if tx_id == "" || prod_id == "" {
+	item_id := c.Params("product_id")
+	if tx_id == "" || item_id == "" {
 		return "", "", fiber.NewError(fiber.StatusBadRequest, "transaction_id and product_id parameters are required")
 	}
-	return tx_id, prod_id, nil
+	return tx_id, item_id, nil
 }
 
 func createSearchParams(c *fiber.Ctx) (*SearchParams, error) {
-	tx_id, prod_id, err := getTxIDAndProdID(c)
+	tx_id, item_id, err := getTxIDAndProdID(c)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func createSearchParams(c *fiber.Ctx) (*SearchParams, error) {
 	}
 	return &SearchParams{
 		TransactionID: tx_id,
-		ProductID:     prod_id,
+		ItemID:        item_id,
 		UserID:        userID,
 	}, nil
 }

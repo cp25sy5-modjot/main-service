@@ -23,10 +23,10 @@ func NewService(repo *Repository, aiClient pb.AiWrapperServiceClient) *Service {
 func (s *Service) Create(transaction *Transaction) error {
 	tx := &Transaction{
 		TransactionID: uuid.New().String(),
-		ProductID:     uuid.New().String(),
+		ItemID:        uuid.New().String(),
 		UserID:        transaction.UserID,
 		Type:          transaction.Type,
-		Amount:        transaction.Amount,
+		Quantity:      transaction.Quantity,
 		Title:         transaction.Title,
 		Price:         transaction.Price,
 		Category:      transaction.Category,
