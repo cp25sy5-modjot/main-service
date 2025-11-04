@@ -2,7 +2,7 @@ name: Build & Push Docker image
 
 on:
   push:
-    branches: ['main','release*']
+    branches: ['main','develop']
 
 permissions:
   contents: read
