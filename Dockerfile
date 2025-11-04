@@ -3,7 +3,6 @@ FROM golang:1.24-alpine AS build
 WORKDIR /app
 
 # Better caching
-RUN go mod tidy
 COPY go.mod go.sum ./
 RUN go mod download
 
