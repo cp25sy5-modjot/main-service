@@ -32,7 +32,6 @@ func NewFiberServer(conf *config.Config, db database.Database, aiClient pb.AiWra
 
 	// Middlewares
 	initMiddleware(app)
-
 	return &fiberServer{
 		app:  app,
 		db:   db,

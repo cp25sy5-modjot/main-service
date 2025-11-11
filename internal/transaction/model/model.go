@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-type SearchParams struct {
+type TransactionSearchParams struct {
 	TransactionID string `json:"transaction_id" validate:"required"`
 	ItemID        string `json:"product_id" validate:"required"`
 	UserID        string `json:"user_id" validate:"required"`

@@ -6,39 +6,42 @@ import (
 
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	successResp "github.com/cp25sy5-modjot/main-service/internal/response/success"
+	model "github.com/cp25sy5-modjot/main-service/internal/transaction/model"
+	svc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
-
 	"github.com/gofiber/fiber/v2"
 )
 
 type Handler struct {
-	service *Service
+	service *svc.Service
 }
 
-func NewHandler(service *Service) *Handler {
+func NewHandler(service *svc.Service) *Handler {
 	return &Handler{service}
 }
 
 // POST /transactions
 func (h *Handler) Create(c *fiber.Ctx) error {
-	var req TransactionInsertReq
+	var req model.TransactionInsertReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
 
-	var tx Transaction
-	_ = utils.MapStructs(&req, &tx)
+	var tx model.Transaction
+	_ = utils.MapStructs(req, &tx)
 	userID, err := jwt.GetUserIDFromClaims(c)
 	if err != nil {
 		return err
 	}
 	tx.UserID = userID
 	tx.Type = "manual"
-	if err := h.service.Create(&tx); err != nil {
+	createdTx, err := h.service.Create(&tx)
+	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-
-	return successResp.Created(c, nil, "Transaction created successfully")
+	var res model.TransactionRes
+	utils.MapStructs(createdTx, &res)
+	return successResp.Created(c, res, "Transaction created successfully")
 }
 
 func (h *Handler) UploadImage(c *fiber.Ctx) error {
@@ -73,12 +76,15 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 		return err
 	}
 
-	if err := h.service.ProcessUploadedFile(imageData, userID); err != nil {
+	createdTx, err := h.service.ProcessUploadedFile(imageData, userID)
+	if err != nil {
 		log.Printf("Failed to process uploaded file: %v", err)
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to process the uploaded file")
 	}
 
-	return successResp.Created(c, nil, "File uploaded and processed successfully")
+	var res model.TransactionRes
+	utils.MapStructs(createdTx, &res)
+	return successResp.Created(c, res, "File uploaded and processed successfully")
 }
 
 // GET /transactions
@@ -91,51 +97,51 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve transactions")
 	}
-	var resp []TransactionRes
-	_ = utils.MapStructs(&transactions, &resp)
+	var resp []model.TransactionRes
+	_ = utils.MapStructs(transactions, &resp)
 	return successResp.OK(c, resp, "Transactions retrieved successfully")
 }
 
 // GET /transactions/:transaction_id/product/:product_id
 func (h *Handler) GetByID(c *fiber.Ctx) error {
-	searchParams, err := createSearchParams(c)
+	TransactionSearchParams, err := createTransactionSearchParams(c)
 	if err != nil {
 		return err
 	}
-	transaction, err := h.service.GetByID(searchParams)
+	transaction, err := h.service.GetByID(TransactionSearchParams)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Transaction not found")
 	}
-	var resp TransactionRes
-	_ = utils.MapStructs(&transaction, &resp)
+	var resp model.TransactionRes
+	_ = utils.MapStructs(transaction, &resp)
 	return successResp.OK(c, resp, "Transaction retrieved successfully")
 }
 
 // PUT /transactions/:transaction_id/product/:product_id
 func (h *Handler) Update(c *fiber.Ctx) error {
-	var req TransactionUpdateReq
+	var req model.TransactionUpdateReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
-	searchParams, err := createSearchParams(c)
+	TransactionSearchParams, err := createTransactionSearchParams(c)
 	if err != nil {
 		return err
 	}
-	if err := h.service.Update(searchParams, &req); err != nil {
+	if err := h.service.Update(TransactionSearchParams, &req); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to update transaction")
 	}
-	var resp TransactionRes
-	_ = utils.MapStructs(&req, &resp)
+	var resp model.TransactionRes
+	_ = utils.MapStructs(req, &resp)
 	return successResp.OK(c, resp, "Transaction updated successfully")
 }
 
 // DELETE /transactions/:transaction_id/product/:product_id
 func (h *Handler) Delete(c *fiber.Ctx) error {
-	searchParams, err := createSearchParams(c)
+	TransactionSearchParams, err := createTransactionSearchParams(c)
 	if err != nil {
 		return err
 	}
-	if err := h.service.Delete(searchParams); err != nil {
+	if err := h.service.Delete(TransactionSearchParams); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to delete transaction")
 	}
 	return successResp.OK(c, nil, "Transaction deleted successfully")
@@ -151,7 +157,7 @@ func getTxIDAndProdID(c *fiber.Ctx) (string, string, error) {
 	return tx_id, item_id, nil
 }
 
-func createSearchParams(c *fiber.Ctx) (*SearchParams, error) {
+func createTransactionSearchParams(c *fiber.Ctx) (*model.TransactionSearchParams, error) {
 	tx_id, item_id, err := getTxIDAndProdID(c)
 	if err != nil {
 		return nil, err
@@ -160,7 +166,7 @@ func createSearchParams(c *fiber.Ctx) (*SearchParams, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SearchParams{
+	return &model.TransactionSearchParams{
 		TransactionID: tx_id,
 		ItemID:        item_id,
 		UserID:        userID,
