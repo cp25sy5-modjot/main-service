@@ -15,10 +15,10 @@ type User struct {
 	Name        string      `gorm:"length:100" json:"name"`
 	DOB         time.Time   `json:"dob"`
 	Email       string      `gorm:"length:100,unique" json:"email"`
-	Status      UserStatus  `gorm:"type:enum('pre-active','active');default:'active'" json:"status"`
+	Status      UserStatus  `gorm:"default:'pre-active'" json:"status"`
 	Onboarding  bool        `gorm:"default:false" json:"onboarding"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
+	CreatedAt   time.Time   `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt   time.Time   `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 type UserBinding struct {
