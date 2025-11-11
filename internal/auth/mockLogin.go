@@ -5,7 +5,8 @@ import (
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
 
-	u "github.com/cp25sy5-modjot/main-service/internal/user"
+	userModel "github.com/cp25sy5-modjot/main-service/internal/user/model"
+	u "github.com/cp25sy5-modjot/main-service/internal/user/service"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -16,12 +17,15 @@ func MockLoginHandler(c *fiber.Ctx, service *u.Service, config *config.Auth) err
 		return fiber.NewError(fiber.StatusBadRequest, "userName is required")
 	}
 
-	user, err := service.Create(&u.UserInsertReq{
-		Email: userName + "@mock.com",
-		Name:  userName,
-	})
+	user, err := service.GetByEmail(userName + "@mock.com")
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to create user")
+		user, err = service.Create(&userModel.UserInsertReq{
+			Email: userName + "@mock.com",
+			Name:  userName,
+		})
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "Failed to create user")
+		}
 	}
 
 	userInfo := &jwt.UserInfo{

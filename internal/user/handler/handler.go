@@ -1,18 +1,21 @@
 package user
 
 import (
+	"log"
+
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	successResp "github.com/cp25sy5-modjot/main-service/internal/response/success"
+	model "github.com/cp25sy5-modjot/main-service/internal/user/model"
+	svc "github.com/cp25sy5-modjot/main-service/internal/user/service"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
 	"github.com/gofiber/fiber/v2"
-	"log"
 )
 
 type Handler struct {
-	service *Service
+	service *svc.Service
 }
 
-func NewHandler(service *Service) *Handler {
+func NewHandler(service *svc.Service) *Handler {
 	return &Handler{service}
 }
 
@@ -27,14 +30,14 @@ func (h *Handler) GetSelf(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 	//parse to response model
-	var userRes UserRes
-	utils.MapStructs(&user, &userRes)
+	var userRes model.UserRes
+	utils.MapStructs(user, &userRes)
 	log.Printf("User retrieved: %+v", userRes)
 	return successResp.OK(c, userRes, "User retrieved successfully")
 }
 
 func (h *Handler) Create(c *fiber.Ctx) error {
-	var req UserInsertReq
+	var req model.UserInsertReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
@@ -43,15 +46,15 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-	var userRes UserRes
-	utils.MapNonNilStructs(user, &userRes)
+	var userRes model.UserRes
+	utils.MapStructs(user, &userRes)
 	return successResp.Created(c, userRes, "User created successfully")
 }
 
 // PUT /user
 func (h *Handler) Update(c *fiber.Ctx) error {
 
-	var req UserUpdateReq
+	var req model.UserUpdateReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
@@ -61,15 +64,15 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		return err
 	}
 
-	var entity User
-	utils.MapNonNilStructs(&req, &entity)
-	entity.UserID = userID
-
-	if err := h.service.Update(&entity); err != nil {
+	updated, err := h.service.Update(userID, &req);
+	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	return successResp.OK(c, nil, "User updated successfully")
+	var resp model.UserRes
+	utils.MapStructs(updated, &resp)
+
+	return successResp.OK(c, resp, "User updated successfully")
 }
 
 // DELETE /user
