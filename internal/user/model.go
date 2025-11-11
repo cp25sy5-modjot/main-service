@@ -17,9 +17,11 @@ type UserUpdateReq struct {
 }
 
 type UserRes struct {
-	UserID    string    `json:"user_id"`
-	Name      string    `json:"name"`
-	DOB       time.Time `json:"dob"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
+	UserBinding UserBinding `json:"user_binding"`
+	Name        string      `json:"name"`
+	DOB         time.Time   `json:"dob"`
+	Email       string      `json:"email"`
+	Status      UserStatus  `json:"status"`
+	Onboarding  bool        `json:"onboarding"`
+	CreatedAt   time.Time   `json:"created_at"`
 }

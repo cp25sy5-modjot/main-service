@@ -10,44 +10,65 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db}
 }
 
-func (r *Repository) Create(user *User) error {
-	return r.db.Create(user).Error
+func (r *Repository) Create(user *User) (*User, error) {
+	if err := r.db.Create(user).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (r *Repository) FindAll() ([]User, error) {
 	var users []User
 	err := r.db.Find(&users).Error
-	return users, err
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 func (r *Repository) FindByEmail(email string) (*User, error) {
 	var user User
 	err := r.db.Where("email = ?", email).First(&user).Error
-	return &user, err
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (r *Repository) FindByID(user_id string) (*User, error) {
 	var user User
 	err := r.db.Where("user_id = ?", user_id).First(&user).Error
-	return &user, err
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (r *Repository) FindByGoogleID(google_id string) (*User, error) {
 	var user User
 	err := r.db.Where("google_id = ?", google_id).First(&user).Error
-	return &user, err
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (r *Repository) FindByFacebookID(facebook_id string) (*User, error) {
 	var user User
 	err := r.db.Where("facebook_id = ?", facebook_id).First(&user).Error
-	return &user, err
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (r *Repository) FindByAppleID(apple_id string) (*User, error) {
 	var user User
 	err := r.db.Where("apple_id = ?", apple_id).First(&user).Error
-	return &user, err
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (r *Repository) Update(user *User) error {

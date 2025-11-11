@@ -14,9 +14,10 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo}
 }
 
-func (s *Service) Create(user *UserInsertReq) error {
+func (s *Service) Create(user *UserInsertReq) (*User, error) {
+	UserID := uuid.New().String()
 	u := &User{
-		UserID: uuid.New().String(),
+		UserID: UserID,
 		UserBinding: UserBinding{
 			GoogleID:   user.UserBinding.GoogleID,
 			FacebookID: user.UserBinding.FacebookID,
