@@ -66,13 +66,14 @@ func initializeAuthRoutes(s *fiberServer) {
 	// Register user routes
 	userApi := s.app.Group("/v1/user")
 	userApi.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
-
+	
+	userApi.Get("", userHandler.GetSelf)
 	userApi.Put("", userHandler.Update)
 	userApi.Delete("", userHandler.Delete)
 
 	authApi := s.app.Group("/v1/auth")
 	authApi.Post("/mock-login", func(c *fiber.Ctx) error {
-		return auth.MockLoginHandler(c, s.conf.Auth)
+		return auth.MockLoginHandler(c, userService, s.conf.Auth)
 	})
 	authApi.Post("/refresh-token", func(c *fiber.Ctx) error {
 		return auth.RefreshHandler(c, s.conf.Auth)

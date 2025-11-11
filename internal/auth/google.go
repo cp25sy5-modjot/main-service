@@ -52,18 +52,26 @@ func validateIDToken(idToken string, config *config.Google) (*idtoken.Payload, e
 func getUserInfoFromPayload(payload *idtoken.Payload, service *u.Service) *jwt.UserInfo {
 	googleID := payload.Subject
 
-	user, err := service.GetByID(googleID)
+	user, err := service.GetByGoogleID(googleID)
 	if err != nil {
 		name := payload.Claims["given_name"].(string)
 		if name == "" {
 			name = payload.Claims["name"].(string)
 		}
-		service.Create(&u.UserInsertReq{
+		if name == "" {
+			name = "New User"
+		}
+		user, err = service.Create(&u.UserInsertReq{
 			Email: payload.Claims["email"].(string),
 			Name:  name,
+			UserBinding: u.UserBinding{
+				GoogleID: googleID,
+			},
 		})
+		if err != nil {
+			fiber.NewError(fiber.StatusInternalServerError, "Failed to create user")
+		}
 		log.Printf("Created new user!")
-		user, _ = service.GetByID(googleID)
 	}
 
 	return &jwt.UserInfo{
