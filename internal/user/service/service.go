@@ -40,8 +40,7 @@ func (s *Service) Create(user *userModel.UserInsertReq) (*userModel.User, error)
 		return nil, err
 	}
 
-	// Create default categories for the new user
-	defaultCategories := []string{"Food", "Transport", "Entertainment", "Utilities", "Health"}
+	defaultCategories := []string{"อาหาร", "การเดินทาง", "ความบันเทิง", "ชอปปิ้ง", "อื่นๆ"}
 	for _, categoryName := range defaultCategories {
 		_, err := s.cat.Create(&catModel.Category{
 			CategoryName: categoryName,
