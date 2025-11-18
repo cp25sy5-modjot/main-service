@@ -22,35 +22,30 @@ func NewService(repo *userRepo.Repository, cat *catSvc.Service) *Service {
 
 func (s *Service) Create(user *userModel.UserInsertReq) (*userModel.User, error) {
 	UserID := uuid.New().String()
-	u := &userModel.User{
-		UserID: UserID,
-		UserBinding: userModel.UserBinding{
-			GoogleID:   user.UserBinding.GoogleID,
-			FacebookID: user.UserBinding.FacebookID,
-			AppleID:    user.UserBinding.AppleID,
-		},
-		Email:     user.Email,
-		Name:      user.Name,
-		DOB:       user.DOB,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
+	u := buildUserObjectToCreate(UserID, user)
 	userCreated, err := s.repo.Create(u)
 	if err != nil {
 		return nil, err
 	}
 
-	defaultCategories := []string{"อาหาร", "การเดินทาง", "ความบันเทิง", "ชอปปิ้ง", "อื่นๆ"}
-	for _, categoryName := range defaultCategories {
-		_, err := s.cat.Create(&catModel.Category{
-			CategoryName: categoryName,
-			UserID:       userCreated.UserID,
-			Budget:       1000.0,
-		})
-		if err != nil {
-			return nil, err
-		}
+	if err := createDefaultCategories(s, UserID); err != nil {
+		return nil, err
 	}
+
+	return userCreated, nil
+}
+
+func (s *Service) CreateMockUser(user *userModel.UserInsertReq, uid string) (*userModel.User, error) {
+	u := buildUserObjectToCreate(uid, user)
+	userCreated, err := s.repo.Create(u)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := createDefaultCategories(s, uid); err != nil {
+		return nil, err
+	}
+
 	return userCreated, nil
 }
 
@@ -86,9 +81,43 @@ func (s *Service) Update(userID string, req *userModel.UserUpdateReq) (*userMode
 	if err := utils.MapStructs(req, exists); err != nil {
 		return nil, err
 	}
+	if exists.Status == userModel.StatusPreActive {
+		exists.Status = userModel.StatusActive
+	}
 	return exists, s.repo.Update(exists)
 }
 
 func (s *Service) Delete(user_id string) error {
 	return s.repo.Delete(user_id)
+}
+
+func buildUserObjectToCreate(uid string, user *userModel.UserInsertReq) *userModel.User {
+	return &userModel.User{
+		UserID: uid,
+		UserBinding: userModel.UserBinding{
+			GoogleID:   user.UserBinding.GoogleID,
+			FacebookID: user.UserBinding.FacebookID,
+			AppleID:    user.UserBinding.AppleID,
+		},
+		Name:      user.Name,
+		DOB:       user.DOB,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+}
+
+func createDefaultCategories(s *Service, uid string) error {
+	defaultCategories := []string{"อาหาร", "การเดินทาง", "ความบันเทิง", "ชอปปิ้ง", "อื่นๆ"}
+	for _, categoryName := range defaultCategories {
+		_, err := s.cat.Create(&catModel.Category{
+			CategoryName: categoryName,
+			UserID:       uid,
+			Budget:       1000.0,
+			ColorCode:    utils.GenerateRandomColor(),
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
