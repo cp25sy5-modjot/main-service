@@ -24,6 +24,7 @@ func (s *Service) Create(category *model.Category) (*model.Category, error) {
 		CategoryName: category.CategoryName,
 		UserID:       category.UserID,
 		Budget:       category.Budget,
+		ColorCode:    category.ColorCode,
 		CreatedAt:    time.Now(),
 	}
 	return s.repo.Create(cate)
