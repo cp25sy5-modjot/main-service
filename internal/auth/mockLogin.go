@@ -17,10 +17,9 @@ func MockLoginHandler(c *fiber.Ctx, service *u.Service, config *config.Auth) err
 		return fiber.NewError(fiber.StatusBadRequest, "userName is required")
 	}
 
-	user, err := service.GetByEmail(userName + "@mock.com")
+	user, err := service.GetByID(userName + "@mock.com")
 	if err != nil {
 		user, err = service.Create(&userModel.UserInsertReq{
-			Email: userName + "@mock.com",
 			Name:  userName,
 		})
 		if err != nil {

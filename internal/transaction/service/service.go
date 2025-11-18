@@ -25,7 +25,9 @@ func NewService(repo *tranRepo.Repository, cat *catSvc.Service, aiClient pb.AiWr
 }
 
 func (s *Service) Create(transaction *tranModel.Transaction) (*tranModel.Transaction, error) {
-	tx := buildTransactionObjectToCreate(transaction)
+	txId := uuid.New().String()
+	transaction.Type = "manual"
+	tx := buildTransactionObjectToCreate(txId, transaction)
 	return s.repo.Create(tx)
 }
 
@@ -47,12 +49,14 @@ func (s *Service) ProcessUploadedFile(fileData []byte, userID string) (*tranMode
 	if err != nil {
 		return nil, err
 	}
-	tx := &tranModel.Transaction{}
-	utils.MapStructs(tResponse, tx)
-	tx.UserID = userID
-	newTx := buildTransactionObjectToCreate(tx)
+	transaction := &tranModel.Transaction{}
+	utils.MapStructs(tResponse, transaction)
+	transaction.UserID = userID
+	txId := uuid.New().String()
+	transaction.Type = "image_upload"
+	tx := buildTransactionObjectToCreate(txId, transaction)
 
-	return s.repo.Create(newTx)
+	return s.repo.Create(tx)
 }
 
 func (s *Service) GetAllByUserID(userID string) ([]tranModel.Transaction, error) {
@@ -101,9 +105,9 @@ func GetCategoryNames(s *Service, userID string) ([]string, error) {
 	return categoryNames, nil
 }
 
-func buildTransactionObjectToCreate(tx *tranModel.Transaction) *tranModel.Transaction {
+func buildTransactionObjectToCreate(txId string, tx *tranModel.Transaction) *tranModel.Transaction {
 	return &tranModel.Transaction{
-		TransactionID: uuid.New().String(),
+		TransactionID: txId,
 		ItemID:        uuid.New().String(),
 		UserID:        tx.UserID,
 		Type:          tx.Type,

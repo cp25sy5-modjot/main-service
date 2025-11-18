@@ -63,7 +63,6 @@ func getUserInfoFromPayload(payload *idtoken.Payload, service *u.Service) *jwt.U
 			name = "New User"
 		}
 		user, err = service.Create(&userModel.UserInsertReq{
-			Email: payload.Claims["email"].(string),
 			Name:  name,
 			UserBinding: userModel.UserBinding{
 				GoogleID: googleID,

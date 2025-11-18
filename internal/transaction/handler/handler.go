@@ -34,7 +34,6 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 		return err
 	}
 	tx.UserID = userID
-	tx.Type = "manual"
 	createdTx, err := h.service.Create(&tx)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
