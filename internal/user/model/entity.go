@@ -12,9 +12,8 @@ const (
 type User struct {
 	UserID      string      `gorm:"primaryKey;autoIncrement:false" json:"user_id"`
 	UserBinding UserBinding `gorm:"embedded" json:"user_binding"`
-	Name        string      `gorm:"length:100" json:"name"`
+	Name        string      `gorm:"length:15" json:"name"`
 	DOB         time.Time   `json:"dob"`
-	Email       string      `gorm:"length:100,unique" json:"email"`
 	Status      UserStatus  `gorm:"default:'pre-active'" json:"status"`
 	Onboarding  bool        `gorm:"default:false" json:"onboarding"`
 	CreatedAt   time.Time   `gorm:"autoCreateTime" json:"created_at"`
