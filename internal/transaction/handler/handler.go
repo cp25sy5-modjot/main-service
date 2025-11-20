@@ -20,7 +20,7 @@ func NewHandler(service *svc.Service) *Handler {
 	return &Handler{service}
 }
 
-// POST /transactions
+// POST /transactions/manual
 func (h *Handler) Create(c *fiber.Ctx) error {
 	var req model.TransactionInsertReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
@@ -43,6 +43,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	return successResp.Created(c, res, "Transaction created successfully")
 }
 
+// POST /transactions/upload
 func (h *Handler) UploadImage(c *fiber.Ctx) error {
 	// Parse the uploaded image
 	image, err := c.FormFile("image")
@@ -92,7 +93,13 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	transactions, err := h.service.GetAllByUserID(userID)
+
+	date := c.Query("date")
+	filter := &model.TransactionFilter{
+		Date: utils.ConvertStringToTime(date),
+	}
+
+	transactions, err := h.service.GetAllByUserIDWithFilter(userID, filter)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve transactions")
 	}
