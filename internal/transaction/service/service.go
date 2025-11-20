@@ -1,10 +1,12 @@
 package transaction
 
 import (
+	"log"
 	"time"
 
 	"context"
 
+	catModel "github.com/cp25sy5-modjot/main-service/internal/category/model"
 	catSvc "github.com/cp25sy5-modjot/main-service/internal/category/service"
 	r "github.com/cp25sy5-modjot/main-service/internal/response/error"
 	tranModel "github.com/cp25sy5-modjot/main-service/internal/transaction/model"
@@ -28,6 +30,9 @@ func (s *Service) Create(transaction *tranModel.Transaction) (*tranModel.Transac
 	txId := uuid.New().String()
 	transaction.Type = "manual"
 	tx := buildTransactionObjectToCreate(txId, transaction)
+	if err := checkCategory(s, tx); err != nil {
+		return nil, err
+	}
 	return s.repo.Create(tx)
 }
 
@@ -56,11 +61,28 @@ func (s *Service) ProcessUploadedFile(fileData []byte, userID string) (*tranMode
 	transaction.Type = "image_upload"
 	tx := buildTransactionObjectToCreate(txId, transaction)
 
+	if err := checkCategory(s, tx); err != nil {
+		return nil, err
+	}
+
 	return s.repo.Create(tx)
 }
 
 func (s *Service) GetAllByUserID(userID string) ([]tranModel.Transaction, error) {
 	return s.repo.FindAllByUserID(userID)
+}
+
+func (s *Service) GetAllByUserIDWithFilter(userID string, filter *tranModel.TransactionFilter) ([]tranModel.Transaction, error) {
+	log.Printf("date is %v", filter.Date)
+	if filter.Date == nil {
+		now := time.Now()
+		filter.Date = &now
+	}
+	transactions, err := s.repo.FindAllByUserIDAndFiltered(userID, filter)
+	if err != nil {
+		return nil, err
+	}
+	return transactions, nil
 }
 
 func (s *Service) GetByID(params *tranModel.TransactionSearchParams) (*tranModel.Transaction, error) {
@@ -76,7 +98,9 @@ func (s *Service) Update(params *tranModel.TransactionSearchParams, transaction 
 		return err
 	}
 	_ = utils.MapStructs(transaction, exists)
-
+	if err := checkCategory(s, exists); err != nil {
+		return err
+	}
 	return s.repo.Update(exists)
 }
 
@@ -114,7 +138,19 @@ func buildTransactionObjectToCreate(txId string, tx *tranModel.Transaction) *tra
 		Quantity:      tx.Quantity,
 		Title:         tx.Title,
 		Price:         tx.Price,
-		Category:      tx.Category,
+		CategoryID:    tx.CategoryID,
 		Date:          time.Now(),
 	}
+}
+
+func checkCategory(s *Service, tx *tranModel.Transaction) error {
+	catSearchParam := &catModel.CategorySearchParams{
+		CategoryID: tx.CategoryID,
+		UserID:     tx.UserID,
+	}
+	_, err := s.cat.GetByID(catSearchParam)
+	if err != nil {
+		return err
+	}
+	return nil
 }
