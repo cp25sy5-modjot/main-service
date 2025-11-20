@@ -150,7 +150,7 @@ func checkCategory(s *Service, tx *tranModel.Transaction) error {
 	}
 	_, err := s.cat.GetByID(catSearchParam)
 	if err != nil {
-		return err
+		return r.BadRequest(nil, "Category does not exist", nil)
 	}
 	return nil
 }
