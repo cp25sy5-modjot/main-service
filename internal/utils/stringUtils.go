@@ -3,6 +3,8 @@ package utils
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"log"
+	"time"
 )
 
 // Utility
@@ -21,4 +23,13 @@ func GenerateRandomColor() string {
 		return "#000000" // return black if error occurs
 	}
 	return "#" + hex.EncodeToString(bytes)
+}
+
+func ConvertStringToTime(s string) *time.Time {
+	t, err := time.Parse(time.DateOnly, s)
+	if err != nil {
+		log.Printf("Failed to parse date: %v", err)
+		return nil
+	}
+	return &t
 }
