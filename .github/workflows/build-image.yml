@@ -40,7 +40,6 @@ jobs:
         run: |
           if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
             # Main branch: Use 'latest' tag, only build host architecture (linux/amd64)
-
             echo "TAG=latest" >> $GITHUB_ENV
             echo "PLATFORMS=linux/amd64" >> $GITHUB_ENV
           else
