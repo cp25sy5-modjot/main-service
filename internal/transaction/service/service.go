@@ -52,8 +52,8 @@ func (s *Service) ProcessUploadedFile(fileData []byte, userID string) (*tranMode
 		ImageData:  fileData,
 		Categories: categoryNames,
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second) // 30 sec timeout for upload
+	const timeout = 5*time.Minute + 30*time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout) // 30 sec timeout for upload
 	defer cancel()
 
 	tResponse, err := s.aiClient.BuildTransactionFromImage(ctx, req)
