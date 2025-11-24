@@ -11,10 +11,11 @@ type TransactionSearchParams struct {
 }
 
 type TransactionInsertReq struct {
-	Title      string  `json:"title" validate:"required,min=2,max=50"`
-	Price      float64 `json:"price" validate:"required"`
-	Quantity   float64 `json:"quantity" validate:"required"`
-	CategoryId string  `json:"category_id" validate:"required"`
+	Title      string    `json:"title" validate:"required,min=2,max=50"`
+	Price      float64   `json:"price" validate:"required"`
+	Quantity   float64   `json:"quantity" validate:"required"`
+	CategoryId string    `json:"category_id" validate:"required"`
+	Date       time.Time `json:"date"`
 }
 
 type TransactionUpdateReq struct {
@@ -23,14 +24,17 @@ type TransactionUpdateReq struct {
 }
 
 type TransactionRes struct {
-	TransactionID string    `json:"transaction_id"`
-	ItemID        string    `json:"product_id"`
-	Title         string    `json:"title"`
-	Price         float64   `json:"price"`
-	Quantity      float64   `json:"quantity"`
-	Date          time.Time `json:"date"`
-	Type          string    `json:"type"`
-	CategoryID    string    `json:"category_id"`
+	TransactionID     string    `json:"transaction_id"`
+	ItemID            string    `json:"product_id"`
+	Title             string    `json:"title"`
+	Price             float64   `json:"price"`
+	Quantity          float64   `json:"quantity"`
+	TotalPrice        float64   `json:"total_price"`
+	Date              time.Time `json:"date"`
+	Type              string    `json:"type"`
+	CategoryID        string    `json:"category_id"`
+	CategoryName      string    `json:"category_name"`
+	CategoryColorCode string    `json:"category_color_code"`
 }
 
 type TransactionFilter struct {
