@@ -69,7 +69,6 @@ func initializeHealthCheckRoutes(s *fiberServer) {
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second) // 15 sec timeout for upload
 		defer cancel()
-		log.Println("Performing gRPC health check...")
 		resp, err := s.aiClient.Check(ctx, &pb.HealthCheckRequest{Name: "main-service"})
 		if err != nil {
 			return err

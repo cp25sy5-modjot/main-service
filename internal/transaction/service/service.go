@@ -76,7 +76,6 @@ func (s *Service) GetAllByUserID(userID string) ([]tranModel.TransactionRes, err
 }
 
 func (s *Service) GetAllByUserIDWithFilter(userID string, filter *tranModel.TransactionFilter) ([]tranModel.TransactionRes, error) {
-	log.Printf("date is %v", filter.Date)
 	if filter.Date == nil {
 		now := time.Now()
 		filter.Date = &now
@@ -243,6 +242,5 @@ func processTransaction(tResponse *pb.TransactionResponse, categories []catModel
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Created transaction: %+v", newTx)
 	return buildTransactionResponse(newTx, match), nil
 }

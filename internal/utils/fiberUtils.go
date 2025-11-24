@@ -1,15 +1,12 @@
 package utils
 
 import (
-	"log"
-
 	v "github.com/cp25sy5-modjot/main-service/internal/validator"
 	"github.com/gofiber/fiber/v2"
 )
 
 func ParseBody(c *fiber.Ctx, req interface{}) error {
 	if err := c.BodyParser(req); err != nil {
-		log.Println("Error parsing body")
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid JSON body")
 	}
 	return nil
@@ -17,7 +14,6 @@ func ParseBody(c *fiber.Ctx, req interface{}) error {
 
 func ValidateStruct(c *fiber.Ctx, req interface{}) error {
 	if err := v.Validator().Struct(req); err != nil {
-		log.Printf("Validation error")
 		return UnprocessableEntity("Validation Failed", err)
 	}
 	return nil
