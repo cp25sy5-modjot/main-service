@@ -243,5 +243,6 @@ func processTransaction(tResponse *pb.TransactionResponse, categories []catModel
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("Created transaction: %+v", newTx)
 	return buildTransactionResponse(newTx, match), nil
 }
