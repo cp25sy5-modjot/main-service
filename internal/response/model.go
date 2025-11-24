@@ -7,6 +7,8 @@ import (
 )
 
 type Response struct {
+	Method    string         `json:"method,omitempty"`
+	Path      string         `json:"path,omitempty"`
 	Status    string         `json:"status" valid:"required,oneof=success error"`
 	Code      int            `json:"code" valid:"required"`
 	Message   string         `json:"message,omitempty" valid:"required"`
