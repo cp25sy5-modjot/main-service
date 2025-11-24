@@ -40,10 +40,3 @@ func LoadConfig() *Config {
 	}
 }
 
-// func getEnv(key, defaultValue string) string {
-// 	if value, exists := os.LookupEnv(key); exists {
-// 		return value
-// 	}
-// 	log.Printf("Warning: %s not set, using default value", key)
-// 	return defaultValue
-// }

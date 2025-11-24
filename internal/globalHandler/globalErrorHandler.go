@@ -57,7 +57,6 @@ func GlobalErrorHandler(c *fiber.Ctx, err error) error {
 		return errorResp.NotFound(c, "Resource not found")
 	}
 
-	log.Println("Unhandled error fell through to fallback")
 	return errorResp.InternalServerError(c, "An unexpected error occurred")
 }
 
