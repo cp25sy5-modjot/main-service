@@ -51,9 +51,7 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 
 	contentType := image.Header.Get("Content-Type")
 	if !strings.HasPrefix(contentType, "image/") {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "File is not an image",
-		})
+		return fiber.NewError(fiber.StatusBadRequest, "Uploaded file is not a valid image")
 	}
 
 	file, err := image.Open()
