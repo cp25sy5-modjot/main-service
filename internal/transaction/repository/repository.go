@@ -1,7 +1,6 @@
 package transaction
 
 import (
-	"log"
 	"time"
 
 	model "github.com/cp25sy5-modjot/main-service/internal/transaction/model"
