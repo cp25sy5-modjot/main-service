@@ -40,7 +40,6 @@ func (r *Repository) FindAllByUserIDAndFiltered(userID string, filter *model.Tra
 	// Calculate the start of the next month (e.g., 2025-12-01 00:00:00)
 	endOfMonth := startOfMonth.AddDate(0, 1, 0)
 
-	log.Printf("Filtering transactions from %s to %s", startOfMonth.String(), endOfMonth.String())
 	// Filter by user_id AND date >= startOfMonth AND date < endOfMonth
 	err := r.db.Where("user_id = ? AND date >= ? AND date < ?",
 		userID,

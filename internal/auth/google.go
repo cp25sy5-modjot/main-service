@@ -24,7 +24,6 @@ func HandleGoogleTokenExchange(c *fiber.Ctx, service *u.Service, config *config.
 
 	payload, err := validateIDToken(req.IdToken, config.Google)
 	if err != nil {
-		log.Printf("Error validating ID token: %v", err)
 		return fiber.NewError(fiber.StatusUnauthorized, "Invalid ID token")
 	}
 

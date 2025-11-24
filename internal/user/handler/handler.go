@@ -32,7 +32,6 @@ func (h *Handler) GetSelf(c *fiber.Ctx) error {
 	//parse to response model
 	var userRes model.UserRes
 	utils.MapStructs(user, &userRes)
-	log.Printf("User retrieved: %+v", userRes)
 	return successResp.OK(c, userRes, "User retrieved successfully")
 }
 

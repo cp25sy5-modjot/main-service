@@ -74,7 +74,6 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 
 	resp, err := h.service.ProcessUploadedFile(imageData, userID)
 	if err != nil {
-		log.Printf("Failed to process uploaded file: %v", err)
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to process the uploaded file")
 	}
 

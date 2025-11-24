@@ -56,22 +56,22 @@ func getTraceID(c *fiber.Ctx) string {
 
 func LogSuccess(resp Response) {
 	logger.Info().
+		Str("status", "Success").
 		Int("status_code", resp.Code).
 		Str("message", resp.Message).
 		Str("trace_id", resp.TraceID).
 		Str("method", resp.Method).
-		Str("path", resp.Path).
-		Msg("HTTP Success Response")
+		Str("path", resp.Path)
 }
 
 func LogError(resp Response) {
 	logger.Error().
+		Str("status", "Error").
 		Int("status_code", resp.Code).
 		Str("message", resp.Message).
 		Str("error_type", resp.Error.Type).
 		Str("error_detail", resp.Error.Detail).
 		Str("trace_id", resp.TraceID).
 		Str("method", resp.Method).
-		Str("path", resp.Path).
-		Msg("HTTP Error Response")
+		Str("path", resp.Path)
 }
