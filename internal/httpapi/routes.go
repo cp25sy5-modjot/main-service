@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/cp25sy5-modjot/main-service/internal/auth"
@@ -49,7 +48,7 @@ func initializeServices(s *fiberServer) *Services {
 	// User Service
 	userRepo := userRepo.NewRepository(s.db.GetDb())
 	userSvc := userSvc.NewService(userRepo, categorySvc)
-	
+
 	// Transaction Service
 	transactionRepo := tranRepo.NewRepository(s.db.GetDb())
 	transactionSvc := tranSvc.NewService(transactionRepo, categorySvc, s.aiClient)
