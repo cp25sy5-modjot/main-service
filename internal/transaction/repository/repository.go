@@ -57,9 +57,11 @@ func (r *Repository) FindByID(params *model.TransactionSearchParams) (*model.Tra
 	return &transaction, err
 }
 
-func (r *Repository) Update(transaction *model.Transaction) error {
-
-	return r.db.Save(transaction).Error
+func (r *Repository) Update(transaction *model.Transaction) (*model.Transaction, error) {
+	if err := r.db.Save(transaction).Error; err != nil {
+		return nil, err
+	}
+	return transaction, nil
 }
 
 func (r *Repository) Delete(params *model.TransactionSearchParams) error {

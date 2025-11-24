@@ -34,13 +34,11 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 		return err
 	}
 	tx.UserID = userID
-	createdTx, err := h.service.Create(&tx)
+	resp, err := h.service.Create(&tx)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-	var res model.TransactionRes
-	utils.MapStructs(createdTx, &res)
-	return successResp.Created(c, res, "Transaction created successfully")
+	return successResp.Created(c, resp, "Transaction created successfully")
 }
 
 // POST /transactions/upload
@@ -53,9 +51,7 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 
 	contentType := image.Header.Get("Content-Type")
 	if !strings.HasPrefix(contentType, "image/") {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "File is not an image",
-		})
+		return fiber.NewError(fiber.StatusBadRequest, "Uploaded file is not a valid image")
 	}
 
 	file, err := image.Open()
@@ -76,15 +72,13 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 		return err
 	}
 
-	createdTx, err := h.service.ProcessUploadedFile(imageData, userID)
+	resp, err := h.service.ProcessUploadedFile(imageData, userID)
 	if err != nil {
 		log.Printf("Failed to process uploaded file: %v", err)
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to process the uploaded file")
 	}
 
-	var res model.TransactionRes
-	utils.MapStructs(createdTx, &res)
-	return successResp.Created(c, res, "File uploaded and processed successfully")
+	return successResp.Created(c, resp, "File uploaded and processed successfully")
 }
 
 // GET /transactions
@@ -99,12 +93,10 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 		Date: utils.ConvertStringToTime(date),
 	}
 
-	transactions, err := h.service.GetAllByUserIDWithFilter(userID, filter)
+	resp, err := h.service.GetAllByUserIDWithFilter(userID, filter)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve transactions")
 	}
-	var resp []model.TransactionRes
-	_ = utils.MapStructs(transactions, &resp)
 	return successResp.OK(c, resp, "Transactions retrieved successfully")
 }
 
@@ -114,12 +106,10 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	transaction, err := h.service.GetByID(TransactionSearchParams)
+	resp, err := h.service.GetByID(TransactionSearchParams)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Transaction not found")
 	}
-	var resp model.TransactionRes
-	_ = utils.MapStructs(transaction, &resp)
 	return successResp.OK(c, resp, "Transaction retrieved successfully")
 }
 
@@ -133,11 +123,10 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	if err := h.service.Update(TransactionSearchParams, &req); err != nil {
+	resp, err := h.service.Update(TransactionSearchParams, &req)
+	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to update transaction")
 	}
-	var resp model.TransactionRes
-	_ = utils.MapStructs(req, &resp)
 	return successResp.OK(c, resp, "Transaction updated successfully")
 }
 
