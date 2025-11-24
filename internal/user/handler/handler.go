@@ -1,8 +1,6 @@
 package user
 
 import (
-	"log"
-
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	successResp "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	model "github.com/cp25sy5-modjot/main-service/internal/user/model"
@@ -63,7 +61,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		return err
 	}
 
-	updated, err := h.service.Update(userID, &req);
+	updated, err := h.service.Update(userID, &req)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
