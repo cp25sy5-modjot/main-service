@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"errors"
 	"log"
 	"time"
 
@@ -8,7 +9,6 @@ import (
 
 	catModel "github.com/cp25sy5-modjot/main-service/internal/category/model"
 	catSvc "github.com/cp25sy5-modjot/main-service/internal/category/service"
-	r "github.com/cp25sy5-modjot/main-service/internal/response/error"
 	tranModel "github.com/cp25sy5-modjot/main-service/internal/transaction/model"
 	tranRepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
@@ -156,7 +156,7 @@ func (s *Service) Delete(params *tranModel.TransactionSearchParams) error {
 
 func validateTransactionOwnership(tx *tranModel.Transaction, userID string) error {
 	if tx.UserID != userID {
-		return r.Conflict(nil, "You are not authorized to access this transaction")
+		return errors.New("you are not authorized to access this transaction")
 	}
 	return nil
 }
@@ -182,7 +182,7 @@ func checkCategory(s *Service, tx *tranModel.Transaction) (*catModel.Category, e
 	}
 	cat, err := s.cat.GetByID(catSearchParam)
 	if err != nil {
-		return nil, r.BadRequest(nil, "Category does not exist", nil)
+		return nil, errors.New("category does not exist")
 	}
 	return cat, nil
 }
