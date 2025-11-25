@@ -110,9 +110,9 @@ func initializeTransactionRoutes(s *fiberServer, services *Services) {
 	txApi.Post("/manual", transactionHandler.Create)
 	txApi.Post("/upload", transactionHandler.UploadImage)
 	txApi.Get("", transactionHandler.GetAll)
-	txApi.Get("/:transaction_id/product/:item_id", transactionHandler.GetByID)
-	txApi.Put("/:transaction_id/product/:item_id", transactionHandler.Update)
-	txApi.Delete("/:transaction_id/product/:item_id", transactionHandler.Delete)
+	txApi.Get("/:transaction_id/item/:item_id", transactionHandler.GetByID)
+	txApi.Put("/:transaction_id/item/:item_id", transactionHandler.Update)
+	txApi.Delete("/:transaction_id/item/:item_id", transactionHandler.Delete)
 }
 
 func initializeCategoryRoutes(s *fiberServer, services *Services) {
