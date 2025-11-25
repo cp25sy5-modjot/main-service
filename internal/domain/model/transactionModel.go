@@ -1,4 +1,4 @@
-package transaction
+package model
 
 import (
 	"time"
@@ -6,7 +6,7 @@ import (
 
 type TransactionSearchParams struct {
 	TransactionID string `json:"transaction_id" validate:"required"`
-	ItemID        string `json:"product_id" validate:"required"`
+	ItemID        string `json:"item_id" validate:"required"`
 	UserID        string `json:"user_id" validate:"required"`
 }
 
@@ -25,7 +25,7 @@ type TransactionUpdateReq struct {
 
 type TransactionRes struct {
 	TransactionID     string    `json:"transaction_id"`
-	ItemID            string    `json:"product_id"`
+	ItemID            string    `json:"item_id"`
 	Title             string    `json:"title"`
 	Price             float64   `json:"price"`
 	Quantity          float64   `json:"quantity"`

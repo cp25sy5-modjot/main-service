@@ -3,7 +3,8 @@ package transaction
 import (
 	"time"
 
-	model "github.com/cp25sy5-modjot/main-service/internal/transaction/model"
+	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"gorm.io/gorm"
 )
 
@@ -15,21 +16,25 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db}
 }
 
-func (r *Repository) Create(transaction *model.Transaction) (*model.Transaction, error) {
+func (r *Repository) Create(transaction *e.Transaction) (*e.Transaction, error) {
 	if err := r.db.Create(transaction).Error; err != nil {
 		return nil, err
 	}
 	return transaction, nil
 }
 
-func (r *Repository) FindAllByUserID(userID string) ([]model.Transaction, error) {
-	var transactions []model.Transaction
-	err := r.db.Where("user_id = ?", userID).Order("date DESC").Find(&transactions).Error
+func (r *Repository) FindAllByUserID(userID string) ([]e.Transaction, error) {
+	var transactions []e.Transaction
+	err := r.db.
+		Preload("Category"). // load related Category
+		Where("user_id = ?", userID).
+		Order("date DESC").
+		Find(&transactions).Error
 	return transactions, err
 }
 
-func (r *Repository) FindAllByUserIDAndFiltered(userID string, filter *model.TransactionFilter) ([]model.Transaction, error) {
-	var transactions []model.Transaction
+func (r *Repository) FindAllByUserIDAndFiltered(userID string, filter *m.TransactionFilter) ([]e.Transaction, error) {
+	var transactions []e.Transaction
 
 	t := filter.Date
 
@@ -40,28 +45,38 @@ func (r *Repository) FindAllByUserIDAndFiltered(userID string, filter *model.Tra
 	endOfMonth := startOfMonth.AddDate(0, 1, 0)
 
 	// Filter by user_id AND date >= startOfMonth AND date < endOfMonth
-	err := r.db.Where("user_id = ? AND date >= ? AND date < ?",
-		userID,
-		startOfMonth,
-		endOfMonth,
-	).Order("date DESC").Find(&transactions).Error
+	err := r.db.
+		Preload("Category").
+		Where("user_id = ? AND date >= ? AND date < ?",
+			userID,
+			startOfMonth,
+			endOfMonth,
+		).
+		Order("date DESC").
+		Find(&transactions).Error
 
 	return transactions, err
 }
 
-func (r *Repository) FindByID(params *model.TransactionSearchParams) (*model.Transaction, error) {
-	var transaction model.Transaction
-	err := r.db.First(&transaction, "transaction_id = ? AND product_id = ? AND user_id = ?", params.TransactionID, params.ItemID, params.UserID).Error
+func (r *Repository) FindByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
+	var transaction e.Transaction
+	err := r.db.
+		Preload("Category").
+		First(&transaction,
+			"transaction_id = ? AND item_id = ? AND user_id = ?",
+			params.TransactionID,
+			params.ItemID,
+			params.UserID).Error
 	return &transaction, err
 }
 
-func (r *Repository) Update(transaction *model.Transaction) (*model.Transaction, error) {
+func (r *Repository) Update(transaction *e.Transaction) (*e.Transaction, error) {
 	if err := r.db.Save(transaction).Error; err != nil {
 		return nil, err
 	}
 	return transaction, nil
 }
 
-func (r *Repository) Delete(params *model.TransactionSearchParams) error {
-	return r.db.Delete(&model.Transaction{}, "transaction_id = ? AND product_id = ?", params.TransactionID, params.ItemID).Error
+func (r *Repository) Delete(params *m.TransactionSearchParams) error {
+	return r.db.Delete(&e.Transaction{}, "transaction_id = ? AND item_id = ?", params.TransactionID, params.ItemID).Error
 }

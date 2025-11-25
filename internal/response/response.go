@@ -22,7 +22,7 @@ func WriteSuccess(c *fiber.Ctx, status int, data any, msg string) error {
 		TraceID:   getTraceID(c),
 		Timestamp: time.Now().UTC(),
 	}
-	LogSuccess(resp)
+	LogSuccess(&resp)
 	return c.Status(status).JSON(resp)
 }
 
@@ -41,7 +41,7 @@ func WriteError(c *fiber.Ctx, status int, msg, typ, detail string, fields []v.Fi
 		TraceID:   getTraceID(c),
 		Timestamp: time.Now().UTC(),
 	}
-	LogError(resp)
+	LogError(&resp)
 	return c.Status(status).JSON(resp)
 }
 
@@ -54,24 +54,24 @@ func getTraceID(c *fiber.Ctx) string {
 	return ""
 }
 
-func LogSuccess(resp Response) {
+func LogSuccess(resp *Response) {
 	logger.Info().
 		Str("status", "Success").
 		Int("status_code", resp.Code).
-		Str("message", resp.Message).
 		Str("trace_id", resp.TraceID).
 		Str("method", resp.Method).
-		Str("path", resp.Path)
+		Str("path", resp.Path).
+		Msg(resp.Message)
 }
 
-func LogError(resp Response) {
+func LogError(resp *Response) {
 	logger.Error().
 		Str("status", "Error").
 		Int("status_code", resp.Code).
-		Str("message", resp.Message).
 		Str("error_type", resp.Error.Type).
 		Str("error_detail", resp.Error.Detail).
 		Str("trace_id", resp.TraceID).
 		Str("method", resp.Method).
-		Str("path", resp.Path)
+		Str("path", resp.Path).
+		Msg(resp.Message)
 }

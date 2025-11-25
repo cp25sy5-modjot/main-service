@@ -1,4 +1,4 @@
-package category
+package entity
 
 import (
 	"time"
@@ -11,4 +11,7 @@ type Category struct {
 	Budget       float64   `json:"budget" validate:"required"`
 	ColorCode    string    `gorm:"length:7" json:"color_code" validate:"required"`
 	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
+
+	// Relationships
+	Transactions []Transaction `gorm:"foreignKey:CategoryID;references:CategoryID" json:"transactions,omitempty"`
 }

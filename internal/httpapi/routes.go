@@ -51,7 +51,7 @@ func initializeServices(s *fiberServer) *Services {
 
 	// Transaction Service
 	transactionRepo := tranRepo.NewRepository(s.db.GetDb())
-	transactionSvc := tranSvc.NewService(transactionRepo, categorySvc, s.aiClient)
+	transactionSvc := tranSvc.NewService(transactionRepo, categoryRepo, s.aiClient)
 
 	return &Services{
 		UserService:        userSvc,
@@ -110,9 +110,9 @@ func initializeTransactionRoutes(s *fiberServer, services *Services) {
 	txApi.Post("/manual", transactionHandler.Create)
 	txApi.Post("/upload", transactionHandler.UploadImage)
 	txApi.Get("", transactionHandler.GetAll)
-	txApi.Get("/:transaction_id/product/:product_id", transactionHandler.GetByID)
-	txApi.Put("/:transaction_id/product/:product_id", transactionHandler.Update)
-	txApi.Delete("/:transaction_id/product/:product_id", transactionHandler.Delete)
+	txApi.Get("/:transaction_id/item/:item_id", transactionHandler.GetByID)
+	txApi.Put("/:transaction_id/item/:item_id", transactionHandler.Update)
+	txApi.Delete("/:transaction_id/item/:item_id", transactionHandler.Delete)
 }
 
 func initializeCategoryRoutes(s *fiberServer, services *Services) {
@@ -124,6 +124,7 @@ func initializeCategoryRoutes(s *fiberServer, services *Services) {
 
 	api.Post("", categoryHandler.Create)
 	api.Get("", categoryHandler.GetAll)
+	api.Get("/:id", categoryHandler.GetByID)
 	api.Put("/:id", categoryHandler.Update)
 	api.Delete("/:id", categoryHandler.Delete)
 }
