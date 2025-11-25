@@ -1,6 +1,7 @@
 package response
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -56,22 +57,23 @@ func getTraceID(c *fiber.Ctx) string {
 
 func LogSuccess(resp Response) {
 	logger.Info().
-		Str("status", "Success").
-		Int("status_code", resp.Code).
-		Str("trace_id", resp.TraceID).
 		Str("method", resp.Method).
 		Str("path", resp.Path).
-		Msg(resp.Message)
+		Int("status_code", resp.Code).
+		Str("detail", resp.Message).
+		Str("trace_id", resp.TraceID).
+		Msg("Success")
 }
 
 func LogError(resp Response) {
 	logger.Error().
-		Str("status", "Error").
-		Int("status_code", resp.Code).
-		Str("error_type", resp.Error.Type).
-		Str("error_detail", resp.Error.Detail).
-		Str("trace_id", resp.TraceID).
 		Str("method", resp.Method).
 		Str("path", resp.Path).
-		Msg(resp.Message)
+		Int("status_code", resp.Code).
+		Str("error_message", resp.Message).
+		Str("error_type", resp.Error.Type).
+		Str("error_detail", resp.Error.Detail).
+		Str("error_fields", fmt.Sprintf("%v", resp.Error.Fields)).
+		Str("trace_id", resp.TraceID).
+		Msg("Error")
 }

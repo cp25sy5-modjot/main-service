@@ -17,7 +17,7 @@ import (
 var isProd = os.Getenv("APP_ENV") == "prod"
 
 func GlobalErrorHandler(c *fiber.Ctx, err error) error {
-	log.Printf("Error caught by global handler: (%T) %v", err, err)
+	// log.Printf("Error caught by global handler: (%T) %v", err, err)
 
 	var valErr *utils.ValidationError
 	if errors.As(err, &valErr) {
