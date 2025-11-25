@@ -20,7 +20,6 @@ type TransactionInsertReq struct {
 
 type TransactionUpdateReq struct {
 	TransactionInsertReq
-	Date string `json:"date" validate:"required"`
 }
 
 type TransactionRes struct {

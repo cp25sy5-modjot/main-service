@@ -6,7 +6,9 @@ import (
 	"github.com/jinzhu/copier"
 )
 
-//for map response structs (shallow copy)
+//src can be pointer or non-pointer but dest must be pointer!!
+
+// for map response structs (shallow copy)
 func MapStructs(src, dest interface{}) error {
 	if err := copier.Copy(dest, src); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to map structures")
