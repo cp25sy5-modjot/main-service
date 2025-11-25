@@ -164,7 +164,7 @@ func buildTransactionResponse(tx *e.Transaction) *m.TransactionRes {
 		Price:             tx.Price,
 		Quantity:          tx.Quantity,
 		TotalPrice:        tx.Price * tx.Quantity,
-		Date:              tx.Date,
+		Date:              utils.ToUserLocal(tx.Date, ""),
 		Type:              tx.Type,
 		CategoryID:        tx.CategoryID,
 		CategoryName:      tx.Category.CategoryName,
