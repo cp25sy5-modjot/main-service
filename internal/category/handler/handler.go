@@ -57,10 +57,27 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+	return successResp.OK(c, categories, "Categories retrieved successfully")
+}
 
-	var cateRes []m.CategoryRes
-	utils.MapStructs(&categories, &cateRes)
-	return successResp.OK(c, cateRes, "Categories retrieved successfully")
+// GET /category/:id
+func (h *Handler) GetByID(c *fiber.Ctx) error {
+	userID, err := jwt.GetUserIDFromClaims(c)
+	if err != nil {
+		return err
+	}
+
+	params := &m.CategorySearchParams{
+		CategoryID: c.Params("id"),
+		UserID:     userID,
+	}
+
+	category, err := h.service.GetByID(params)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return successResp.OK(c, category, "Category retrieved successfully")
 }
 
 // PUT /category/:id
@@ -80,14 +97,11 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		UserID:     userID,
 	}
 
-	updatedCategory, err := h.service.Update(params, &req)
+	category, err := h.service.Update(params, &req)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-
-	var cateRes m.CategoryRes
-	utils.MapStructs(updatedCategory, &cateRes)
-	return successResp.OK(c, cateRes, "Category updated successfully")
+	return successResp.OK(c, category, "Category updated successfully")
 }
 
 // DELETE /category/:id
