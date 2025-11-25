@@ -6,10 +6,11 @@ import (
 
 	"github.com/cp25sy5-modjot/main-service/internal/config"
 
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
+	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	u "github.com/cp25sy5-modjot/main-service/internal/user/service"
-	userModel "github.com/cp25sy5-modjot/main-service/internal/user/model"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -61,9 +62,9 @@ func getUserInfoFromPayload(payload *idtoken.Payload, service *u.Service) *jwt.U
 		if name == "" {
 			name = "New User"
 		}
-		user, err = service.Create(&userModel.UserInsertReq{
-			Name:  name,
-			UserBinding: userModel.UserBinding{
+		user, err = service.Create(&m.UserInsertReq{
+			Name: name,
+			UserBinding: e.UserBinding{
 				GoogleID: googleID,
 			},
 		})

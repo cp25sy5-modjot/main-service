@@ -1,6 +1,8 @@
-package transaction
+package entity
 
-import "time"
+import (
+	"time"
+)
 
 type Transaction struct {
 	TransactionID string    `gorm:"primaryKey;autoIncrement:false" json:"transaction_id" validate:"required"`
@@ -12,4 +14,7 @@ type Transaction struct {
 	Date          time.Time `json:"date" validate:"required"`
 	Type          string    `json:"type" validate:"required"`
 	CategoryID    string    `json:"category_id" validate:"required"`
+
+	// Relationships
+	Category Category `gorm:"foreignKey:CategoryID;references:CategoryID" json:"category,omitempty"`
 }

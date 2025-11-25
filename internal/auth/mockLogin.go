@@ -5,11 +5,12 @@ import (
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
 
-	userModel "github.com/cp25sy5-modjot/main-service/internal/user/model"
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	u "github.com/cp25sy5-modjot/main-service/internal/user/service"
 	"github.com/gofiber/fiber/v2"
 )
 
+// MockLoginHandler handles mock login requests for testing purposes Only in non-production environments.
 func MockLoginHandler(c *fiber.Ctx, service *u.Service, config *config.Auth) error {
 	userName := c.FormValue("userName")
 
@@ -19,8 +20,8 @@ func MockLoginHandler(c *fiber.Ctx, service *u.Service, config *config.Auth) err
 
 	user, err := service.GetByID(userName + "@mock.com")
 	if err != nil {
-		user, err = service.Create(&userModel.UserInsertReq{
-			Name:  userName,
+		user, err = service.Create(&m.UserInsertReq{
+			Name: userName,
 		})
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "Failed to create user")
