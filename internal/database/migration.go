@@ -12,5 +12,6 @@ func AutoMigrate(db *gorm.DB) error {
 		&e.Transaction{},
 		&e.User{},
 		&e.Category{},
+		// &e.TransactionItem{},
 	)
 }
