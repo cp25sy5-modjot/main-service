@@ -3,9 +3,9 @@ package category
 import (
 	"time"
 
-	model "github.com/cp25sy5-modjot/main-service/internal/category/model"
 	repo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
-	r "github.com/cp25sy5-modjot/main-service/internal/response/error"
+	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
 	"github.com/google/uuid"
 )
@@ -18,8 +18,8 @@ func NewService(repo *repo.Repository) *Service {
 	return &Service{repo}
 }
 
-func (s *Service) Create(category *model.Category) (*model.Category, error) {
-	cate := &model.Category{
+func (s *Service) Create(category *e.Category) (*e.Category, error) {
+	cate := &e.Category{
 		CategoryID:   uuid.New().String(),
 		CategoryName: category.CategoryName,
 		UserID:       category.UserID,
@@ -30,15 +30,15 @@ func (s *Service) Create(category *model.Category) (*model.Category, error) {
 	return s.repo.Create(cate)
 }
 
-func (s *Service) GetAllByUserID(userID string) ([]model.Category, error) {
+func (s *Service) GetAllByUserID(userID string) ([]e.Category, error) {
 	return s.repo.FindAllByUserID(userID)
 }
 
-func (s *Service) GetByID(params *model.CategorySearchParams) (*model.Category, error) {
+func (s *Service) GetByID(params *m.CategorySearchParams) (*e.Category, error) {
 	return s.repo.FindByID(params)
 }
 
-func (s *Service) Update(params *model.CategorySearchParams, category *model.CategoryUpdateReq) (*model.Category, error) {
+func (s *Service) Update(params *m.CategorySearchParams, category *m.CategoryUpdateReq) (*e.Category, error) {
 	exists, err := s.repo.FindByID(params)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (s *Service) Update(params *model.CategorySearchParams, category *model.Cat
 	return exists, s.repo.Update(exists)
 }
 
-func (s *Service) Delete(params *model.CategorySearchParams) error {
+func (s *Service) Delete(params *m.CategorySearchParams) error {
 	exists, err := s.repo.FindByID(params)
 	if err != nil {
 		return err
@@ -63,11 +63,4 @@ func (s *Service) Delete(params *model.CategorySearchParams) error {
 	}
 
 	return s.repo.Delete(params)
-}
-
-func validateCategoryOwnership(cate *model.Category, userID string) error {
-	if cate.UserID != userID {
-		return r.Conflict(nil, "You are not authorized to access this category")
-	}
-	return nil
 }

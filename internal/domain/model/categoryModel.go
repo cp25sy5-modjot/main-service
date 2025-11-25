@@ -1,4 +1,4 @@
-package category
+package model
 
 import "time"
 
@@ -14,6 +14,8 @@ type CategoryRes struct {
 	Budget       float64   `json:"budget"`
 	ColorCode    string    `json:"color_code"`
 	CreatedAt    time.Time `json:"created_at"`
+
+	TotalPrice float64 `json:"total_price"`
 }
 
 type CategoryUpdateReq struct {

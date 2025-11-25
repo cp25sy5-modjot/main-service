@@ -1,9 +1,9 @@
 package user
 
 import (
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	successResp "github.com/cp25sy5-modjot/main-service/internal/response/success"
-	model "github.com/cp25sy5-modjot/main-service/internal/user/model"
 	svc "github.com/cp25sy5-modjot/main-service/internal/user/service"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
 	"github.com/gofiber/fiber/v2"
@@ -28,13 +28,13 @@ func (h *Handler) GetSelf(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 	//parse to response model
-	var userRes model.UserRes
+	var userRes m.UserRes
 	utils.MapStructs(user, &userRes)
 	return successResp.OK(c, userRes, "User retrieved successfully")
 }
 
 func (h *Handler) Create(c *fiber.Ctx) error {
-	var req model.UserInsertReq
+	var req m.UserInsertReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-	var userRes model.UserRes
+	var userRes m.UserRes
 	utils.MapStructs(user, &userRes)
 	return successResp.Created(c, userRes, "User created successfully")
 }
@@ -51,7 +51,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 // PUT /user
 func (h *Handler) Update(c *fiber.Ctx) error {
 
-	var req model.UserUpdateReq
+	var req m.UserUpdateReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	var resp model.UserRes
+	var resp m.UserRes
 	utils.MapStructs(updated, &resp)
 
 	return successResp.OK(c, resp, "User updated successfully")

@@ -1,8 +1,9 @@
 package category
 
 import (
-	model "github.com/cp25sy5-modjot/main-service/internal/category/model"
 	catSvc "github.com/cp25sy5-modjot/main-service/internal/category/service"
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
+	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	successResp "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
@@ -19,7 +20,7 @@ func NewHandler(service *catSvc.Service) *Handler {
 
 // POST /category
 func (h *Handler) Create(c *fiber.Ctx) error {
-	var req model.CategoryReq
+	var req m.CategoryReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
@@ -29,7 +30,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 		return err
 	}
 
-	cate := &model.Category{
+	cate := &e.Category{
 		CategoryName: req.CategoryName,
 		Budget:       req.Budget,
 		UserID:       userID,
@@ -40,7 +41,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	var cateRes model.CategoryRes
+	var cateRes m.CategoryRes
 	utils.MapStructs(createdCate, &cateRes)
 	return successResp.Created(c, cateRes, "Category created successfully")
 }
@@ -57,14 +58,14 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	var cateRes []model.CategoryRes
+	var cateRes []m.CategoryRes
 	utils.MapStructs(&categories, &cateRes)
 	return successResp.OK(c, cateRes, "Categories retrieved successfully")
 }
 
 // PUT /category/:id
 func (h *Handler) Update(c *fiber.Ctx) error {
-	var req model.CategoryUpdateReq
+	var req m.CategoryUpdateReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
@@ -74,7 +75,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		return err
 	}
 
-	params := &model.CategorySearchParams{
+	params := &m.CategorySearchParams{
 		CategoryID: c.Params("id"),
 		UserID:     userID,
 	}
@@ -84,7 +85,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	var cateRes model.CategoryRes
+	var cateRes m.CategoryRes
 	utils.MapStructs(updatedCategory, &cateRes)
 	return successResp.OK(c, cateRes, "Category updated successfully")
 }
@@ -96,7 +97,7 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 		return err
 	}
 
-	params := &model.CategorySearchParams{
+	params := &m.CategorySearchParams{
 		CategoryID: c.Params("id"),
 		UserID:     userID,
 	}

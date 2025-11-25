@@ -3,9 +3,10 @@ package transaction
 import (
 	"strings"
 
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
+	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	successResp "github.com/cp25sy5-modjot/main-service/internal/response/success"
-	model "github.com/cp25sy5-modjot/main-service/internal/transaction/model"
 	svc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
 	"github.com/gofiber/fiber/v2"
@@ -21,12 +22,12 @@ func NewHandler(service *svc.Service) *Handler {
 
 // POST /transactions/manual
 func (h *Handler) Create(c *fiber.Ctx) error {
-	var req model.TransactionInsertReq
+	var req m.TransactionInsertReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
 
-	var tx model.Transaction
+	var tx e.Transaction
 	_ = utils.MapStructs(req, &tx)
 	userID, err := jwt.GetUserIDFromClaims(c)
 	if err != nil {
@@ -87,7 +88,7 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 	}
 
 	date := c.Query("date")
-	filter := &model.TransactionFilter{
+	filter := &m.TransactionFilter{
 		Date: utils.ConvertStringToTime(date),
 	}
 
@@ -113,7 +114,7 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 
 // PUT /transactions/:transaction_id/product/:product_id
 func (h *Handler) Update(c *fiber.Ctx) error {
-	var req model.TransactionUpdateReq
+	var req m.TransactionUpdateReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
@@ -150,7 +151,7 @@ func getTxIDAndProdID(c *fiber.Ctx) (string, string, error) {
 	return tx_id, item_id, nil
 }
 
-func createTransactionSearchParams(c *fiber.Ctx) (*model.TransactionSearchParams, error) {
+func createTransactionSearchParams(c *fiber.Ctx) (*m.TransactionSearchParams, error) {
 	tx_id, item_id, err := getTxIDAndProdID(c)
 	if err != nil {
 		return nil, err
@@ -159,7 +160,7 @@ func createTransactionSearchParams(c *fiber.Ctx) (*model.TransactionSearchParams
 	if err != nil {
 		return nil, err
 	}
-	return &model.TransactionSearchParams{
+	return &m.TransactionSearchParams{
 		TransactionID: tx_id,
 		ItemID:        item_id,
 		UserID:        userID,

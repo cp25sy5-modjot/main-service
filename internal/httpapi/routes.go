@@ -51,7 +51,7 @@ func initializeServices(s *fiberServer) *Services {
 
 	// Transaction Service
 	transactionRepo := tranRepo.NewRepository(s.db.GetDb())
-	transactionSvc := tranSvc.NewService(transactionRepo, categorySvc, s.aiClient)
+	transactionSvc := tranSvc.NewService(transactionRepo, categoryRepo, s.aiClient)
 
 	return &Services{
 		UserService:        userSvc,
