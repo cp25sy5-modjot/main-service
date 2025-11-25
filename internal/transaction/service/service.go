@@ -25,6 +25,14 @@ func NewService(repo *tranRepo.Repository, catRepo *catRepo.Repository, aiClient
 func (s *Service) Create(transaction *e.Transaction) (*m.TransactionRes, error) {
 	txId := uuid.New().String()
 	transaction.Type = "manual"
+	//check if category accessible
+	_, err := s.catRepo.FindByID(&m.CategorySearchParams{
+		CategoryID: transaction.CategoryID,
+		UserID:     transaction.UserID,
+	})
+	if err != nil {
+		return nil, err
+	}
 	tx := buildTransactionObjectToCreate(txId, transaction)
 	txWithCat, err := saveNewTransaction(s, tx)
 	if err != nil {

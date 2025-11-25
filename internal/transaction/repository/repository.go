@@ -26,7 +26,6 @@ func (r *Repository) Create(transaction *e.Transaction) (*e.Transaction, error) 
 func (r *Repository) FindAllByUserID(userID string) ([]e.Transaction, error) {
 	var transactions []e.Transaction
 	err := r.db.
-		Preload("Category"). // load related Category
 		Where("user_id = ?", userID).
 		Order("date DESC").
 		Find(&transactions).Error
@@ -46,7 +45,6 @@ func (r *Repository) FindAllByUserIDAndFiltered(userID string, filter *m.Transac
 
 	// Filter by user_id AND date >= startOfMonth AND date < endOfMonth
 	err := r.db.
-		Preload("Category").
 		Where("user_id = ? AND date >= ? AND date < ?",
 			userID,
 			startOfMonth,
@@ -61,7 +59,6 @@ func (r *Repository) FindAllByUserIDAndFiltered(userID string, filter *m.Transac
 func (r *Repository) FindByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
 	var transaction e.Transaction
 	err := r.db.
-		Preload("Category").
 		First(&transaction,
 			"transaction_id = ? AND item_id = ? AND user_id = ?",
 			params.TransactionID,
