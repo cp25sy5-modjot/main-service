@@ -1,9 +1,10 @@
-package user
+package userhandler
 
 import (
+	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
-	successResp "github.com/cp25sy5-modjot/main-service/internal/response/success"
+	sresp "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	svc "github.com/cp25sy5-modjot/main-service/internal/user/service"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
 	"github.com/gofiber/fiber/v2"
@@ -23,14 +24,13 @@ func (h *Handler) GetSelf(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
 	user, err := h.service.GetByID(userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-	//parse to response model
-	var userRes m.UserRes
-	utils.MapStructs(user, &userRes)
-	return successResp.OK(c, userRes, "User retrieved successfully")
+
+	return sresp.OK(c, buildUserResponse(user), "User retrieved successfully")
 }
 
 func (h *Handler) Create(c *fiber.Ctx) error {
@@ -39,13 +39,22 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 		return err
 	}
 
-	user, err := h.service.Create(&req)
+	input := &svc.UserCreateInput{
+		UserBinding: e.UserBinding{
+			GoogleID:   req.UserBinding.GoogleID,
+			FacebookID: req.UserBinding.FacebookID,
+			AppleID:    req.UserBinding.AppleID,
+		},
+		Name: req.Name,
+		DOB:  utils.NormalizeToUTC(req.DOB, ""),
+	}
+
+	user, err := h.service.Create(input)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-	var userRes m.UserRes
-	utils.MapStructs(user, &userRes)
-	return successResp.Created(c, userRes, "User created successfully")
+
+	return sresp.Created(c, buildUserResponse(user), "User created successfully")
 }
 
 // PUT /user
@@ -61,15 +70,17 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		return err
 	}
 
-	updated, err := h.service.Update(userID, &req)
+	input := &svc.UserUpdateInput{
+		Name: req.Name,
+		DOB:  utils.NormalizeToUTC(req.DOB, ""),
+	}
+
+	updated, err := h.service.Update(userID, input)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	var resp m.UserRes
-	utils.MapStructs(updated, &resp)
-
-	return successResp.OK(c, resp, "User updated successfully")
+	return sresp.OK(c, buildUserResponse(updated), "User updated successfully")
 }
 
 // DELETE /user
@@ -82,5 +93,19 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 	if err := h.service.Delete(userID); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-	return successResp.OK(c, nil, "User deleted successfully")
+	return sresp.OK(c, nil, "User deleted successfully")
+}
+
+func buildUserResponse(user *e.User) *m.UserRes {
+	return &m.UserRes{
+		Name:      user.Name,
+		DOB:       utils.ToUserLocal(user.DOB, ""),
+		Status:    string(user.Status),
+		CreatedAt: utils.ToUserLocal(user.CreatedAt, ""),
+		UserBinding: m.UserBinding{
+			GoogleID:   user.UserBinding.GoogleID,
+			FacebookID: user.UserBinding.FacebookID,
+			AppleID:    user.UserBinding.AppleID,
+		},
+	}
 }

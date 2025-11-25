@@ -1,6 +1,8 @@
 package database
 
 import (
+	"time"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -26,7 +28,12 @@ func NewPostgresDatabase(conf *config.Config) Database {
 			panic("failed to build database URL")
 		}
 
-		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+			NowFunc: func() time.Time {
+				return time.Now().UTC()
+			},
+		})
+		
 		if err != nil {
 			panic("failed to connect database")
 		}

@@ -1,4 +1,4 @@
-package transaction
+package transactionhandler
 
 import (
 	"strings"
@@ -6,17 +6,17 @@ import (
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
-	successResp "github.com/cp25sy5-modjot/main-service/internal/response/success"
-	svc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
+	sresp "github.com/cp25sy5-modjot/main-service/internal/response/success"
+	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
 	"github.com/gofiber/fiber/v2"
 )
 
 type Handler struct {
-	service *svc.Service
+	service *txsvc.Service
 }
 
-func NewHandler(service *svc.Service) *Handler {
+func NewHandler(service *txsvc.Service) *Handler {
 	return &Handler{service}
 }
 
@@ -27,46 +27,27 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 		return err
 	}
 
-	var tx e.Transaction
-	_ = utils.MapStructs(req, &tx)
 	userID, err := jwt.GetUserIDFromClaims(c)
 	if err != nil {
 		return err
 	}
-	tx.UserID = userID
-	resp, err := h.service.Create(&tx)
+
+	var input = parseTransactionInsertReqToServiceInput(&req)
+
+	resp, err := h.service.Create(userID, input)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-	return successResp.Created(c, resp, "Transaction created successfully")
+	return sresp.Created(c, buildTransactionResponse(resp), "Transaction created successfully")
 }
 
 // POST /transactions/upload
 func (h *Handler) UploadImage(c *fiber.Ctx) error {
-	// Parse the uploaded image
-	image, err := c.FormFile("image")
+	imageData, err := getImageData(c)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Failed to upload image")
+		return err
 	}
 
-	contentType := image.Header.Get("Content-Type")
-	if !strings.HasPrefix(contentType, "image/") {
-		return fiber.NewError(fiber.StatusBadRequest, "Uploaded file is not a valid image")
-	}
-
-	file, err := image.Open()
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to process uploaded image")
-	}
-	defer file.Close()
-
-	imageData := make([]byte, image.Size)
-	_, err = file.Read(imageData)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to read uploaded image")
-	}
-
-	// Get user ID from JWT claims
 	userID, err := jwt.GetUserIDFromClaims(c)
 	if err != nil {
 		return err
@@ -77,7 +58,7 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to process the uploaded file")
 	}
 
-	return successResp.Created(c, resp, "File uploaded and processed successfully")
+	return sresp.Created(c, buildTransactionResponse(resp), "File uploaded and processed successfully")
 }
 
 // GET /transactions
@@ -96,7 +77,7 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve transactions")
 	}
-	return successResp.OK(c, resp, "Transactions retrieved successfully")
+	return sresp.OK(c, buildTransactionResponses(resp), "Transactions retrieved successfully")
 }
 
 // GET /transactions/:transaction_id/product/:item_id
@@ -105,11 +86,13 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
 	resp, err := h.service.GetByID(TransactionSearchParams)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Transaction not found")
 	}
-	return successResp.OK(c, resp, "Transaction retrieved successfully")
+
+	return sresp.OK(c, buildTransactionResponse(resp), "Transaction retrieved successfully")
 }
 
 // PUT /transactions/:transaction_id/product/:item_id
@@ -118,15 +101,19 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
+
 	TransactionSearchParams, err := createTransactionSearchParams(c)
 	if err != nil {
 		return err
 	}
-	resp, err := h.service.Update(TransactionSearchParams, &req)
+
+	input := parseTransactionUpdateReqToServiceInput(&req)
+
+	resp, err := h.service.Update(TransactionSearchParams, input)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to update transaction")
 	}
-	return successResp.OK(c, resp, "Transaction updated successfully")
+	return sresp.OK(c, buildTransactionResponse(resp), "Transaction updated successfully")
 }
 
 // DELETE /transactions/:transaction_id/product/:item_id
@@ -135,10 +122,12 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
 	if err := h.service.Delete(TransactionSearchParams); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to delete transaction")
 	}
-	return successResp.OK(c, nil, "Transaction deleted successfully")
+
+	return sresp.OK(c, nil, "Transaction deleted successfully")
 }
 
 // utils
@@ -165,4 +154,75 @@ func createTransactionSearchParams(c *fiber.Ctx) (*m.TransactionSearchParams, er
 		ItemID:        item_id,
 		UserID:        userID,
 	}, nil
+}
+
+func buildTransactionResponse(tx *e.Transaction) *m.TransactionRes {
+	return &m.TransactionRes{
+		TransactionID:     tx.TransactionID,
+		ItemID:            tx.ItemID,
+		Title:             tx.Title,
+		Price:             tx.Price,
+		Quantity:          tx.Quantity,
+		TotalPrice:        tx.Price * tx.Quantity,
+		Date:              tx.Date,
+		Type:              tx.Type,
+		CategoryID:        tx.CategoryID,
+		CategoryName:      tx.Category.CategoryName,
+		CategoryColorCode: tx.Category.ColorCode,
+	}
+}
+
+func buildTransactionResponses(transactions []e.Transaction) []m.TransactionRes {
+	transactionResponses := make([]m.TransactionRes, 0, len(transactions))
+	for _, tx := range transactions {
+		res := buildTransactionResponse(&tx)
+		transactionResponses = append(transactionResponses, *res)
+	}
+	return transactionResponses
+}
+
+func parseTransactionInsertReqToServiceInput(req *m.TransactionInsertReq) *txsvc.TransactionCreateInput {
+	return &txsvc.TransactionCreateInput{
+		Title:      req.Title,
+		Price:      req.Price,
+		Quantity:   req.Quantity,
+		Date:       utils.NormalizeToUTC(req.Date, ""),
+		CategoryID: req.CategoryID,
+	}
+}
+
+func parseTransactionUpdateReqToServiceInput(req *m.TransactionUpdateReq) *txsvc.TransactionUpdateInput {
+	return &txsvc.TransactionUpdateInput{
+		Title:      req.Title,
+		Price:      req.Price,
+		Quantity:   req.Quantity,
+		Date:       utils.NormalizeToUTC(req.Date, ""),
+		CategoryID: req.CategoryID,
+	}
+}
+
+func getImageData(c *fiber.Ctx) ([]byte, error) {
+	image, err := c.FormFile("image")
+	if err != nil {
+		return nil, fiber.NewError(fiber.StatusBadRequest, "Failed to upload image")
+	}
+
+	contentType := image.Header.Get("Content-Type")
+	if !strings.HasPrefix(contentType, "image/") {
+		return nil, fiber.NewError(fiber.StatusBadRequest, "Uploaded file is not a valid image")
+	}
+
+	file, err := image.Open()
+	if err != nil {
+		return nil, fiber.NewError(fiber.StatusInternalServerError, "Failed to process uploaded image")
+	}
+	defer file.Close()
+
+	imageData := make([]byte, image.Size)
+	_, err = file.Read(imageData)
+	if err != nil {
+		return nil, fiber.NewError(fiber.StatusInternalServerError, "Failed to read uploaded image")
+	}
+
+	return imageData, nil
 }

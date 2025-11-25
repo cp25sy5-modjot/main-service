@@ -1,4 +1,4 @@
-package user
+package userrepo
 
 import (
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
@@ -26,12 +26,6 @@ func (r *Repository) FindAll() ([]*e.User, error) {
 	return users, err
 }
 
-func (r *Repository) FindByEmail(email string) (*e.User, error) {
-	var user e.User
-	err := r.db.Where("email = ?", email).First(&user).Error
-	return &user, err
-}
-
 func (r *Repository) FindByID(user_id string) (*e.User, error) {
 	var user e.User
 	err := r.db.Where("user_id = ?", user_id).First(&user).Error
@@ -56,8 +50,11 @@ func (r *Repository) FindByAppleID(apple_id string) (*e.User, error) {
 	return &user, err
 }
 
-func (r *Repository) Update(user *e.User) error {
-	return r.db.Save(user).Error
+func (r *Repository) Update(user *e.User) (*e.User, error) {
+	if err := r.db.Save(user).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (r *Repository) Delete(user_id string) error {

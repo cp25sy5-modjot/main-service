@@ -1,4 +1,4 @@
-package category
+package categoryrepo
 
 import (
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"

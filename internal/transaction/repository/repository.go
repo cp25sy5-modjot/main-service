@@ -1,4 +1,4 @@
-package transaction
+package transactionrepo
 
 import (
 	"time"
@@ -21,6 +21,16 @@ func (r *Repository) Create(transaction *e.Transaction) (*e.Transaction, error) 
 		return nil, err
 	}
 	return transaction, nil
+}
+
+func (r *Repository) findAllUncategorizedByUserID(userID string) ([]e.Transaction, error) {
+	var transactions []e.Transaction
+	err := r.db.
+		Preload("Category"). // load related Category
+		Where("user_id = ? AND category_id IS NULL", userID).
+		Order("date DESC").
+		Find(&transactions).Error
+	return transactions, err
 }
 
 func (r *Repository) FindAllByUserID(userID string) ([]e.Transaction, error) {

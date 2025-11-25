@@ -6,7 +6,7 @@ import (
 	"os"
 
 	r "github.com/cp25sy5-modjot/main-service/internal/response"
-	errorResp "github.com/cp25sy5-modjot/main-service/internal/response/error"
+	eresp "github.com/cp25sy5-modjot/main-service/internal/response/error"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
 	v "github.com/cp25sy5-modjot/main-service/internal/validator"
 
@@ -28,25 +28,25 @@ func GlobalErrorHandler(c *fiber.Ctx, err error) error {
 	if errors.As(err, &fe) {
 		switch fe.Code {
 		case fiber.StatusBadRequest:
-			return errorResp.BadRequest(c, fe.Message, nil)
+			return eresp.BadRequest(c, fe.Message, nil)
 		case fiber.StatusNotFound:
-			return errorResp.NotFound(c, fe.Message)
+			return eresp.NotFound(c, fe.Message)
 		case fiber.StatusUnauthorized:
-			return errorResp.Unauthorized(c, fe.Message)
+			return eresp.Unauthorized(c, fe.Message)
 		case fiber.StatusForbidden:
-			return errorResp.Forbidden(c, fe.Message)
+			return eresp.Forbidden(c, fe.Message)
 		case fiber.StatusConflict:
-			return errorResp.Conflict(c, fe.Message)
+			return eresp.Conflict(c, fe.Message)
 		case fiber.StatusTooManyRequests:
-			return errorResp.TooManyRequests(c, fe.Message)
+			return eresp.TooManyRequests(c, fe.Message)
 		case fiber.StatusInternalServerError:
-			return errorResp.InternalServerError(c, fe.Message)
+			return eresp.InternalServerError(c, fe.Message)
 		case fiber.StatusBadGateway:
-			return errorResp.BadGateway(c, fe.Message)
+			return eresp.BadGateway(c, fe.Message)
 		case fiber.StatusServiceUnavailable:
-			return errorResp.ServiceUnavailable(c, fe.Message)
+			return eresp.ServiceUnavailable(c, fe.Message)
 		case fiber.StatusGatewayTimeout:
-			return errorResp.GatewayTimeout(c, fe.Message)
+			return eresp.GatewayTimeout(c, fe.Message)
 		default:
 			log.Printf("Unhandled fiber error code: %d", fe.Code)
 			return r.WriteError(c, fe.Code, "Error", "error", safeDetail(err), nil)
@@ -54,10 +54,10 @@ func GlobalErrorHandler(c *fiber.Ctx, err error) error {
 	}
 	
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return errorResp.NotFound(c, "Resource not found")
+		return eresp.NotFound(c, "Resource not found")
 	}
 
-	return errorResp.InternalServerError(c, "An unexpected error occurred")
+	return eresp.InternalServerError(c, "An unexpected error occurred")
 }
 
 func safeDetail(err error) string {

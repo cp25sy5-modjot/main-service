@@ -1,4 +1,4 @@
-package success
+package successresponse
 
 import (
 	"github.com/cp25sy5-modjot/main-service/internal/response"

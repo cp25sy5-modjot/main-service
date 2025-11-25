@@ -5,46 +5,47 @@ import (
 )
 
 type Transaction struct {
-	TransactionID string    `gorm:"primaryKey;autoIncrement:false" json:"transaction_id" validate:"required"`
-	ItemID        string    `gorm:"primaryKey;autoIncrement:false" json:"item_id" validate:"required"`
-	UserID        string    `json:"user_id" validate:"required"`
-	Title         string    `json:"title" validate:"required"`
-	Price         float64   `json:"price" validate:"required"`
-	Quantity      float64   `json:"quantity" validate:"required"`
-	Date          time.Time `json:"date" validate:"required"`
-	Type          string    `json:"type" validate:"required"`
-	CategoryID    string    `json:"category_id" validate:"required"`
+	TransactionID string `gorm:"primaryKey;autoIncrement:false"`
+	ItemID        string `gorm:"primaryKey;autoIncrement:false"`
+	UserID        string
+	Title         string
+	Price         float64
+	Quantity      float64
+	Date          time.Time
+	Type          string
 
-	// Relationships
-	Category Category `gorm:"foreignKey:CategoryID;references:CategoryID" json:"category,omitempty"`
+	// make nullable if you really want OnDelete:SET NULL
+	CategoryID *string
+
+	Category Category `gorm:"foreignKey:UserID,CategoryID;references:UserID,CategoryID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
 
 // Next Release: Split Transaction into Transaction and TransactionItem
 // This will allow multiple items per transaction in the future
 // Remove Quantity from TransactionItem as well
 // type Transaction struct {
-// 	TransactionID string    `gorm:"primaryKey;autoIncrement:false" json:"transaction_id" validate:"required"`
-// 	UserID        string    `json:"user_id" validate:"required"`
-// 	Date          time.Time `json:"date" validate:"required"`
-// 	Type          string    `json:"type" validate:"required"` // e.g. "manual", "upload"
+// 	TransactionID string    `gorm:"primaryKey;autoIncrement:false" `
+// 	UserID        string
+// 	Date          time.Time
+// 	Type          string    // e.g. "manual", "upload"
 
 // 	// Optional summary fields
-// 	TotalPrice  float64 `json:"total_price,omitempty"`
+// 	TotalPrice  float64
 // 	// Relationships
-// 	Items []TransactionItem `gorm:"foreignKey:TransactionID;references:TransactionID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"items,omitempty"`
+// 	Items []TransactionItem `gorm:"foreignKey:TransactionID;references:TransactionID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 // }
 
 // type TransactionItem struct {
-// 	TransactionID string `gorm:"primaryKey;autoIncrement:false" json:"transaction_id" validate:"required"`
-// 	ItemID        string `gorm:"primaryKey;autoIncrement:false" json:"item_id" validate:"required"`
+// 	TransactionID string `gorm:"primaryKey;autoIncrement:false" `
+// 	ItemID        string `gorm:"primaryKey;autoIncrement:false" `
 
-// 	Title      string  `json:"title" validate:"required"`
-// 	Price      float64 `json:"price" validate:"required"`
-// 	CategoryID string  `json:"category_id" validate:"required"`
+// 	Title      string
+// 	Price      float64
+// 	CategoryID string
 
-// 	// Relationships
-// 	Category Category `gorm:"foreignKey:CategoryID;references:CategoryID" json:"category,omitempty"`
+//	// Relationships
+// 	Category Category `gorm:"foreignKey:CategoryID;references:CategoryID"`
 
 // 	// Back-reference (optional but nice to have)
-// 	Transaction Transaction `gorm:"foreignKey:TransactionID;references:TransactionID" json:"-"`
+// 	Transaction Transaction `gorm:"foreignKey:TransactionID;references:TransactionID"`
 // }
