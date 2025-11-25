@@ -124,6 +124,7 @@ func initializeCategoryRoutes(s *fiberServer, services *Services) {
 
 	api.Post("", categoryHandler.Create)
 	api.Get("", categoryHandler.GetAll)
+	api.Get("/:id", categoryHandler.GetByID)
 	api.Put("/:id", categoryHandler.Update)
 	api.Delete("/:id", categoryHandler.Delete)
 }

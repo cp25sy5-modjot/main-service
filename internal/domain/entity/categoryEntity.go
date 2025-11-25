@@ -13,5 +13,5 @@ type Category struct {
 	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
 
 	// Relationships
-	Transactions []Transaction `gorm:"foreignKey:UserID,CategoryID;references:UserID,CategoryID" json:"transactions,omitempty"`
+	Transactions []Transaction `gorm:"foreignKey:CategoryID;references:CategoryID" json:"transactions,omitempty"`
 }

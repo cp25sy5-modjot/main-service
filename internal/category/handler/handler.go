@@ -1,9 +1,11 @@
 package category
 
 import (
+	"strconv"
+
 	catSvc "github.com/cp25sy5-modjot/main-service/internal/category/service"
-	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	successResp "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	"github.com/cp25sy5-modjot/main-service/internal/utils"
@@ -53,9 +55,22 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 		return err
 	}
 
+	isIncludeTransactions, err := isIncludeTransactions(c)
+	if err != nil {
+		return err
+	}
+
+	if isIncludeTransactions {
+		categories, err := h.service.GetAllByUserIDWithTransactions(userID)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "failed to retrieve categories with transactions")
+		}
+		return successResp.OK(c, categories, "Categories with transactions retrieved successfully")
+	}
+
 	categories, err := h.service.GetAllByUserID(userID)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		return fiber.NewError(fiber.StatusInternalServerError, "failed to retrieve categories")
 	}
 	return successResp.OK(c, categories, "Categories retrieved successfully")
 }
@@ -70,6 +85,19 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 	params := &m.CategorySearchParams{
 		CategoryID: c.Params("id"),
 		UserID:     userID,
+	}
+	
+	isIncludeTransactions, err := isIncludeTransactions(c)
+	if err != nil {
+		return err
+	}
+
+	if isIncludeTransactions {
+		category, err := h.service.GetByIDWithTransactions(params)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+		return successResp.OK(c, category, "Category with transactions retrieved successfully")
 	}
 
 	category, err := h.service.GetByID(params)
@@ -121,4 +149,14 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 	}
 
 	return successResp.OK(c, nil, "Category deleted successfully")
+}
+
+// utils
+func isIncludeTransactions(c *fiber.Ctx) (bool, error) {
+	includeTransactionsStr := c.Query("includeTransactions", "false")
+	includeTransactions, err := strconv.ParseBool(includeTransactionsStr)
+	if err != nil {
+		return false, fiber.NewError(fiber.StatusBadRequest, "includeTransactions must be a boolean (true/false)")
+	}
+	return includeTransactions, nil
 }

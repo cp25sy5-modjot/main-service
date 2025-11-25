@@ -16,5 +16,5 @@ type Transaction struct {
 	CategoryID    string    `json:"category_id" validate:"required"`
 
 	// Relationships
-	Category Category `gorm:"foreignKey:UserID,CategoryID;references:UserID,CategoryID" json:"category,omitempty"`
+	Category Category `gorm:"foreignKey:CategoryID;references:CategoryID" json:"category,omitempty"`
 }
