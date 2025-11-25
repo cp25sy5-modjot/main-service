@@ -12,13 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func validateTransactionOwnership(tx *e.Transaction, userID string) error {
-	if tx.UserID != userID {
-		return errors.New("you are not authorized to access this transaction")
-	}
-	return nil
-}
-
 func GetCategoryNames(categories []e.Category) ([]string, error) {
 	//parse categories to string slice
 	var categoryNames []string
@@ -26,18 +19,6 @@ func GetCategoryNames(categories []e.Category) ([]string, error) {
 		categoryNames = append(categoryNames, cate.CategoryName)
 	}
 	return categoryNames, nil
-}
-
-func checkCategory(s *Service, tx *e.Transaction) (*e.Category, error) {
-	catSearchParam := &m.CategorySearchParams{
-		CategoryID: tx.CategoryID,
-		UserID:     tx.UserID,
-	}
-	cat, err := s.catRepo.FindByID(catSearchParam)
-	if err != nil {
-		return nil, errors.New("invalid category ID")
-	}
-	return cat, nil
 }
 
 func buildTransactionObjectToCreate(txId string, tx *e.Transaction) *e.Transaction {
@@ -57,20 +38,38 @@ func buildTransactionObjectToCreate(txId string, tx *e.Transaction) *e.Transacti
 	}
 }
 
-func buildTransactionResponse(tx *e.Transaction, category *e.Category) *m.TransactionRes {
+// func buildTransactionObjectToCreates(txId string, txs []*e.Transaction) []*e.Transaction {
+// 	var transactions []*e.Transaction
+// 	for _, tx := range txs {
+// 		newTx := buildTransactionObjectToCreate(txId, tx)
+// 		transactions = append(transactions, newTx)
+// 	}
+// 	return transactions
+// }
+
+func buildTransactionResponse(tx *e.Transaction) *m.TransactionRes {
 	return &m.TransactionRes{
 		TransactionID:     tx.TransactionID,
 		ItemID:            tx.ItemID,
-		Type:              tx.Type,
 		Title:             tx.Title,
 		Price:             tx.Price,
 		Quantity:          tx.Quantity,
-		TotalPrice:        tx.Price * float64(tx.Quantity),
+		TotalPrice:        tx.Price * tx.Quantity,
 		Date:              tx.Date,
+		Type:              tx.Type,
 		CategoryID:        tx.CategoryID,
-		CategoryName:      category.CategoryName,
-		CategoryColorCode: category.ColorCode,
+		CategoryName:      tx.Category.CategoryName,
+		CategoryColorCode: tx.Category.ColorCode,
 	}
+}
+
+func buildTransactionResponses(transactions []e.Transaction) []m.TransactionRes {
+	transactionResponses := make([]m.TransactionRes, 0, len(transactions))
+	for _, tx := range transactions {
+		res := buildTransactionResponse(&tx)
+		transactionResponses = append(transactionResponses, *res)
+	}
+	return transactionResponses
 }
 
 func matchCategoryFromName(categories []e.Category, categoryName string) *e.Category {
@@ -109,15 +108,36 @@ func processTransaction(tResponse *pb.TransactionResponse, categories []e.Catego
 		return nil, errors.New("category does not exist")
 	}
 	transaction := &e.Transaction{}
-	utils.MapStructs(tResponse, transaction)
+	err := utils.MapStructs(tResponse, transaction)
+	if err != nil {
+		return nil, err
+	}
 	transaction.UserID = userID
 	transaction.CategoryID = match.CategoryID
 	txId := uuid.New().String()
 	transaction.Type = "image_upload"
+
 	tx := buildTransactionObjectToCreate(txId, transaction)
+	txWithCat, err := saveNewTransaction(s, tx)
+	if err != nil {
+		return nil, err
+	}
+	return txWithCat, nil
+}
+
+func saveNewTransaction(s *Service, tx *e.Transaction) (*m.TransactionRes, error) {
 	newTx, err := s.repo.Create(tx)
 	if err != nil {
 		return nil, err
 	}
-	return buildTransactionResponse(newTx, match), nil
+	// Reload with preload
+	txWithCat, err := s.repo.FindByID(&m.TransactionSearchParams{
+		TransactionID: newTx.TransactionID,
+		ItemID:        newTx.ItemID,
+		UserID:        newTx.UserID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return buildTransactionResponse(txWithCat), nil
 }

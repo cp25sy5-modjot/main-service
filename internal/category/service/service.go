@@ -43,9 +43,6 @@ func (s *Service) Update(params *m.CategorySearchParams, category *m.CategoryUpd
 	if err != nil {
 		return nil, err
 	}
-	if err := validateCategoryOwnership(exists, params.UserID); err != nil {
-		return nil, err
-	}
 	if err = utils.MapStructs(category, &exists); err != nil {
 		return nil, err
 	}
@@ -54,13 +51,9 @@ func (s *Service) Update(params *m.CategorySearchParams, category *m.CategoryUpd
 }
 
 func (s *Service) Delete(params *m.CategorySearchParams) error {
-	exists, err := s.repo.FindByID(params)
+	_, err := s.repo.FindByID(params)
 	if err != nil {
 		return err
 	}
-	if err := validateCategoryOwnership(exists, params.UserID); err != nil {
-		return err
-	}
-
 	return s.repo.Delete(params)
 }

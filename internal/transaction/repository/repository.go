@@ -3,9 +3,9 @@ package transaction
 import (
 	"time"
 
-m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
-		"gorm.io/gorm"
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
+	"gorm.io/gorm"
 )
 
 type Repository struct {
@@ -63,7 +63,7 @@ func (r *Repository) FindByID(params *m.TransactionSearchParams) (*e.Transaction
 	err := r.db.
 		Preload("Category").
 		First(&transaction,
-			"transaction_id = ? AND product_id = ? AND user_id = ?",
+			"transaction_id = ? AND item_id = ? AND user_id = ?",
 			params.TransactionID,
 			params.ItemID,
 			params.UserID).Error
@@ -78,5 +78,5 @@ func (r *Repository) Update(transaction *e.Transaction) (*e.Transaction, error) 
 }
 
 func (r *Repository) Delete(params *m.TransactionSearchParams) error {
-	return r.db.Delete(&e.Transaction{}, "transaction_id = ? AND product_id = ?", params.TransactionID, params.ItemID).Error
+	return r.db.Delete(&e.Transaction{}, "transaction_id = ? AND item_id = ?", params.TransactionID, params.ItemID).Error
 }

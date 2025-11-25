@@ -26,16 +26,11 @@ func (s *Service) Create(transaction *e.Transaction) (*m.TransactionRes, error) 
 	txId := uuid.New().String()
 	transaction.Type = "manual"
 	tx := buildTransactionObjectToCreate(txId, transaction)
-	cat, err := checkCategory(s, tx)
+	txWithCat, err := saveNewTransaction(s, tx)
 	if err != nil {
 		return nil, err
 	}
-	newTx, err := s.repo.Create(tx)
-	if err != nil {
-		return nil, err
-	}
-
-	return buildTransactionResponse(newTx, cat), nil
+	return txWithCat, nil
 }
 
 func (s *Service) ProcessUploadedFile(fileData []byte, userID string) (*m.TransactionRes, error) {
@@ -45,12 +40,12 @@ func (s *Service) ProcessUploadedFile(fileData []byte, userID string) (*m.Transa
 		return nil, err
 	}
 
-	tResponse, err := callAIServiceToBuildTransaction(fileData, categories, s.aiClient)
+	resp, err := callAIServiceToBuildTransaction(fileData, categories, s.aiClient)
 	if err != nil {
 		return nil, err
 	}
 
-	return processTransaction(tResponse, categories, userID, s)
+	return processTransaction(resp, categories, userID, s)
 }
 
 func (s *Service) GetAllByUserID(userID string) ([]m.TransactionRes, error) {
@@ -59,16 +54,7 @@ func (s *Service) GetAllByUserID(userID string) ([]m.TransactionRes, error) {
 		return nil, err
 	}
 
-	var transactionResponses []m.TransactionRes
-	for _, tx := range transactions {
-		cat, err := checkCategory(s, &tx)
-		if err != nil {
-			return nil, err
-		}
-		txRes := buildTransactionResponse(&tx, cat)
-		transactionResponses = append(transactionResponses, *txRes)
-	}
-	return transactionResponses, nil
+	return buildTransactionResponses(transactions), nil
 }
 
 func (s *Service) GetAllByUserIDWithFilter(userID string, filter *m.TransactionFilter) ([]m.TransactionRes, error) {
@@ -80,19 +66,12 @@ func (s *Service) GetAllByUserIDWithFilter(userID string, filter *m.TransactionF
 	if err != nil {
 		return nil, err
 	}
+
 	if transactions == nil {
 		return []m.TransactionRes{}, nil
 	}
-	var transactionResponses []m.TransactionRes
-	for _, tx := range transactions {
-		cat, err := checkCategory(s, &tx)
-		if err != nil {
-			return nil, err
-		}
-		txRes := buildTransactionResponse(&tx, cat)
-		transactionResponses = append(transactionResponses, *txRes)
-	}
-	return transactionResponses, nil
+
+	return buildTransactionResponses(transactions), nil
 }
 
 func (s *Service) GetByID(params *m.TransactionSearchParams) (*m.TransactionRes, error) {
@@ -100,11 +79,7 @@ func (s *Service) GetByID(params *m.TransactionSearchParams) (*m.TransactionRes,
 	if err != nil {
 		return nil, err
 	}
-	cat, err := checkCategory(s, tx)
-	if err != nil {
-		return nil, err
-	}
-	return buildTransactionResponse(tx, cat), nil
+	return buildTransactionResponse(tx), nil
 }
 
 func (s *Service) Update(params *m.TransactionSearchParams, transaction *m.TransactionUpdateReq) (*m.TransactionRes, error) {
@@ -112,21 +87,23 @@ func (s *Service) Update(params *m.TransactionSearchParams, transaction *m.Trans
 	if err != nil {
 		return nil, err
 	}
-	if err := validateTransactionOwnership(exists, params.UserID); err != nil {
-		return nil, err
-	}
-	_ = utils.MapStructs(transaction, exists)
-	cat, err := checkCategory(s, exists)
+
+	err = utils.MapStructs(transaction, exists)
 	if err != nil {
 		return nil, err
 	}
+
 	updatedTx, err := s.repo.Update(exists)
 	if err != nil {
 		return nil, err
 	}
-	return buildTransactionResponse(updatedTx, cat), nil
+	return buildTransactionResponse(updatedTx), nil
 }
 
 func (s *Service) Delete(params *m.TransactionSearchParams) error {
+	_, err := s.repo.FindByID(params)
+	if err != nil {
+		return err
+	}
 	return s.repo.Delete(params)
 }

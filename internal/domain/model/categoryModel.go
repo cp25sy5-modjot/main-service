@@ -16,6 +16,7 @@ type CategoryRes struct {
 	CreatedAt    time.Time `json:"created_at"`
 
 	TotalPrice float64 `json:"total_price"`
+	TotalItems int     `json:"total_items,omitempty"`
 }
 
 type CategoryUpdateReq struct {

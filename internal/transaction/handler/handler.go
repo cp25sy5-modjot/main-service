@@ -3,8 +3,8 @@ package transaction
 import (
 	"strings"
 
-	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	successResp "github.com/cp25sy5-modjot/main-service/internal/response/success"
 	svc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
@@ -99,7 +99,7 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 	return successResp.OK(c, resp, "Transactions retrieved successfully")
 }
 
-// GET /transactions/:transaction_id/product/:product_id
+// GET /transactions/:transaction_id/product/:item_id
 func (h *Handler) GetByID(c *fiber.Ctx) error {
 	TransactionSearchParams, err := createTransactionSearchParams(c)
 	if err != nil {
@@ -112,7 +112,7 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 	return successResp.OK(c, resp, "Transaction retrieved successfully")
 }
 
-// PUT /transactions/:transaction_id/product/:product_id
+// PUT /transactions/:transaction_id/product/:item_id
 func (h *Handler) Update(c *fiber.Ctx) error {
 	var req m.TransactionUpdateReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
@@ -129,7 +129,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	return successResp.OK(c, resp, "Transaction updated successfully")
 }
 
-// DELETE /transactions/:transaction_id/product/:product_id
+// DELETE /transactions/:transaction_id/product/:item_id
 func (h *Handler) Delete(c *fiber.Ctx) error {
 	TransactionSearchParams, err := createTransactionSearchParams(c)
 	if err != nil {
@@ -144,9 +144,9 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 // utils
 func getTxIDAndProdID(c *fiber.Ctx) (string, string, error) {
 	tx_id := c.Params("transaction_id")
-	item_id := c.Params("product_id")
+	item_id := c.Params("item_id")
 	if tx_id == "" || item_id == "" {
-		return "", "", fiber.NewError(fiber.StatusBadRequest, "transaction_id and product_id parameters are required")
+		return "", "", fiber.NewError(fiber.StatusBadRequest, "transaction_id and item_id parameters are required")
 	}
 	return tx_id, item_id, nil
 }
