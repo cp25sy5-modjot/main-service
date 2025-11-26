@@ -38,7 +38,6 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
-
 	input := &svc.UserCreateInput{
 		UserBinding: e.UserBinding{
 			GoogleID:   req.UserBinding.GoogleID,
@@ -69,7 +68,6 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
 	input := &svc.UserUpdateInput{
 		Name: req.Name,
 		DOB:  utils.NormalizeToUTC(req.DOB, ""),

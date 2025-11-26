@@ -25,9 +25,8 @@ func ToUserLocal(t time.Time, tz string) time.Time {
 }
 
 func NormalizeToUTC(t time.Time, tz string) time.Time {
-	if t.Location() == time.UTC || t.Location().String() == "Local" {
+	if t.Location().String() == "Local" {
 		loc := LoadLocationOrDefault(tz)
-		// Treat the time as if it's user local time
 		t = time.Date(
 			t.Year(), t.Month(), t.Day(),
 			t.Hour(), t.Minute(), t.Second(),
@@ -37,3 +36,4 @@ func NormalizeToUTC(t time.Time, tz string) time.Time {
 	}
 	return t.UTC()
 }
+

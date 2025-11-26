@@ -182,6 +182,9 @@ func buildTransactionResponses(transactions []e.Transaction) []m.TransactionRes 
 }
 
 func parseTransactionInsertReqToServiceInput(req *m.TransactionInsertReq) *txsvc.TransactionCreateInput {
+	if req.Date.IsZero() {
+		req.Date = utils.NowUTC()
+	}
 	return &txsvc.TransactionCreateInput{
 		Title:      req.Title,
 		Price:      req.Price,
@@ -192,6 +195,9 @@ func parseTransactionInsertReqToServiceInput(req *m.TransactionInsertReq) *txsvc
 }
 
 func parseTransactionUpdateReqToServiceInput(req *m.TransactionUpdateReq) *txsvc.TransactionUpdateInput {
+	if req.Date.IsZero() {
+		req.Date = utils.NowUTC()
+	}
 	return &txsvc.TransactionUpdateInput{
 		Title:      req.Title,
 		Price:      req.Price,
