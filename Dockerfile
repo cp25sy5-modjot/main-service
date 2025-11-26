@@ -2,30 +2,37 @@
 FROM golang:1.24-alpine AS build
 WORKDIR /app
 
-# Better caching
+# Cache dependencies
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the rest of the code
+# Copy project
 COPY . .
 
-# Build API and Worker binaries
+# Build both API and Worker
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o api ./cmd/api && \
     CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o worker ./cmd/worker
 
-# ---- Minimal runtime
-FROM gcr.io/distroless/static:nonroot
+
+# ---- Runtime stage (Alpine, NOT distroless)
+FROM alpine:3.20
+
+# Create non-root user and uploads dir
+RUN adduser -D -g '' appuser && \
+    mkdir -p /uploads && \
+    chown -R appuser:appuser /uploads
 
 WORKDIR /
 
-# Copy both binaries from build stage
+# Copy binaries from build stage
 COPY --from=build /app/api /api
 COPY --from=build /app/worker /worker
 
-USER nonroot:nonroot
+# Run as unprivileged user
+USER appuser
 
-# Match the port your Fiber app listens on (same as before)
+# API port
 EXPOSE 8081
 
-# Default command = API server
+# Default: run API
 CMD ["/api"]
