@@ -1,14 +1,14 @@
-package globalHandler
+package globalhandler
 
 import (
 	"errors"
 	"log"
 	"os"
 
-	r "github.com/cp25sy5-modjot/main-service/internal/response"
-	eresp "github.com/cp25sy5-modjot/main-service/internal/response/error"
-	"github.com/cp25sy5-modjot/main-service/internal/utils"
-	v "github.com/cp25sy5-modjot/main-service/internal/validator"
+	r "github.com/cp25sy5-modjot/main-service/internal/shared/response"
+	eresp "github.com/cp25sy5-modjot/main-service/internal/shared/response/error"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
+	v "github.com/cp25sy5-modjot/main-service/internal/shared/validator"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -52,7 +52,7 @@ func GlobalErrorHandler(c *fiber.Ctx, err error) error {
 			return r.WriteError(c, fe.Code, "Error", "error", safeDetail(err), nil)
 		}
 	}
-	
+
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return eresp.NotFound(c, "Resource not found")
 	}

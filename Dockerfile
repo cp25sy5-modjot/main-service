@@ -1,20 +1,31 @@
 # ---- Build stage
-FROM golang:1.24-alpine AS build
+FROM golang:1.22-alpine AS build
 WORKDIR /app
 
 # Better caching
 COPY go.mod go.sum ./
 RUN go mod download
 
+# Copy the rest of the code
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o main-service ./cmd/server
+
+# Build API and Worker binaries
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o api ./cmd/api && \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o worker ./cmd/worker
 
 # ---- Minimal runtime
 FROM gcr.io/distroless/static:nonroot
+
 WORKDIR /
-COPY --from=build /app/main-service /main-service
+
+# Copy both binaries from build stage
+COPY --from=build /app/api /api
+COPY --from=build /app/worker /worker
+
 USER nonroot:nonroot
 
-# Match the port your app listens on (see FIBER_PORT below)
+# Match the port your Fiber app listens on (same as before)
 EXPOSE 8081
-ENTRYPOINT ["/main-service"]
+
+# Default entrypoint = API server
+ENTRYPOINT ["/api"]

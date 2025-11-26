@@ -1,11 +1,13 @@
 package categorysvc
 
 import (
+	"time"
+
 	categoryrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
-	utils "github.com/cp25sy5-modjot/main-service/internal/utils"
+	utils "github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	"github.com/google/uuid"
 )
 
@@ -25,7 +27,7 @@ func (s *Service) Create(userId string, input *CategoryCreateInput) (*e.Category
 		UserID:       userId,
 		Budget:       input.Budget,
 		ColorCode:    input.ColorCode,
-		CreatedAt:    utils.NowUTC(),
+		CreatedAt:    time.Now(),
 	}
 	return saveNewCategory(s, cate)
 }

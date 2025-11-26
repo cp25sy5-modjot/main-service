@@ -3,12 +3,15 @@ package httpapi
 import (
 	"log"
 
-	"github.com/cp25sy5-modjot/main-service/internal/config"
 	"github.com/cp25sy5-modjot/main-service/internal/database"
-	"github.com/cp25sy5-modjot/main-service/internal/globalHandler"
+	globalhandler "github.com/cp25sy5-modjot/main-service/internal/global_handler"
 	"github.com/cp25sy5-modjot/main-service/internal/middleware"
-	"github.com/cp25sy5-modjot/main-service/internal/utils"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
+	"github.com/cp25sy5-modjot/main-service/internal/storage"
+	"github.com/cp25sy5-modjot/main-service/internal/storage/localfs"
 	pb "github.com/cp25sy5-modjot/proto/gen/ai/v1"
+	"github.com/hibiken/asynq"
 
 	// "github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
@@ -19,24 +22,40 @@ type Server interface {
 }
 
 type fiberServer struct {
-	app  *fiber.App
-	db   database.Database
-	conf *config.Config
-	aiClient   pb.AiWrapperServiceClient
+	app         *fiber.App
+	db          database.Database
+	conf        *config.Config
+	aiClient    pb.AiWrapperServiceClient
+	asynqClient *asynq.Client
+	storage     storage.Storage
 }
 
 func NewFiberServer(conf *config.Config, db database.Database, aiClient pb.AiWrapperServiceClient) Server {
 	app := fiber.New(fiber.Config{
-		ErrorHandler: globalHandler.GlobalErrorHandler,
+		ErrorHandler: globalhandler.GlobalErrorHandler,
+	})
+	initMiddleware(app)
+
+	asynqClient := asynq.NewClient(asynq.RedisClientOpt{
+		Addr: conf.Redis.Addr,
 	})
 
-	// Middlewares
-	initMiddleware(app)
+	uploadDir := conf.UploadDir
+	if uploadDir == "" {
+		uploadDir = "./uploads"
+	}
+	st, err := localfs.NewLocalStorage(uploadDir)
+	if err != nil {
+		log.Fatalf("failed to init storage: %v", err)
+	}
+
 	return &fiberServer{
-		app:  app,
-		db:   db,
-		conf: conf,
-		aiClient:   aiClient,
+		app:         app,
+		db:          db,
+		conf:        conf,
+		aiClient:    aiClient,
+		asynqClient: asynqClient,
+		storage:     st,
 	}
 }
 

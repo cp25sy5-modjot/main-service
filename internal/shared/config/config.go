@@ -37,6 +37,10 @@ func LoadConfig() *Config {
 		AIService: &AIService{
 			Url: os.Getenv("AI_WRAPPER_ADDR"),
 		},
+		Redis: &Redis{
+			Addr: os.Getenv("REDIS_ADDR"),
+		},
+		UploadDir: os.Getenv("UPLOAD_DIR"),
 	}
 }
 

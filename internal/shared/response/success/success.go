@@ -1,8 +1,8 @@
 package successresponse
 
 import (
-	"github.com/cp25sy5-modjot/main-service/internal/response"
-	"github.com/cp25sy5-modjot/main-service/internal/utils"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/response"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	"github.com/gofiber/fiber/v2"
 )
 

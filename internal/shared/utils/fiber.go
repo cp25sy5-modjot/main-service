@@ -1,7 +1,7 @@
 package utils
 
 import (
-	v "github.com/cp25sy5-modjot/main-service/internal/validator"
+	v "github.com/cp25sy5-modjot/main-service/internal/shared/validator"
 	"github.com/gofiber/fiber/v2"
 )
 

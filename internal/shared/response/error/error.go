@@ -1,8 +1,8 @@
 package errorresponse
 
 import (
-	"github.com/cp25sy5-modjot/main-service/internal/response"
-	v "github.com/cp25sy5-modjot/main-service/internal/validator"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/response"
+	v "github.com/cp25sy5-modjot/main-service/internal/shared/validator"
 	"github.com/gofiber/fiber/v2"
 )
 

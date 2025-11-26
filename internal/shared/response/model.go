@@ -3,7 +3,7 @@ package response
 import (
 	"time"
 
-	v "github.com/cp25sy5-modjot/main-service/internal/validator"
+	v "github.com/cp25sy5-modjot/main-service/internal/shared/validator"
 )
 
 type Response struct {

@@ -1,9 +1,9 @@
 package auth
 
 import (
-	"github.com/cp25sy5-modjot/main-service/internal/config"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
-	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
+	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
 
 	u "github.com/cp25sy5-modjot/main-service/internal/user/service"
 	"github.com/gofiber/fiber/v2"

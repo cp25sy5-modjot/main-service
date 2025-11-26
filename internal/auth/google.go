@@ -4,13 +4,13 @@ import (
 	"context"
 	"log"
 
-	"github.com/cp25sy5-modjot/main-service/internal/config"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
-	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
+	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
 	u "github.com/cp25sy5-modjot/main-service/internal/user/service"
-	"github.com/cp25sy5-modjot/main-service/internal/utils"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/api/idtoken"

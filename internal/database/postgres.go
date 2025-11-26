@@ -8,8 +8,8 @@ import (
 
 	"sync"
 
-	"github.com/cp25sy5-modjot/main-service/internal/config"
-	"github.com/cp25sy5-modjot/main-service/internal/utils"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 )
 
 type postgresDatabase struct {

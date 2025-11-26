@@ -6,6 +6,8 @@ type Config struct {
 	Auth       *Auth
 	Google     *Google
 	AIService  *AIService
+	Redis      *Redis
+	UploadDir  string
 }
 
 type Fiber struct {
@@ -38,4 +40,8 @@ type Google struct {
 
 type AIService struct {
 	Url string
+}
+
+type Redis struct {
+	Addr string
 }

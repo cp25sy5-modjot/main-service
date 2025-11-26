@@ -6,18 +6,26 @@ import (
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
-	sresp "github.com/cp25sy5-modjot/main-service/internal/response/success"
+	sresp "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
+	"github.com/cp25sy5-modjot/main-service/internal/storage"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
-	"github.com/cp25sy5-modjot/main-service/internal/utils"
 	"github.com/gofiber/fiber/v2"
+	"github.com/hibiken/asynq"
 )
 
 type Handler struct {
-	service *txsvc.Service
+	service     *txsvc.Service
+	asynqClient *asynq.Client
+	storage     storage.Storage
 }
 
-func NewHandler(service *txsvc.Service) *Handler {
-	return &Handler{service}
+func NewHandler(svc *txsvc.Service, client *asynq.Client, st storage.Storage) *Handler {
+	return &Handler{
+		service:     svc,
+		asynqClient: client,
+		storage:     st,
+	}
 }
 
 // POST /transactions/manual
@@ -42,24 +50,24 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 }
 
 // POST /transactions/upload
-func (h *Handler) UploadImage(c *fiber.Ctx) error {
-	imageData, err := getImageData(c)
-	if err != nil {
-		return err
-	}
+// func (h *Handler) UploadImage(c *fiber.Ctx) error {
+// 	imageData, err := getImageData(c)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	userID, err := jwt.GetUserIDFromClaims(c)
-	if err != nil {
-		return err
-	}
+// 	userID, err := jwt.GetUserIDFromClaims(c)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	resp, err := h.service.ProcessUploadedFile(imageData, userID)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to process the uploaded file")
-	}
+// 	resp, err := h.service.ProcessUploadedFile(imageData, userID)
+// 	if err != nil {
+// 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to process the uploaded file")
+// 	}
 
-	return sresp.Created(c, buildTransactionResponse(resp), "File uploaded and processed successfully")
-}
+// 	return sresp.Created(c, buildTransactionResponse(resp), "File uploaded and processed successfully")
+// }
 
 // GET /transactions
 func (h *Handler) GetAll(c *fiber.Ctx) error {
@@ -164,7 +172,7 @@ func buildTransactionResponse(tx *e.Transaction) *m.TransactionRes {
 		Price:             tx.Price,
 		Quantity:          tx.Quantity,
 		TotalPrice:        tx.Price * tx.Quantity,
-		Date:              utils.ToUserLocal(tx.Date, ""),
+		Date:              tx.Date,
 		Type:              tx.Type,
 		CategoryID:        tx.CategoryID,
 		CategoryName:      tx.Category.CategoryName,
@@ -182,27 +190,21 @@ func buildTransactionResponses(transactions []e.Transaction) []m.TransactionRes 
 }
 
 func parseTransactionInsertReqToServiceInput(req *m.TransactionInsertReq) *txsvc.TransactionCreateInput {
-	if req.Date.IsZero() {
-		req.Date = utils.NowUTC()
-	}
 	return &txsvc.TransactionCreateInput{
 		Title:      req.Title,
 		Price:      req.Price,
 		Quantity:   req.Quantity,
-		Date:       utils.NormalizeToUTC(req.Date, ""),
+		Date:       req.Date,
 		CategoryID: req.CategoryID,
 	}
 }
 
 func parseTransactionUpdateReqToServiceInput(req *m.TransactionUpdateReq) *txsvc.TransactionUpdateInput {
-	if req.Date.IsZero() {
-		req.Date = utils.NowUTC()
-	}
 	return &txsvc.TransactionUpdateInput{
 		Title:      req.Title,
 		Price:      req.Price,
 		Quantity:   req.Quantity,
-		Date:       utils.NormalizeToUTC(req.Date, ""),
+		Date:       req.Date,
 		CategoryID: req.CategoryID,
 	}
 }

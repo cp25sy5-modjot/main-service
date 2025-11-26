@@ -1,10 +1,10 @@
 package auth
 
 import (
-	"github.com/cp25sy5-modjot/main-service/internal/config"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
 	internaljwt "github.com/cp25sy5-modjot/main-service/internal/jwt"
-	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
-	"github.com/cp25sy5-modjot/main-service/internal/utils"
+	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"

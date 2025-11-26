@@ -8,8 +8,8 @@ import (
 	catrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
-	"github.com/cp25sy5-modjot/main-service/internal/utils"
 	pb "github.com/cp25sy5-modjot/proto/gen/ai/v1"
 	"github.com/google/uuid"
 )
@@ -44,17 +44,23 @@ func (s *Service) Create(userID string, input *TransactionCreateInput) (*e.Trans
 }
 
 func (s *Service) ProcessUploadedFile(fileData []byte, userID string) (*e.Transaction, error) {
-	//fetch user categories
+	if s.aiClient == nil {
+		return nil, errors.New("AI client not configured (this method should only be used in worker process)")
+	}
+
+	// 1. fetch categories
 	categories, err := s.catrepo.FindAllByUserID(userID)
 	if err != nil {
 		return nil, err
 	}
 
+	// 2. call AI service
 	resp, err := callAIServiceToBuildTransaction(fileData, categories, s.aiClient)
 	if err != nil {
 		return nil, err
 	}
 
+	// 3. process into real transaction (same as before)
 	return processTransaction(resp, categories, userID, s)
 }
 
@@ -69,7 +75,7 @@ func (s *Service) GetAllByUserID(userID string) ([]e.Transaction, error) {
 
 func (s *Service) GetAllByUserIDWithFilter(userID string, filter *m.TransactionFilter) ([]e.Transaction, error) {
 	if filter.Date == nil {
-		now := utils.NowUTC()
+		now := time.Now()
 		filter.Date = &now
 	}
 	transactions, err := s.repo.FindAllByUserIDAndFiltered(userID, filter)
@@ -131,7 +137,7 @@ func GetCategoryNames(categories []e.Category) ([]string, error) {
 
 func buildTransactionObjectToCreate(txId, userID, txType string, tx *TransactionCreateInput) *e.Transaction {
 	if tx.Date.IsZero() {
-		tx.Date = utils.NowUTC()
+		tx.Date = time.Now()
 	}
 	return &e.Transaction{
 		TransactionID: txId,
@@ -142,7 +148,7 @@ func buildTransactionObjectToCreate(txId, userID, txType string, tx *Transaction
 		Title:         tx.Title,
 		Price:         tx.Price,
 		CategoryID:    tx.CategoryID,
-		Date:          utils.NormalizeToUTC(tx.Date, ""),
+		Date:          tx.Date,
 	}
 }
 

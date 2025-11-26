@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	v "github.com/cp25sy5-modjot/main-service/internal/validator"
+	v "github.com/cp25sy5-modjot/main-service/internal/shared/validator"
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
 )

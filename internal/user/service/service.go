@@ -1,10 +1,12 @@
 package usersvc
 
 import (
+	"time"
+
 	catsvc "github.com/cp25sy5-modjot/main-service/internal/category/service"
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	userrepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
-	"github.com/cp25sy5-modjot/main-service/internal/utils"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	"github.com/google/uuid"
 )
 
@@ -102,8 +104,8 @@ func buildUserObjectToCreate(uid string, input *UserCreateInput) *e.User {
 		},
 		Name:      input.Name,
 		DOB:       input.DOB,
-		CreatedAt: utils.NowUTC(),
-		UpdatedAt: utils.NowUTC(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 }
 

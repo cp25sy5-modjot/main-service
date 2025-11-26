@@ -10,7 +10,7 @@ import (
 	catsvc "github.com/cp25sy5-modjot/main-service/internal/category/service"
 
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
-	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
+	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
 	txhandler "github.com/cp25sy5-modjot/main-service/internal/transaction/handler"
 	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
@@ -98,19 +98,23 @@ func initializeAuthRoutes(s *fiberServer, services *Services) {
 }
 
 func initializeTransactionRoutes(s *fiberServer, services *Services) {
-	transactionHandler := txhandler.NewHandler(services.TransactionService)
+	transactionHandler := txhandler.NewHandler(
+		services.TransactionService,
+		s.asynqClient,
+		s.storage,
+	)
 
-	// Register routes
 	txApi := s.app.Group("/v1/transaction")
 	txApi.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
 
 	txApi.Post("/manual", transactionHandler.Create)
-	txApi.Post("/upload", transactionHandler.UploadImage)
+	txApi.Post("/upload", transactionHandler.UploadImage) // async
 	txApi.Get("", transactionHandler.GetAll)
 	txApi.Get("/:transaction_id/item/:item_id", transactionHandler.GetByID)
 	txApi.Put("/:transaction_id/item/:item_id", transactionHandler.Update)
 	txApi.Delete("/:transaction_id/item/:item_id", transactionHandler.Delete)
 }
+
 
 func initializeCategoryRoutes(s *fiberServer, services *Services) {
 	categoryHandler := cathandler.NewHandler(services.CategoryService)

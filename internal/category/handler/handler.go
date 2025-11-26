@@ -7,8 +7,8 @@ import (
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
-	sresp "github.com/cp25sy5-modjot/main-service/internal/response/success"
-	"github.com/cp25sy5-modjot/main-service/internal/utils"
+	sresp "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -174,7 +174,7 @@ func buildCategoryResponse(cat *e.Category) *m.CategoryRes {
 			CategoryName: cat.CategoryName,
 			Budget:       cat.Budget,
 			ColorCode:    cat.ColorCode,
-			CreatedAt:    utils.ToUserLocal(cat.CreatedAt, ""),
+			CreatedAt:    cat.CreatedAt,
 		}
 	} else {
 		budgetUsage := 0.0
@@ -187,7 +187,7 @@ func buildCategoryResponse(cat *e.Category) *m.CategoryRes {
 			CategoryName: cat.CategoryName,
 			Budget:       cat.Budget,
 			ColorCode:    cat.ColorCode,
-			CreatedAt:    utils.ToUserLocal(cat.CreatedAt, ""),
+			CreatedAt:    cat.CreatedAt,
 			BudgetUsage:  budgetUsage,
 		}
 	}
