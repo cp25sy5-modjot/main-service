@@ -2,6 +2,7 @@ package transactionhandler
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -40,7 +41,10 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 	// 1. Save file to storage
 	path, err := h.storage.Save(ctx, userID, imageData, ext)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to store image")
+		return fiber.NewError(
+			fiber.StatusInternalServerError,
+			fmt.Sprintf("Failed to store image: %v", err),
+		)
 	}
 
 	traceID := xid.New().String()
