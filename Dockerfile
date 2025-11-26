@@ -27,5 +27,5 @@ USER nonroot:nonroot
 # Match the port your Fiber app listens on (same as before)
 EXPOSE 8081
 
-# Default entrypoint = API server
-ENTRYPOINT ["/api"]
+# Default command = API server
+CMD ["/api"]
