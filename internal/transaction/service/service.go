@@ -3,6 +3,7 @@ package transactionsvc
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	catrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
@@ -59,6 +60,8 @@ func (s *Service) ProcessUploadedFile(fileData []byte, userID string) (*e.Transa
 	if err != nil {
 		return nil, err
 	}
+
+	log.Printf("AI Service Response: %+v", resp)
 
 	// 3. process into real transaction (same as before)
 	return processTransaction(resp, categories, userID, s)
