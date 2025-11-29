@@ -11,7 +11,7 @@ type TransactionSearchParams struct {
 }
 
 type TransactionInsertReq struct {
-	Title      string    `json:"title" validate:"required,min=2,max=50"`
+	Title      string    `json:"title" validate:"required,min=2,max=20"`
 	Price      float64   `json:"price" validate:"required"`
 	Quantity   float64   `json:"quantity" validate:"required"`
 	CategoryID *string   `json:"category_id"`
@@ -19,7 +19,7 @@ type TransactionInsertReq struct {
 }
 
 type TransactionUpdateReq struct {
-	Title      string    `json:"title" validate:"required,min=2,max=50"`
+	Title      string    `json:"title" validate:"required,min=2,max=20"`
 	Price      float64   `json:"price" validate:"required"`
 	Quantity   float64   `json:"quantity" validate:"required"`
 	CategoryID *string   `json:"category_id"`

@@ -8,7 +8,7 @@ type Transaction struct {
 	TransactionID string `gorm:"primaryKey;autoIncrement:false"`
 	ItemID        string `gorm:"primaryKey;autoIncrement:false"`
 	UserID        string
-	Title         string
+	Title         string `gorm:"length:20"`
 	Price         float64
 	Quantity      float64
 	Date          time.Time
