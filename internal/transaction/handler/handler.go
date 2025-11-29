@@ -81,11 +81,19 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 		Date: utils.ConvertStringToTime(date),
 	}
 
-	resp, err := h.service.GetAllByUserIDWithFilter(userID, filter)
+	months, err := h.service.GetAllComparePreviousMonthAndByUserIDWithFilter(userID, filter)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve transactions")
 	}
-	return sresp.OK(c, buildTransactionResponses(resp), "Transactions retrieved successfully")
+	currMonth := buildTransactionResponses(months.CurrentMonth)
+	previousMonth := buildTransactionResponses(months.PreviousMonth)
+	resp := m.TransactionCompareMonthResponse{
+		Transactions:       currMonth,
+		CurrentMonthTotal:  calculateTotal(currMonth),
+		PreviousMonthTotal: calculateTotal(previousMonth),
+	}
+
+	return sresp.OK(c, resp, "Transactions retrieved successfully")
 }
 
 // GET /transactions/:transaction_id/product/:item_id
@@ -181,6 +189,9 @@ func buildTransactionResponse(tx *e.Transaction) *m.TransactionRes {
 }
 
 func buildTransactionResponses(transactions []e.Transaction) []m.TransactionRes {
+	if len(transactions) == 0 {
+		return []m.TransactionRes{}
+	}
 	transactionResponses := make([]m.TransactionRes, 0, len(transactions))
 	for _, tx := range transactions {
 		res := buildTransactionResponse(&tx)
@@ -233,4 +244,15 @@ func getImageData(c *fiber.Ctx) ([]byte, error) {
 	}
 
 	return imageData, nil
+}
+
+func calculateTotal(transactions []m.TransactionRes) float64 {
+	if len(transactions) == 0 {
+		return 0
+	}
+	total := 0.0
+	for _, tx := range transactions {
+		total += tx.TotalPrice
+	}
+	return total
 }

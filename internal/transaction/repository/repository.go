@@ -44,29 +44,34 @@ func (r *Repository) FindAllByUserID(userID string) ([]e.Transaction, error) {
 }
 
 func (r *Repository) FindAllByUserIDAndFiltered(userID string, filter *m.TransactionFilter) ([]e.Transaction, error) {
-	var transactions []e.Transaction
+    var transactions []e.Transaction
 
-	t := filter.Date
+    t := filter.Date
 
-	// Calculate the start of the target month (e.g., 2025-11-01 00:00:00)
-	startOfMonth := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
+    // Start of current month
+    startOfMonth := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
 
-	// Calculate the start of the next month (e.g., 2025-12-01 00:00:00)
-	endOfMonth := startOfMonth.AddDate(0, 1, 0)
+    var startRange, endRange time.Time
 
-	// Filter by user_id AND date >= startOfMonth AND date < endOfMonth
-	err := r.db.
-		Preload("Category").
-		Where("user_id = ? AND date >= ? AND date < ?",
-			userID,
-			startOfMonth,
-			endOfMonth,
-		).
-		Order("date DESC").
-		Find(&transactions).Error
+    if filter.PreviousMonth {
+        // Previous month
+        startRange = startOfMonth.AddDate(0, -1, 0)
+        endRange   = startOfMonth
+    } else {
+        // Current month
+        startRange = startOfMonth
+        endRange   = startOfMonth.AddDate(0, 1, 0)
+    }
 
-	return transactions, err
+    err := r.db.
+        Preload("Category").
+        Where("user_id = ? AND date >= ? AND date < ?", userID, startRange, endRange).
+        Order("date DESC").
+        Find(&transactions).Error
+
+    return transactions, err
 }
+
 
 func (r *Repository) FindByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
 	var transaction e.Transaction

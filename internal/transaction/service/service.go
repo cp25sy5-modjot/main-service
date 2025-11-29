@@ -81,7 +81,9 @@ func (s *Service) GetAllByUserIDWithFilter(userID string, filter *m.TransactionF
 		now := time.Now()
 		filter.Date = &now
 	}
+	filter.PreviousMonth = false
 	transactions, err := s.repo.FindAllByUserIDAndFiltered(userID, filter)
+
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +93,37 @@ func (s *Service) GetAllByUserIDWithFilter(userID string, filter *m.TransactionF
 	}
 
 	return transactions, nil
+}
+
+type MonthlyResult struct {
+	CurrentMonth  []e.Transaction `json:"current_month"`
+	PreviousMonth []e.Transaction `json:"previous_month"`
+}
+
+func (s *Service) GetAllComparePreviousMonthAndByUserIDWithFilter(userID string, filter *m.TransactionFilter) (*MonthlyResult, error) {
+	if filter.Date == nil {
+		now := time.Now()
+		filter.Date = &now
+	}
+
+	// --- Current Month ---
+	filter.PreviousMonth = false
+	current, err := s.repo.FindAllByUserIDAndFiltered(userID, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// --- Previous Month ---
+	filter.PreviousMonth = true
+	previous, err := s.repo.FindAllByUserIDAndFiltered(userID, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return &MonthlyResult{
+		CurrentMonth:  current,
+		PreviousMonth: previous,
+	}, nil
 }
 
 func (s *Service) GetByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
