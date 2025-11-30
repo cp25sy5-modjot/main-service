@@ -287,12 +287,10 @@ func saveNewTransaction(s *service, tx *e.Transaction) (*e.Transaction, error) {
 
 func getMonthRange(filter *m.TransactionFilter) (time.Time, time.Time) {
 
-	t := *filter.Date
-	loc, _ := time.LoadLocation("Asia/Bangkok")
-	t = t.In(loc)
+	t := filter.Date
 
 	// Start of current month
-	startOfMonth := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, loc)
+	startOfMonth := time.Date(t.Year(), t.Month(), 1, 7, 0, 0, 0, t.Location())
 
 	var startRange, endRange time.Time
 

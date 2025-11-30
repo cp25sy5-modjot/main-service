@@ -25,8 +25,7 @@ func NewService(repo *overviewrepo.Repository) Service {
 
 func (s *service) GetOverview(userID string, baseDate time.Time) (*m.OverviewResponse, error) {
 	// Normalize baseDate just to be safe; use its location for month range
-	loc := baseDate.Location()
-	startOfMonth := time.Date(baseDate.Year(), baseDate.Month(), 1, 0, 0, 0, 0, loc)
+	startOfMonth := time.Date(baseDate.Year(), baseDate.Month(), 1, 7, 0, 0, 0, baseDate.Location())
 	endOfMonth := startOfMonth.AddDate(0, 1, 0) // first day of next month (exclusive)
 
 	// 1) last 3 transactions (global, not month-limited)
