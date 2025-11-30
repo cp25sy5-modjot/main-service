@@ -138,7 +138,9 @@ func saveNewCategory(s *service, cat *e.Category) (*e.Category, error) {
 
 func getMonthRange(filter *m.TransactionFilter) (time.Time, time.Time) {
 	t := filter.Date
-	startOfMonth := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
+	loc, _ := time.LoadLocation("Asia/Bangkok")
+
+	startOfMonth := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, loc)
 
 	endOfMonth := startOfMonth.AddDate(0, 1, 0)
 
