@@ -13,12 +13,12 @@ import (
 )
 
 type Handler struct {
-	service     *txsvc.Service
+	service     txsvc.Service      // <- use interface, not *Service
 	asynqClient *asynq.Client
 	storage     storage.Storage
 }
 
-func NewHandler(svc *txsvc.Service, client *asynq.Client, st storage.Storage) *Handler {
+func NewHandler(svc txsvc.Service, client *asynq.Client, st storage.Storage) *Handler {
 	return &Handler{
 		service:     svc,
 		asynqClient: client,
@@ -156,8 +156,6 @@ func buildTransactionResponse(tx *e.Transaction) *m.TransactionRes {
 		ItemID:            tx.ItemID,
 		Title:             tx.Title,
 		Price:             tx.Price,
-		Quantity:          tx.Quantity,
-		TotalPrice:        tx.Price * tx.Quantity,
 		Date:              tx.Date,
 		Type:              tx.Type,
 		CategoryID:        tx.CategoryID,
@@ -204,7 +202,7 @@ func calculateTotal(transactions []m.TransactionRes) float64 {
 	}
 	total := 0.0
 	for _, tx := range transactions {
-		total += tx.TotalPrice
+		total += tx.Price
 	}
 	return total
 }

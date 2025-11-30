@@ -31,8 +31,6 @@ type TransactionRes struct {
 	ItemID            string    `json:"item_id"`
 	Title             string    `json:"title"`
 	Price             float64   `json:"price"`
-	Quantity          float64   `json:"quantity"`
-	TotalPrice        float64   `json:"total_price"`
 	Date              time.Time `json:"date"`
 	Type              string    `json:"type"`
 	CategoryID        *string   `json:"category_id"`

@@ -5,16 +5,16 @@ import (
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	sresp "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
-	svc "github.com/cp25sy5-modjot/main-service/internal/user/service"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
+	svc "github.com/cp25sy5-modjot/main-service/internal/user/service"
 	"github.com/gofiber/fiber/v2"
 )
 
 type Handler struct {
-	service *svc.Service
+	service svc.Service
 }
 
-func NewHandler(service *svc.Service) *Handler {
+func NewHandler(service svc.Service) *Handler {
 	return &Handler{service}
 }
 

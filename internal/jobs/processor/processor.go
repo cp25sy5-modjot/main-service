@@ -13,11 +13,11 @@ import (
 )
 
 type Processor struct {
-	txService *txsvc.Service
+	txService txsvc.Service
 	storage   storage.Storage
 }
 
-func NewProcessor(txService *txsvc.Service, st storage.Storage) *Processor {
+func NewProcessor(txService txsvc.Service, st storage.Storage) *Processor {
 	return &Processor{
 		txService: txService,
 		storage:   st,

@@ -10,7 +10,7 @@ import (
 )
 
 // MockLoginHandler handles mock login requests for testing purposes Only in non-production environments.
-func MockLoginHandler(c *fiber.Ctx, service *u.Service, config *config.Auth) error {
+func MockLoginHandler(c *fiber.Ctx, service u.Service, config *config.Auth) error {
 	userName := c.FormValue("userName")
 
 	if userName == "" {

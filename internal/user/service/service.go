@@ -10,16 +10,30 @@ import (
 	"github.com/google/uuid"
 )
 
-type Service struct {
+type Service interface {
+	Create(input *UserCreateInput) (*e.User, error)
+	CreateMockUser(input *UserCreateInput, uid string) (*e.User, error)
+
+	GetAll() ([]*e.User, error)
+	GetByID(user_id string) (*e.User, error)
+	GetByGoogleID(google_id string) (*e.User, error)
+	GetByFacebookID(facebook_id string) (*e.User, error)
+	GetByAppleID(apple_id string) (*e.User, error)
+
+	Update(userID string, input *UserUpdateInput) (*e.User, error)
+	Delete(user_id string) error
+}
+
+type service struct {
 	repo *userrepo.Repository
-	cat  *catsvc.Service
+	cat  catsvc.Service
 }
 
-func NewService(repo *userrepo.Repository, cat *catsvc.Service) *Service {
-	return &Service{repo, cat}
+func NewService(repo *userrepo.Repository, cat catsvc.Service) *service {
+	return &service{repo: repo, cat: cat}
 }
 
-func (s *Service) Create(input *UserCreateInput) (*e.User, error) {
+func (s *service) Create(input *UserCreateInput) (*e.User, error) {
 	UserID := uuid.New().String()
 	u := buildUserObjectToCreate(UserID, input)
 	userCreated, err := s.repo.Create(u)
@@ -34,7 +48,7 @@ func (s *Service) Create(input *UserCreateInput) (*e.User, error) {
 	return userCreated, nil
 }
 
-func (s *Service) CreateMockUser(input *UserCreateInput, uid string) (*e.User, error) {
+func (s *service) CreateMockUser(input *UserCreateInput, uid string) (*e.User, error) {
 	u := buildUserObjectToCreate(uid, input)
 	userCreated, err := s.repo.Create(u)
 	if err != nil {
@@ -48,27 +62,27 @@ func (s *Service) CreateMockUser(input *UserCreateInput, uid string) (*e.User, e
 	return userCreated, nil
 }
 
-func (s *Service) GetAll() ([]*e.User, error) {
+func (s *service) GetAll() ([]*e.User, error) {
 	return s.repo.FindAll()
 }
 
-func (s *Service) GetByID(user_id string) (*e.User, error) {
+func (s *service) GetByID(user_id string) (*e.User, error) {
 	return s.repo.FindByID(user_id)
 }
 
-func (s *Service) GetByGoogleID(google_id string) (*e.User, error) {
+func (s *service) GetByGoogleID(google_id string) (*e.User, error) {
 	return s.repo.FindByGoogleID(google_id)
 }
 
-func (s *Service) GetByFacebookID(facebook_id string) (*e.User, error) {
+func (s *service) GetByFacebookID(facebook_id string) (*e.User, error) {
 	return s.repo.FindByFacebookID(facebook_id)
 }
 
-func (s *Service) GetByAppleID(apple_id string) (*e.User, error) {
+func (s *service) GetByAppleID(apple_id string) (*e.User, error) {
 	return s.repo.FindByAppleID(apple_id)
 }
 
-func (s *Service) Update(userID string, input *UserUpdateInput) (*e.User, error) {
+func (s *service) Update(userID string, input *UserUpdateInput) (*e.User, error) {
 	exists, err := s.repo.FindByID(userID)
 	if err != nil {
 		return nil, err
@@ -89,7 +103,7 @@ func (s *Service) Update(userID string, input *UserUpdateInput) (*e.User, error)
 	return updatedUser, nil
 }
 
-func (s *Service) Delete(user_id string) error {
+func (s *service) Delete(user_id string) error {
 	return s.repo.Delete(user_id)
 }
 
@@ -109,7 +123,7 @@ func buildUserObjectToCreate(uid string, input *UserCreateInput) *e.User {
 	}
 }
 
-func createDefaultCategories(s *Service, uid string) error {
+func createDefaultCategories(s *service, uid string) error {
 	defaultCategories := []string{"อาหาร", "การเดินทาง", "ความบันเทิง", "ชอปปิ้ง", "อื่นๆ"}
 	for _, categoryName := range defaultCategories {
 		_, err := s.cat.Create(uid, &catsvc.CategoryCreateInput{

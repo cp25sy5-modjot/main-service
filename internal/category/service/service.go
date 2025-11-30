@@ -11,16 +11,26 @@ import (
 	"github.com/google/uuid"
 )
 
-type Service struct {
+type Service interface {
+	Create(userId string, input *CategoryCreateInput) (*e.Category, error)
+	GetAllByUserID(userID string) ([]e.Category, error)
+	GetAllByUserIDWithTransactions(userID string, filter *m.TransactionFilter) ([]e.Category, error)
+	GetByID(params *m.CategorySearchParams) (*e.Category, error)
+	GetByIDWithTransactions(params *m.CategorySearchParams, filter *m.TransactionFilter) (*e.Category, error)
+	Update(params *m.CategorySearchParams, input *CategoryUpdateInput) (*e.Category, error)
+	Delete(params *m.CategorySearchParams) error
+}
+
+type service struct {
 	categoryrepo *categoryrepo.Repository
 	txrepo       *txrepo.Repository
 }
 
-func NewService(categoryrepo *categoryrepo.Repository, txrepo *txrepo.Repository) *Service {
-	return &Service{categoryrepo, txrepo}
+func NewService(categoryrepo *categoryrepo.Repository, txrepo *txrepo.Repository) *service {
+	return &service{categoryrepo, txrepo}
 }
 
-func (s *Service) Create(userId string, input *CategoryCreateInput) (*e.Category, error) {
+func (s *service) Create(userId string, input *CategoryCreateInput) (*e.Category, error) {
 	cate := &e.Category{
 		CategoryID:   uuid.New().String(),
 		CategoryName: input.CategoryName,
@@ -32,7 +42,7 @@ func (s *Service) Create(userId string, input *CategoryCreateInput) (*e.Category
 	return saveNewCategory(s, cate)
 }
 
-func (s *Service) GetAllByUserID(userID string) ([]e.Category, error) {
+func (s *service) GetAllByUserID(userID string) ([]e.Category, error) {
 	categories, err := s.categoryrepo.FindAllByUserID(userID)
 	if err != nil {
 		return nil, err
@@ -40,19 +50,21 @@ func (s *Service) GetAllByUserID(userID string) ([]e.Category, error) {
 	return categories, nil
 }
 
-func (s *Service) GetAllByUserIDWithTransactions(userID string, filter *m.TransactionFilter) ([]e.Category, error) {
+func (s *service) GetAllByUserIDWithTransactions(userID string, filter *m.TransactionFilter) ([]e.Category, error) {
 	if filter.Date == nil {
 		now := time.Now()
 		filter.Date = &now
 	}
-	categories, err := s.categoryrepo.FindAllByUserIDWithTransactionsFiltered(userID, filter)
+	start, end := getMonthRange(filter)
+
+	categories, err := s.categoryrepo.FindAllByUserIDWithTransactionsFiltered(userID, start, end)
 	if err != nil {
 		return nil, err
 	}
 	return categories, nil
 }
 
-func (s *Service) GetByID(params *m.CategorySearchParams) (*e.Category, error) {
+func (s *service) GetByID(params *m.CategorySearchParams) (*e.Category, error) {
 	category, err := s.categoryrepo.FindByID(params)
 	if err != nil {
 		return nil, err
@@ -60,19 +72,21 @@ func (s *Service) GetByID(params *m.CategorySearchParams) (*e.Category, error) {
 	return category, nil
 }
 
-func (s *Service) GetByIDWithTransactions(params *m.CategorySearchParams, filter *m.TransactionFilter) (*e.Category, error) {
+func (s *service) GetByIDWithTransactions(params *m.CategorySearchParams, filter *m.TransactionFilter) (*e.Category, error) {
 	if filter.Date == nil {
 		now := time.Now()
 		filter.Date = &now
 	}
-	category, err := s.categoryrepo.FindByIDWithTransactionsFiltered(params, filter)
+	start, end := getMonthRange(filter)
+
+	category, err := s.categoryrepo.FindByIDWithTransactionsFiltered(params, start, end)
 	if err != nil {
 		return nil, err
 	}
 	return category, nil
 }
 
-func (s *Service) Update(params *m.CategorySearchParams, input *CategoryUpdateInput) (*e.Category, error) {
+func (s *service) Update(params *m.CategorySearchParams, input *CategoryUpdateInput) (*e.Category, error) {
 	exists, err := s.categoryrepo.FindByID(params)
 	if err != nil {
 		return nil, err
@@ -90,7 +104,7 @@ func (s *Service) Update(params *m.CategorySearchParams, input *CategoryUpdateIn
 	return updatedCat, nil
 }
 
-func (s *Service) Delete(params *m.CategorySearchParams) error {
+func (s *service) Delete(params *m.CategorySearchParams) error {
 	_, err := s.categoryrepo.FindByID(params)
 	if err != nil {
 		return err
@@ -106,7 +120,7 @@ func applyUpdates(cat *e.Category, in *CategoryUpdateInput) {
 	cat.ColorCode = in.ColorCode
 }
 
-func saveNewCategory(s *Service, cat *e.Category) (*e.Category, error) {
+func saveNewCategory(s *service, cat *e.Category) (*e.Category, error) {
 	newCat, err := s.categoryrepo.Create(cat)
 	if err != nil {
 		return nil, err
@@ -120,4 +134,13 @@ func saveNewCategory(s *Service, cat *e.Category) (*e.Category, error) {
 		return nil, err
 	}
 	return catWithDetails, nil
+}
+
+func getMonthRange(filter *m.TransactionFilter) (time.Time, time.Time) {
+	t := filter.Date
+	startOfMonth := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
+
+	endOfMonth := startOfMonth.AddDate(0, 1, 0)
+
+	return startOfMonth, endOfMonth
 }
