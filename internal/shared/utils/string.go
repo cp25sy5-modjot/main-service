@@ -28,8 +28,9 @@ func GenerateRandomColor() string {
 func ConvertStringToTime(s string) *time.Time {
 	t, err := time.Parse(time.DateOnly, s)
 	if err != nil {
-		log.Printf("Failed to parse date: %v", err)
-		return nil
+		log.Printf("Failed to parse date: %v will use current date", err)
+		now := time.Now()
+		return &now
 	}
 	return &t
 }

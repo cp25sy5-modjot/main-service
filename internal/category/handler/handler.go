@@ -56,9 +56,12 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
 	if isIncludeTransactions {
-		categories, err := h.service.GetAllByUserIDWithTransactions(userID)
+		date := c.Query("date")
+		filter := &m.TransactionFilter{
+			Date: utils.ConvertStringToTime(date),
+		}
+		categories, err := h.service.GetAllByUserIDWithTransactions(userID, filter)
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "failed to retrieve categories with transactions")
 		}
@@ -91,7 +94,11 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 	}
 
 	if isIncludeTransactions {
-		category, err := h.service.GetByIDWithTransactions(params)
+		date := c.Query("date")
+		filter := &m.TransactionFilter{
+			Date: utils.ConvertStringToTime(date),
+		}
+		category, err := h.service.GetByIDWithTransactions(params, filter)
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
