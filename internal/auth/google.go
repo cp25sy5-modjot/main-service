@@ -4,14 +4,13 @@ import (
 	"context"
 	"log"
 
-	"github.com/cp25sy5-modjot/main-service/internal/config"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
 
-	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
-	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
+	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
 	u "github.com/cp25sy5-modjot/main-service/internal/user/service"
-	"github.com/cp25sy5-modjot/main-service/internal/utils"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/api/idtoken"
@@ -62,7 +61,7 @@ func getUserInfoFromPayload(payload *idtoken.Payload, service *u.Service) *jwt.U
 		if name == "" {
 			name = "New User"
 		}
-		user, err = service.Create(&m.UserInsertReq{
+		user, err = service.Create(&u.UserCreateInput{
 			Name: name,
 			UserBinding: e.UserBinding{
 				GoogleID: googleID,

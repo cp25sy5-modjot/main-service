@@ -1,13 +1,15 @@
 package database
 
 import (
+	"time"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
 	"sync"
 
-	"github.com/cp25sy5-modjot/main-service/internal/config"
-	"github.com/cp25sy5-modjot/main-service/internal/utils"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 )
 
 type postgresDatabase struct {
@@ -26,7 +28,12 @@ func NewPostgresDatabase(conf *config.Config) Database {
 			panic("failed to build database URL")
 		}
 
-		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+			NowFunc: func() time.Time {
+				return time.Now().UTC()
+			},
+		})
+		
 		if err != nil {
 			panic("failed to connect database")
 		}

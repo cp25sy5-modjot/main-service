@@ -1,11 +1,10 @@
 package auth
 
 import (
-	"github.com/cp25sy5-modjot/main-service/internal/config"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
-	r "github.com/cp25sy5-modjot/main-service/internal/response/success"
+	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
 
-	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	u "github.com/cp25sy5-modjot/main-service/internal/user/service"
 	"github.com/gofiber/fiber/v2"
 )
@@ -18,11 +17,11 @@ func MockLoginHandler(c *fiber.Ctx, service *u.Service, config *config.Auth) err
 		return fiber.NewError(fiber.StatusBadRequest, "userName is required")
 	}
 
-	user, err := service.GetByID(userName + "@mock.com")
+	user, err := service.GetByID(userName)
 	if err != nil {
-		user, err = service.Create(&m.UserInsertReq{
+		user, err = service.CreateMockUser(&u.UserCreateInput{
 			Name: userName,
-		})
+		}, userName)
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "Failed to create user")
 		}

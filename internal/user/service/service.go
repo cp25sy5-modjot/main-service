@@ -1,26 +1,27 @@
-package user
+package usersvc
 
 import (
-	catSvc "github.com/cp25sy5-modjot/main-service/internal/category/service"
+	"time"
+
+	catsvc "github.com/cp25sy5-modjot/main-service/internal/category/service"
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
-	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
-	userRepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
-	"github.com/cp25sy5-modjot/main-service/internal/utils"
+	userrepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	"github.com/google/uuid"
 )
 
 type Service struct {
-	repo *userRepo.Repository
-	cat  *catSvc.Service
+	repo *userrepo.Repository
+	cat  *catsvc.Service
 }
 
-func NewService(repo *userRepo.Repository, cat *catSvc.Service) *Service {
+func NewService(repo *userrepo.Repository, cat *catsvc.Service) *Service {
 	return &Service{repo, cat}
 }
 
-func (s *Service) Create(user *m.UserInsertReq) (*e.User, error) {
+func (s *Service) Create(input *UserCreateInput) (*e.User, error) {
 	UserID := uuid.New().String()
-	u := buildUserObjectToCreate(UserID, user)
+	u := buildUserObjectToCreate(UserID, input)
 	userCreated, err := s.repo.Create(u)
 	if err != nil {
 		return nil, err
@@ -33,8 +34,8 @@ func (s *Service) Create(user *m.UserInsertReq) (*e.User, error) {
 	return userCreated, nil
 }
 
-func (s *Service) CreateMockUser(user *m.UserInsertReq, uid string) (*e.User, error) {
-	u := buildUserObjectToCreate(uid, user)
+func (s *Service) CreateMockUser(input *UserCreateInput, uid string) (*e.User, error) {
+	u := buildUserObjectToCreate(uid, input)
 	userCreated, err := s.repo.Create(u)
 	if err != nil {
 		return nil, err
@@ -49,10 +50,6 @@ func (s *Service) CreateMockUser(user *m.UserInsertReq, uid string) (*e.User, er
 
 func (s *Service) GetAll() ([]*e.User, error) {
 	return s.repo.FindAll()
-}
-
-func (s *Service) GetByEmail(email string) (*e.User, error) {
-	return s.repo.FindByEmail(email)
 }
 
 func (s *Service) GetByID(user_id string) (*e.User, error) {
@@ -71,20 +68,58 @@ func (s *Service) GetByAppleID(apple_id string) (*e.User, error) {
 	return s.repo.FindByAppleID(apple_id)
 }
 
-func (s *Service) Update(userID string, req *m.UserUpdateReq) (*e.User, error) {
+func (s *Service) Update(userID string, input *UserUpdateInput) (*e.User, error) {
 	exists, err := s.repo.FindByID(userID)
 	if err != nil {
 		return nil, err
 	}
-	if err := utils.MapStructs(req, exists); err != nil {
+
+	if err := utils.MapStructs(input, exists); err != nil {
 		return nil, err
 	}
+
 	if exists.Status == e.StatusPreActive {
 		exists.Status = e.StatusActive
 	}
-	return exists, s.repo.Update(exists)
+
+	updatedUser, err := s.repo.Update(exists)
+	if err != nil {
+		return nil, err
+	}
+	return updatedUser, nil
 }
 
 func (s *Service) Delete(user_id string) error {
 	return s.repo.Delete(user_id)
+}
+
+// utils functions for service
+func buildUserObjectToCreate(uid string, input *UserCreateInput) *e.User {
+	return &e.User{
+		UserID: uid,
+		UserBinding: e.UserBinding{
+			GoogleID:   input.UserBinding.GoogleID,
+			FacebookID: input.UserBinding.FacebookID,
+			AppleID:    input.UserBinding.AppleID,
+		},
+		Name:      input.Name,
+		DOB:       input.DOB,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+}
+
+func createDefaultCategories(s *Service, uid string) error {
+	defaultCategories := []string{"อาหาร", "การเดินทาง", "ความบันเทิง", "ชอปปิ้ง", "อื่นๆ"}
+	for _, categoryName := range defaultCategories {
+		_, err := s.cat.Create(uid, &catsvc.CategoryCreateInput{
+			CategoryName: categoryName,
+			Budget:       1000.0,
+			ColorCode:    utils.GenerateRandomColor(),
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
