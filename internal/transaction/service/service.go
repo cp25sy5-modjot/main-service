@@ -161,7 +161,6 @@ func (s *Service) Delete(params *m.TransactionSearchParams) error {
 }
 
 // utils functions for service
-
 func GetCategoryNames(categories []e.Category) ([]string, error) {
 	//parse categories to string slice
 	var categoryNames []string

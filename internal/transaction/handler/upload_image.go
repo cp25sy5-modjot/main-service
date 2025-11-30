@@ -15,9 +15,6 @@ import (
 	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
 )
 
-// getImageData is assumed to be your existing helper
-// func getImageData(c *fiber.Ctx) ([]byte, error) { ... }
-
 func (h *Handler) UploadImage(c *fiber.Ctx) error {
 	imageData, err := getImageData(c)
 	if err != nil {
@@ -70,4 +67,30 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 		"trace_id": traceID,
 		"path":     path,
 	}, "Image uploaded. Transaction will be processed asynchronously.")
+}
+
+func getImageData(c *fiber.Ctx) ([]byte, error) {
+	image, err := c.FormFile("image")
+	if err != nil {
+		return nil, fiber.NewError(fiber.StatusBadRequest, "Failed to upload image")
+	}
+
+	contentType := image.Header.Get("Content-Type")
+	if !strings.HasPrefix(contentType, "image/") {
+		return nil, fiber.NewError(fiber.StatusBadRequest, "Uploaded file is not a valid image")
+	}
+
+	file, err := image.Open()
+	if err != nil {
+		return nil, fiber.NewError(fiber.StatusInternalServerError, "Failed to process uploaded image")
+	}
+	defer file.Close()
+
+	imageData := make([]byte, image.Size)
+	_, err = file.Read(imageData)
+	if err != nil {
+		return nil, fiber.NewError(fiber.StatusInternalServerError, "Failed to read uploaded image")
+	}
+
+	return imageData, nil
 }

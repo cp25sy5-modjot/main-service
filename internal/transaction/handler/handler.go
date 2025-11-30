@@ -1,8 +1,6 @@
 package transactionhandler
 
 import (
-	"strings"
-
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
@@ -48,26 +46,6 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	}
 	return sresp.Created(c, buildTransactionResponse(resp), "Transaction created successfully")
 }
-
-// POST /transactions/upload
-// func (h *Handler) UploadImage(c *fiber.Ctx) error {
-// 	imageData, err := getImageData(c)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	userID, err := jwt.GetUserIDFromClaims(c)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	resp, err := h.service.ProcessUploadedFile(imageData, userID)
-// 	if err != nil {
-// 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to process the uploaded file")
-// 	}
-
-// 	return sresp.Created(c, buildTransactionResponse(resp), "File uploaded and processed successfully")
-// }
 
 // GET /transactions
 func (h *Handler) GetAll(c *fiber.Ctx) error {
@@ -218,32 +196,6 @@ func parseTransactionUpdateReqToServiceInput(req *m.TransactionUpdateReq) *txsvc
 		Date:       req.Date,
 		CategoryID: req.CategoryID,
 	}
-}
-
-func getImageData(c *fiber.Ctx) ([]byte, error) {
-	image, err := c.FormFile("image")
-	if err != nil {
-		return nil, fiber.NewError(fiber.StatusBadRequest, "Failed to upload image")
-	}
-
-	contentType := image.Header.Get("Content-Type")
-	if !strings.HasPrefix(contentType, "image/") {
-		return nil, fiber.NewError(fiber.StatusBadRequest, "Uploaded file is not a valid image")
-	}
-
-	file, err := image.Open()
-	if err != nil {
-		return nil, fiber.NewError(fiber.StatusInternalServerError, "Failed to process uploaded image")
-	}
-	defer file.Close()
-
-	imageData := make([]byte, image.Size)
-	_, err = file.Read(imageData)
-	if err != nil {
-		return nil, fiber.NewError(fiber.StatusInternalServerError, "Failed to read uploaded image")
-	}
-
-	return imageData, nil
 }
 
 func calculateTotal(transactions []m.TransactionRes) float64 {
