@@ -40,7 +40,6 @@ type TransactionRes struct {
 
 type TransactionFilter struct {
 	Date          *time.Time `json:"date"`
-	PreviousMonth bool       
 }
 
 type TransactionCompareMonthResponse struct {

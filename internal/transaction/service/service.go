@@ -95,9 +95,8 @@ func (s *service) GetAllByUserIDWithFilter(userID string, filter *m.TransactionF
 		now := time.Now()
 		filter.Date = &now
 	}
-	filter.PreviousMonth = false
-	startOfMonth, endOfMonth := getMonthRange(filter)
-	transactions, err := s.repo.FindAllByUserIDAndFiltered(userID, startOfMonth, endOfMonth)
+	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
+	transactions, err := s.repo.FindAllByUserIDAndFiltered(userID, start, end)
 
 	if err != nil {
 		return nil, err
@@ -117,16 +116,15 @@ type MonthlyResult struct {
 
 func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(userID string, filter *m.TransactionFilter) (*MonthlyResult, error) {
 	// --- Current Month ---
-	filter.PreviousMonth = false
-	startOfMonth, endOfMonth := getMonthRange(filter)
-	current, err := s.repo.FindAllByUserIDAndFiltered(userID, startOfMonth, endOfMonth)
+	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
+	current, err := s.repo.FindAllByUserIDAndFiltered(userID, start, end)
 	if err != nil {
 		return nil, err
 	}
 
 	// --- Previous Month ---
-	filter.PreviousMonth = true
-	previousStart, previousEnd := getMonthRange(filter)
+	date := filter.Date.AddDate(0, -1, 0) // move filter date to previous month
+	previousStart, previousEnd := utils.GetStartAndEndOfMonth(date)
 	previous, err := s.repo.FindAllByUserIDAndFiltered(userID, previousStart, previousEnd)
 	if err != nil {
 		return nil, err
@@ -288,21 +286,28 @@ func saveNewTransaction(s *service, tx *e.Transaction) (*e.Transaction, error) {
 func getMonthRange(filter *m.TransactionFilter) (time.Time, time.Time) {
 
 	t := filter.Date
+	loc := t.Location()
+	// First day of current month at 00:00
+	firstOfCurrent := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, loc)
 
-	// Start of current month
-	startOfMonth := time.Date(t.Year(), t.Month(), 1, 7, 0, 0, 0, t.Location())
+	// Last day of previous month = firstOfCurrent - 1 day
+	lastOfPrevious := firstOfCurrent.AddDate(0, 0, -1)
 
-	var startRange, endRange time.Time
+	// Last day of current month = first of next month - 1 day
+	firstOfNext := firstOfCurrent.AddDate(0, 1, 0)
+	lastOfCurrent := firstOfNext.AddDate(0, 0, -1)
 
-	if filter.PreviousMonth {
-		// Previous month
-		startRange = startOfMonth.AddDate(0, -1, 0)
-		endRange = startOfMonth
-	} else {
-		// Current month
-		startRange = startOfMonth
-		endRange = startOfMonth.AddDate(0, 1, 0)
-	}
+	// Set final times to 17:00:00
+	startRange := time.Date(
+		lastOfPrevious.Year(), lastOfPrevious.Month(), lastOfPrevious.Day(),
+		17, 0, 0, 0,
+		loc,
+	)
 
+	endRange := time.Date(
+		lastOfCurrent.Year(), lastOfCurrent.Month(), lastOfCurrent.Day(),
+		17, 0, 0, 0,
+		loc,
+	)
 	return startRange, endRange
 }

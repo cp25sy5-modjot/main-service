@@ -5,6 +5,7 @@ import (
 
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	overviewrepo "github.com/cp25sy5-modjot/main-service/internal/overview/repository"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 )
 
 // Service defines behavior for overview use case
@@ -23,11 +24,9 @@ func NewService(repo *overviewrepo.Repository) Service {
 	return &service{repo: repo}
 }
 
-func (s *service) GetOverview(userID string, baseDate time.Time) (*m.OverviewResponse, error) {
+func (s *service) GetOverview(userID string, t time.Time) (*m.OverviewResponse, error) {
 	// Normalize baseDate just to be safe; use its location for month range
-	startOfMonth := time.Date(baseDate.Year(), baseDate.Month(), 1, 7, 0, 0, 0, baseDate.Location())
-	endOfMonth := startOfMonth.AddDate(0, 1, 0) // first day of next month (exclusive)
-
+	start, end := utils.GetStartAndEndOfMonth(t)
 	// 1) last 3 transactions (global, not month-limited)
 	lastTx, err := s.repo.GetLastTransactions(userID, 3)
 	if err != nil {
@@ -35,7 +34,7 @@ func (s *service) GetOverview(userID string, baseDate time.Time) (*m.OverviewRes
 	}
 
 	// 2) top 3 categories by spending in that month
-	topCats, err := s.repo.GetTopCategoriesBySpending(userID, startOfMonth, endOfMonth, 3)
+	topCats, err := s.repo.GetTopCategoriesBySpending(userID, start, end, 3)
 	if err != nil {
 		return nil, err
 	}

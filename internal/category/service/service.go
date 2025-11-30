@@ -55,7 +55,7 @@ func (s *service) GetAllByUserIDWithTransactions(userID string, filter *m.Transa
 		now := time.Now()
 		filter.Date = &now
 	}
-	start, end := getMonthRange(filter)
+	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
 
 	categories, err := s.categoryrepo.FindAllByUserIDWithTransactionsFiltered(userID, start, end)
 	if err != nil {
@@ -77,7 +77,7 @@ func (s *service) GetByIDWithTransactions(params *m.CategorySearchParams, filter
 		now := time.Now()
 		filter.Date = &now
 	}
-	start, end := getMonthRange(filter)
+	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
 
 	category, err := s.categoryrepo.FindByIDWithTransactionsFiltered(params, start, end)
 	if err != nil {
@@ -134,13 +134,4 @@ func saveNewCategory(s *service, cat *e.Category) (*e.Category, error) {
 		return nil, err
 	}
 	return catWithDetails, nil
-}
-
-func getMonthRange(filter *m.TransactionFilter) (time.Time, time.Time) {
-	t := *filter.Date
-	startOfMonth := time.Date(t.Year(), t.Month(), 1, 7, 0, 0, 0, t.Location())
-
-	endOfMonth := startOfMonth.AddDate(0, 1, 0)
-
-	return startOfMonth, endOfMonth
 }
