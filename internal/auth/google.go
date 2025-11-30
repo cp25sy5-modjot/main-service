@@ -16,7 +16,7 @@ import (
 	"google.golang.org/api/idtoken"
 )
 
-func HandleGoogleTokenExchange(c *fiber.Ctx, service *u.Service, config *config.Config) error {
+func HandleGoogleTokenExchange(c *fiber.Ctx, service u.Service, config *config.Config) error {
 	var req GoogleTokenRequest
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
@@ -49,7 +49,7 @@ func validateIDToken(idToken string, config *config.Google) (*idtoken.Payload, e
 	return payload, nil
 }
 
-func getUserInfoFromPayload(payload *idtoken.Payload, service *u.Service) *jwt.UserInfo {
+func getUserInfoFromPayload(payload *idtoken.Payload, service u.Service) *jwt.UserInfo {
 	googleID := payload.Subject
 
 	user, err := service.GetByGoogleID(googleID)

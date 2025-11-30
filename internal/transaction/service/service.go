@@ -15,17 +15,31 @@ import (
 	"github.com/google/uuid"
 )
 
-type Service struct {
+type Service interface {
+	Create(userID string, input *TransactionCreateInput) (*e.Transaction, error)
+	ProcessUploadedFile(fileData []byte, userID string) (*e.Transaction, error)
+
+	GetAllByUserID(userID string) ([]e.Transaction, error)
+	GetAllByUserIDWithFilter(userID string, filter *m.TransactionFilter) ([]e.Transaction, error)
+	GetAllComparePreviousMonthAndByUserIDWithFilter(userID string, filter *m.TransactionFilter) (*MonthlyResult, error)
+
+	GetByID(params *m.TransactionSearchParams) (*e.Transaction, error)
+	Update(params *m.TransactionSearchParams, input *TransactionUpdateInput) (*e.Transaction, error)
+	Delete(params *m.TransactionSearchParams) error
+}
+
+// concrete implementation
+type service struct {
 	repo     *txrepo.Repository
 	catrepo  *catrepo.Repository
 	aiClient pb.AiWrapperServiceClient
 }
 
-func NewService(repo *txrepo.Repository, catrepo *catrepo.Repository, aiClient pb.AiWrapperServiceClient) *Service {
-	return &Service{repo: repo, catrepo: catrepo, aiClient: aiClient}
+func NewService(repo *txrepo.Repository, catrepo *catrepo.Repository, aiClient pb.AiWrapperServiceClient) *service {
+	return &service{repo: repo, catrepo: catrepo, aiClient: aiClient}
 }
 
-func (s *Service) Create(userID string, input *TransactionCreateInput) (*e.Transaction, error) {
+func (s *service) Create(userID string, input *TransactionCreateInput) (*e.Transaction, error) {
 	txId := uuid.New().String()
 
 	_, err := s.catrepo.FindByID(&m.CategorySearchParams{
@@ -44,7 +58,7 @@ func (s *Service) Create(userID string, input *TransactionCreateInput) (*e.Trans
 	return txWithCat, nil
 }
 
-func (s *Service) ProcessUploadedFile(fileData []byte, userID string) (*e.Transaction, error) {
+func (s *service) ProcessUploadedFile(fileData []byte, userID string) (*e.Transaction, error) {
 	if s.aiClient == nil {
 		return nil, errors.New("AI client not configured (this method should only be used in worker process)")
 	}
@@ -67,7 +81,7 @@ func (s *Service) ProcessUploadedFile(fileData []byte, userID string) (*e.Transa
 	return processTransaction(resp, categories, userID, s)
 }
 
-func (s *Service) GetAllByUserID(userID string) ([]e.Transaction, error) {
+func (s *service) GetAllByUserID(userID string) ([]e.Transaction, error) {
 	transactions, err := s.repo.FindAllByUserID(userID)
 	if err != nil {
 		return nil, err
@@ -76,13 +90,13 @@ func (s *Service) GetAllByUserID(userID string) ([]e.Transaction, error) {
 	return transactions, nil
 }
 
-func (s *Service) GetAllByUserIDWithFilter(userID string, filter *m.TransactionFilter) ([]e.Transaction, error) {
+func (s *service) GetAllByUserIDWithFilter(userID string, filter *m.TransactionFilter) ([]e.Transaction, error) {
 	if filter.Date == nil {
 		now := time.Now()
 		filter.Date = &now
 	}
-	filter.PreviousMonth = false
-	transactions, err := s.repo.FindAllByUserIDAndFiltered(userID, filter)
+	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
+	transactions, err := s.repo.FindAllByUserIDAndFiltered(userID, start, end)
 
 	if err != nil {
 		return nil, err
@@ -100,17 +114,18 @@ type MonthlyResult struct {
 	PreviousMonth []e.Transaction `json:"previous_month"`
 }
 
-func (s *Service) GetAllComparePreviousMonthAndByUserIDWithFilter(userID string, filter *m.TransactionFilter) (*MonthlyResult, error) {
+func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(userID string, filter *m.TransactionFilter) (*MonthlyResult, error) {
 	// --- Current Month ---
-	filter.PreviousMonth = false
-	current, err := s.repo.FindAllByUserIDAndFiltered(userID, filter)
+	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
+	current, err := s.repo.FindAllByUserIDAndFiltered(userID, start, end)
 	if err != nil {
 		return nil, err
 	}
 
 	// --- Previous Month ---
-	filter.PreviousMonth = true
-	previous, err := s.repo.FindAllByUserIDAndFiltered(userID, filter)
+	date := filter.Date.AddDate(0, -1, 0) // move filter date to previous month
+	previousStart, previousEnd := utils.GetStartAndEndOfMonth(date)
+	previous, err := s.repo.FindAllByUserIDAndFiltered(userID, previousStart, previousEnd)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +136,7 @@ func (s *Service) GetAllComparePreviousMonthAndByUserIDWithFilter(userID string,
 	}, nil
 }
 
-func (s *Service) GetByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
+func (s *service) GetByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
 	tx, err := s.repo.FindByID(params)
 	if err != nil {
 		return nil, err
@@ -129,7 +144,7 @@ func (s *Service) GetByID(params *m.TransactionSearchParams) (*e.Transaction, er
 	return tx, nil
 }
 
-func (s *Service) Update(params *m.TransactionSearchParams, input *TransactionUpdateInput) (*e.Transaction, error) {
+func (s *service) Update(params *m.TransactionSearchParams, input *TransactionUpdateInput) (*e.Transaction, error) {
 	exists, err := s.repo.FindByID(params)
 	if err != nil {
 		return nil, err
@@ -147,7 +162,7 @@ func (s *Service) Update(params *m.TransactionSearchParams, input *TransactionUp
 	return updatedTx, nil
 }
 
-func (s *Service) Delete(params *m.TransactionSearchParams) error {
+func (s *service) Delete(params *m.TransactionSearchParams) error {
 	_, err := s.repo.FindByID(params)
 	if err != nil {
 		return err
@@ -225,7 +240,7 @@ func callAIServiceToBuildTransaction(fileData []byte, categories []e.Category, a
 	return tResponse, nil
 }
 
-func processTransaction(tResponse *pb.TransactionResponse, categories []e.Category, userID string, s *Service) (*e.Transaction, error) {
+func processTransaction(tResponse *pb.TransactionResponse, categories []e.Category, userID string, s *service) (*e.Transaction, error) {
 	match := matchCategoryFromName(categories, tResponse.Category)
 	if match == nil {
 		return nil, errors.New("category does not exist")
@@ -246,7 +261,12 @@ func processTransaction(tResponse *pb.TransactionResponse, categories []e.Catego
 	return txWithCat, nil
 }
 
-func saveNewTransaction(s *Service, tx *e.Transaction) (*e.Transaction, error) {
+func saveNewTransaction(s *service, tx *e.Transaction) (*e.Transaction, error) {
+	if tx.Quantity != 1 {
+		//quantity will be remove in future, so we multiply price with quantity and set quantity to 1
+		tx.Price *= float64(tx.Quantity)
+		tx.Quantity = 1
+	}
 	newTx, err := s.repo.Create(tx)
 	if err != nil {
 		return nil, err
@@ -261,4 +281,33 @@ func saveNewTransaction(s *Service, tx *e.Transaction) (*e.Transaction, error) {
 		return nil, err
 	}
 	return txWithCat, nil
+}
+
+func getMonthRange(filter *m.TransactionFilter) (time.Time, time.Time) {
+
+	t := filter.Date
+	loc := t.Location()
+	// First day of current month at 00:00
+	firstOfCurrent := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, loc)
+
+	// Last day of previous month = firstOfCurrent - 1 day
+	lastOfPrevious := firstOfCurrent.AddDate(0, 0, -1)
+
+	// Last day of current month = first of next month - 1 day
+	firstOfNext := firstOfCurrent.AddDate(0, 1, 0)
+	lastOfCurrent := firstOfNext.AddDate(0, 0, -1)
+
+	// Set final times to 17:00:00
+	startRange := time.Date(
+		lastOfPrevious.Year(), lastOfPrevious.Month(), lastOfPrevious.Day(),
+		17, 0, 0, 0,
+		loc,
+	)
+
+	endRange := time.Date(
+		lastOfCurrent.Year(), lastOfCurrent.Month(), lastOfCurrent.Day(),
+		17, 0, 0, 0,
+		loc,
+	)
+	return startRange, endRange
 }

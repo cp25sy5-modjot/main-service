@@ -43,35 +43,17 @@ func (r *Repository) FindAllByUserID(userID string) ([]e.Transaction, error) {
 	return transactions, err
 }
 
-func (r *Repository) FindAllByUserIDAndFiltered(userID string, filter *m.TransactionFilter) ([]e.Transaction, error) {
-    var transactions []e.Transaction
+func (r *Repository) FindAllByUserIDAndFiltered(userID string, start, end time.Time) ([]e.Transaction, error) {
+	var transactions []e.Transaction
 
-    t := filter.Date
+	err := r.db.
+		Preload("Category").
+		Where("user_id = ? AND date >= ? AND date < ?", userID, start, end).
+		Order("date DESC").
+		Find(&transactions).Error
 
-    // Start of current month
-    startOfMonth := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
-
-    var startRange, endRange time.Time
-
-    if filter.PreviousMonth {
-        // Previous month
-        startRange = startOfMonth.AddDate(0, -1, 0)
-        endRange   = startOfMonth
-    } else {
-        // Current month
-        startRange = startOfMonth
-        endRange   = startOfMonth.AddDate(0, 1, 0)
-    }
-
-    err := r.db.
-        Preload("Category").
-        Where("user_id = ? AND date >= ? AND date < ?", userID, startRange, endRange).
-        Order("date DESC").
-        Find(&transactions).Error
-
-    return transactions, err
+	return transactions, err
 }
-
 
 func (r *Repository) FindByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
 	var transaction e.Transaction
