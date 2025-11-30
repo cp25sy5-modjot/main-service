@@ -101,11 +101,6 @@ type MonthlyResult struct {
 }
 
 func (s *Service) GetAllComparePreviousMonthAndByUserIDWithFilter(userID string, filter *m.TransactionFilter) (*MonthlyResult, error) {
-	if filter.Date == nil {
-		now := time.Now()
-		filter.Date = &now
-	}
-
 	// --- Current Month ---
 	filter.PreviousMonth = false
 	current, err := s.repo.FindAllByUserIDAndFiltered(userID, filter)

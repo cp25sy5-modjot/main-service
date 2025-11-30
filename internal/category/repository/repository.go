@@ -1,6 +1,8 @@
 package categoryrepo
 
 import (
+	"time"
+
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"gorm.io/gorm"
@@ -40,24 +42,41 @@ func (r *Repository) FindByID(params *m.CategorySearchParams) (*e.Category, erro
 	return &category, err
 }
 
-func (r *Repository) FindAllByUserIDWithTransactions(userID string) ([]e.Category, error) {
+func (r *Repository) FindAllByUserIDWithTransactionsFiltered(
+	userID string,
+	filter *m.TransactionFilter,
+) ([]e.Category, error) {
 	var categories []e.Category
+
+	startOfMonth, endOfMonth := getMonthRange(filter.Date)
+
 	err := r.db.
-		Preload("Transactions").
+		// preload เฉพาะ transactions ที่อยู่ในช่วงวันที่ที่ต้องการ
+		Preload("Transactions", "date >= ? AND date < ?", startOfMonth, endOfMonth).
 		Where("user_id = ?", userID).
 		Order("created_at ASC").
 		Find(&categories).Error
+
 	return categories, err
 }
 
-func (r *Repository) FindByIDWithTransactions(params *m.CategorySearchParams) (*e.Category, error) {
+func (r *Repository) FindByIDWithTransactionsFiltered(
+	params *m.CategorySearchParams,
+	filter *m.TransactionFilter,
+) (*e.Category, error) {
 	var category e.Category
+
+	startOfMonth, endOfMonth := getMonthRange(filter.Date)
+
 	err := r.db.
-		Preload("Transactions").
-		First(&category,
+		Preload("Transactions", "date >= ? AND date < ?", startOfMonth, endOfMonth).
+		First(
+			&category,
 			"category_id = ? AND user_id = ?",
 			params.CategoryID,
-			params.UserID).Error
+			params.UserID,
+		).Error
+
 	return &category, err
 }
 
@@ -70,4 +89,12 @@ func (r *Repository) Update(category *e.Category) (*e.Category, error) {
 
 func (r *Repository) Delete(params *m.CategorySearchParams) error {
 	return r.db.Delete(&e.Category{}, "category_id = ? AND user_id = ?", params.CategoryID, params.UserID).Error
+}
+
+func getMonthRange(t *time.Time) (time.Time, time.Time) {
+	startOfMonth := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
+
+	endOfMonth := startOfMonth.AddDate(0, 1, 0)
+
+	return startOfMonth, endOfMonth
 }

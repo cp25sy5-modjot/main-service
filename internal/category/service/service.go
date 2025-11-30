@@ -6,8 +6,8 @@ import (
 	categoryrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
-	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
 	utils "github.com/cp25sy5-modjot/main-service/internal/shared/utils"
+	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
 	"github.com/google/uuid"
 )
 
@@ -40,8 +40,12 @@ func (s *Service) GetAllByUserID(userID string) ([]e.Category, error) {
 	return categories, nil
 }
 
-func (s *Service) GetAllByUserIDWithTransactions(userID string) ([]e.Category, error) {
-	categories, err := s.categoryrepo.FindAllByUserIDWithTransactions(userID)
+func (s *Service) GetAllByUserIDWithTransactions(userID string, filter *m.TransactionFilter) ([]e.Category, error) {
+	if filter.Date == nil {
+		now := time.Now()
+		filter.Date = &now
+	}
+	categories, err := s.categoryrepo.FindAllByUserIDWithTransactionsFiltered(userID, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +60,12 @@ func (s *Service) GetByID(params *m.CategorySearchParams) (*e.Category, error) {
 	return category, nil
 }
 
-func (s *Service) GetByIDWithTransactions(params *m.CategorySearchParams) (*e.Category, error) {
-	category, err := s.categoryrepo.FindByIDWithTransactions(params)
+func (s *Service) GetByIDWithTransactions(params *m.CategorySearchParams, filter *m.TransactionFilter) (*e.Category, error) {
+	if filter.Date == nil {
+		now := time.Now()
+		filter.Date = &now
+	}
+	category, err := s.categoryrepo.FindByIDWithTransactionsFiltered(params, filter)
 	if err != nil {
 		return nil, err
 	}
