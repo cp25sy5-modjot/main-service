@@ -170,8 +170,12 @@ func GetCategoryNames(categories []e.Category) ([]string, error) {
 	return categoryNames, nil
 }
 
+func isDefaultDate(t time.Time) bool {
+	return t.Year() == 1 && t.Month() == time.January && t.Day() == 1
+}
+
 func buildTransactionObjectToCreate(txId, userID, txType string, tx *TransactionCreateInput) *e.Transaction {
-	if tx.Date.IsZero() {
+	if isDefaultDate(tx.Date) {
 		tx.Date = time.Now()
 	}
 	return &e.Transaction{
