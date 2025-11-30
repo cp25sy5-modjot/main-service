@@ -10,6 +10,9 @@ import (
 	catsvc "github.com/cp25sy5-modjot/main-service/internal/category/service"
 
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
+	overviewhandler "github.com/cp25sy5-modjot/main-service/internal/overview/handler"
+	overviewrepo "github.com/cp25sy5-modjot/main-service/internal/overview/repository"
+	overviewsvc "github.com/cp25sy5-modjot/main-service/internal/overview/service"
 	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
 	txhandler "github.com/cp25sy5-modjot/main-service/internal/transaction/handler"
 	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
@@ -17,16 +20,16 @@ import (
 	userhandler "github.com/cp25sy5-modjot/main-service/internal/user/handler"
 	userepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
 	usersvc "github.com/cp25sy5-modjot/main-service/internal/user/service"
-
 	pb "github.com/cp25sy5-modjot/proto/gen/ai/v1"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type Services struct {
-	UserService        *usersvc.Service
-	TransactionService *txsvc.Service
-	CategoryService    *catsvc.Service
+	UserService        usersvc.Service
+	TransactionService txsvc.Service
+	CategoryService    catsvc.Service
+	OverviewService    overviewsvc.Service
 }
 
 func RegisterRoutes(
@@ -38,22 +41,26 @@ func RegisterRoutes(
 	initializeTransactionRoutes(s, services)
 	initializeAuthRoutes(s, services)
 	initializeCategoryRoutes(s, services)
+	initializeOverviewRoutes(s, services)
 }
 func initializeServices(s *fiberServer) *Services {
 
 	// Category Service
 	categoryRepo := catrepo.NewRepository(s.db.GetDb())
-	useRepo := userepo.NewRepository(s.db.GetDb())
+	userRepo := userepo.NewRepository(s.db.GetDb())
 	transactionRepo := txrepo.NewRepository(s.db.GetDb())
+	overviewRepo := overviewrepo.NewRepository(s.db.GetDb())
 
 	categorySvc := catsvc.NewService(categoryRepo, transactionRepo)
-	userSvc := usersvc.NewService(useRepo, categorySvc)
+	userSvc := usersvc.NewService(userRepo, categorySvc)
 	transactionSvc := txsvc.NewService(transactionRepo, categoryRepo, s.aiClient)
+	overviewSvc := overviewsvc.NewService(overviewRepo)
 
 	return &Services{
 		UserService:        userSvc,
 		TransactionService: transactionSvc,
 		CategoryService:    categorySvc,
+		OverviewService:    overviewSvc,
 	}
 }
 
@@ -115,7 +122,6 @@ func initializeTransactionRoutes(s *fiberServer, services *Services) {
 	txApi.Delete("/:transaction_id/item/:item_id", transactionHandler.Delete)
 }
 
-
 func initializeCategoryRoutes(s *fiberServer, services *Services) {
 	categoryHandler := cathandler.NewHandler(services.CategoryService)
 
@@ -128,4 +134,14 @@ func initializeCategoryRoutes(s *fiberServer, services *Services) {
 	api.Get("/:id", categoryHandler.GetByID)
 	api.Put("/:id", categoryHandler.Update)
 	api.Delete("/:id", categoryHandler.Delete)
+}
+
+func initializeOverviewRoutes(s *fiberServer, services *Services) {
+	overviewHandler := overviewhandler.NewHandler(services.OverviewService)
+
+	// Register routes
+	api := s.app.Group("/v1/overview")
+	api.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
+
+	api.Get("", overviewHandler.GetOverview)
 }
