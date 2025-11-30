@@ -1,0 +1,70 @@
+package main
+
+import (
+	"log"
+
+	"github.com/hibiken/asynq"
+
+	catrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
+	"github.com/cp25sy5-modjot/main-service/internal/database"
+	"github.com/cp25sy5-modjot/main-service/internal/jobs/processor"
+	jobsserver "github.com/cp25sy5-modjot/main-service/internal/jobs/server"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
+	"github.com/cp25sy5-modjot/main-service/internal/storage/localfs"
+	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
+	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
+	pb "github.com/cp25sy5-modjot/proto/gen/ai/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+func main() {
+	conf := config.LoadConfig()
+
+	// DB
+	db := database.NewPostgresDatabase(conf)
+	database.AutoMigrate(db.GetDb())
+
+	// gRPC AI client (same as API server)
+	grpcConn, err := grpc.Dial(conf.AIService.Url, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect to gRPC server: %v", err)
+	}
+	defer grpcConn.Close()
+	aiClient := pb.NewAiWrapperServiceClient(grpcConn)
+
+	// Services
+	txRepo := txrepo.NewRepository(db.GetDb())
+	catRepo := catrepo.NewRepository(db.GetDb())
+	txService := txsvc.NewService(txRepo, catRepo, aiClient)
+
+	// Storage
+	uploadDir := conf.UploadDir
+	if uploadDir == "" {
+		uploadDir = "./uploads"
+	}
+	st, err := localfs.NewLocalStorage(uploadDir)
+	if err != nil {
+		log.Fatalf("failed to init storage: %v", err)
+	}
+
+	// Redis addr
+	redisAddr := ""
+	if conf.Redis != nil {
+		redisAddr = conf.Redis.Addr
+	}
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+
+	// Asynq server
+	srv := jobsserver.NewAsynqServer(redisAddr, 5)
+	mux := asynq.NewServeMux()
+
+	// Job processor
+	p := processor.NewProcessor(txService, st)
+	p.Register(mux)
+
+	log.Printf("Starting worker with Redis at %s", redisAddr)
+	jobsserver.RunServer(srv, mux)
+}

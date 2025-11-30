@@ -2,19 +2,37 @@
 FROM golang:1.24-alpine AS build
 WORKDIR /app
 
-# Better caching
+# Cache dependencies
 COPY go.mod go.sum ./
 RUN go mod download
 
+# Copy project
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o main-service ./cmd/server
 
-# ---- Minimal runtime
-FROM gcr.io/distroless/static:nonroot
+# Build both API and Worker
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o api ./cmd/api && \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o worker ./cmd/worker
+
+
+# ---- Runtime stage (Alpine, NOT distroless)
+FROM alpine:3.20
+
+# Create non-root user and uploads dir
+RUN adduser -D -g '' appuser && \
+    mkdir -p /uploads && \
+    chown -R appuser:appuser /uploads
+
 WORKDIR /
-COPY --from=build /app/main-service /main-service
-USER nonroot:nonroot
 
-# Match the port your app listens on (see FIBER_PORT below)
+# Copy binaries from build stage
+COPY --from=build /app/api /api
+COPY --from=build /app/worker /worker
+
+# Run as unprivileged user
+USER appuser
+
+# API port
 EXPOSE 8081
-ENTRYPOINT ["/main-service"]
+
+# Default: run API
+CMD ["/api"]

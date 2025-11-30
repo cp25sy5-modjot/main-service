@@ -1,89 +1,115 @@
-package category
+package categorysvc
 
 import (
 	"time"
 
-	repo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
+	categoryrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
-	"github.com/cp25sy5-modjot/main-service/internal/utils"
+	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
+	utils "github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	"github.com/google/uuid"
 )
 
 type Service struct {
-	repo *repo.Repository
+	categoryrepo *categoryrepo.Repository
+	txrepo       *txrepo.Repository
 }
 
-func NewService(repo *repo.Repository) *Service {
-	return &Service{repo}
+func NewService(categoryrepo *categoryrepo.Repository, txrepo *txrepo.Repository) *Service {
+	return &Service{categoryrepo, txrepo}
 }
 
-func (s *Service) Create(category *e.Category) (*m.CategoryRes, error) {
+func (s *Service) Create(userId string, input *CategoryCreateInput) (*e.Category, error) {
 	cate := &e.Category{
 		CategoryID:   uuid.New().String(),
-		CategoryName: category.CategoryName,
-		UserID:       category.UserID,
-		Budget:       category.Budget,
-		ColorCode:    category.ColorCode,
+		CategoryName: input.CategoryName,
+		UserID:       userId,
+		Budget:       input.Budget,
+		ColorCode:    input.ColorCode,
 		CreatedAt:    time.Now(),
 	}
 	return saveNewCategory(s, cate)
 }
 
-func (s *Service) GetAllByUserID(userID string) ([]m.CategoryRes, error) {
-	categories, err := s.repo.FindAllByUserID(userID)
+func (s *Service) GetAllByUserID(userID string) ([]e.Category, error) {
+	categories, err := s.categoryrepo.FindAllByUserID(userID)
 	if err != nil {
 		return nil, err
 	}
-	return buildCategoryResponses(categories), nil
+	return categories, nil
 }
 
-func (s *Service) GetAllByUserIDWithTransactions(userID string) ([]m.CategoryRes, error) {
-	categories, err := s.repo.FindAllByUserIDWithTransactions(userID)
+func (s *Service) GetAllByUserIDWithTransactions(userID string) ([]e.Category, error) {
+	categories, err := s.categoryrepo.FindAllByUserIDWithTransactions(userID)
 	if err != nil {
 		return nil, err
 	}
-	return buildCategoryResponses(categories), nil
+	return categories, nil
 }
 
-func (s *Service) GetByID(params *m.CategorySearchParams) (*m.CategoryRes, error) {
-	category, err := s.repo.FindByID(params)
+func (s *Service) GetByID(params *m.CategorySearchParams) (*e.Category, error) {
+	category, err := s.categoryrepo.FindByID(params)
 	if err != nil {
 		return nil, err
 	}
-	return buildCategoryResponse(category), nil
+	return category, nil
 }
 
-func (s *Service) GetByIDWithTransactions(params *m.CategorySearchParams) (*m.CategoryRes, error) {
-	category, err := s.repo.FindByIDWithTransactions(params)
+func (s *Service) GetByIDWithTransactions(params *m.CategorySearchParams) (*e.Category, error) {
+	category, err := s.categoryrepo.FindByIDWithTransactions(params)
 	if err != nil {
 		return nil, err
 	}
-	return buildCategoryResponse(category), nil
+	return category, nil
 }
 
-func (s *Service) Update(params *m.CategorySearchParams, category *m.CategoryUpdateReq) (*m.CategoryRes, error) {
-	exists, err := s.repo.FindByID(params)
-	if err != nil {
-		return nil, err
-	}
-	
-	if err = utils.MapStructs(category, &exists); err != nil {
-		return nil, err
-	}
-
-	updatedCat, err := s.repo.Update(exists)
+func (s *Service) Update(params *m.CategorySearchParams, input *CategoryUpdateInput) (*e.Category, error) {
+	exists, err := s.categoryrepo.FindByID(params)
 	if err != nil {
 		return nil, err
 	}
 
-	return buildCategoryResponse(updatedCat), nil
+	if err := utils.MapStructs(input, exists); err != nil {
+		return nil, err
+	}
+
+	updatedCat, err := s.categoryrepo.Update(exists)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedCat, nil
 }
 
 func (s *Service) Delete(params *m.CategorySearchParams) error {
-	_, err := s.repo.FindByID(params)
+	_, err := s.categoryrepo.FindByID(params)
 	if err != nil {
 		return err
 	}
-	return s.repo.Delete(params)
+	return s.categoryrepo.Delete(params)
+}
+
+// utils functions for service
+
+func applyUpdates(cat *e.Category, in *CategoryUpdateInput) {
+	cat.CategoryName = in.CategoryName
+	cat.Budget = in.Budget
+	cat.ColorCode = in.ColorCode
+}
+
+func saveNewCategory(s *Service, cat *e.Category) (*e.Category, error) {
+	newCat, err := s.categoryrepo.Create(cat)
+	if err != nil {
+		return nil, err
+	}
+	// Reload with preload
+	catWithDetails, err := s.categoryrepo.FindByID(&m.CategorySearchParams{
+		CategoryID: &newCat.CategoryID,
+		UserID:     newCat.UserID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return catWithDetails, nil
 }

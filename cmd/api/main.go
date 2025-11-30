@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/cp25sy5-modjot/main-service/internal/config"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
 	"github.com/cp25sy5-modjot/main-service/internal/database"
 	server "github.com/cp25sy5-modjot/main-service/internal/httpapi"
 	pb "github.com/cp25sy5-modjot/proto/gen/ai/v1"
