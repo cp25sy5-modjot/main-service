@@ -17,7 +17,20 @@ func NewRepository(db *gorm.DB) *Repository {
 }
 
 func (r *Repository) Create(transaction *e.Transaction) (*e.Transaction, error) {
+	// 1) เซฟตัว transaction ก่อน
 	if err := r.db.Create(transaction).Error; err != nil {
+		return nil, err
+	}
+
+	// 2) preload Category แล้วโหลดกลับมาใส่ใน struct เดิม
+	if err := r.db.
+		Preload("Category").
+		First(transaction,
+			"transaction_id = ? AND item_id = ? AND user_id = ?",
+			transaction.TransactionID,
+			transaction.ItemID,
+			transaction.UserID,
+		).Error; err != nil {
 		return nil, err
 	}
 	return transaction, nil
@@ -79,7 +92,20 @@ func (r *Repository) FindByIDWithCategory(params *m.TransactionSearchParams) (*e
 }
 
 func (r *Repository) Update(transaction *e.Transaction) (*e.Transaction, error) {
+	// 1) เซฟตัว transaction ก่อน
 	if err := r.db.Save(transaction).Error; err != nil {
+		return nil, err
+	}
+
+	// 2) preload Category แล้วโหลดกลับมาใส่ใน struct เดิม
+	if err := r.db.
+		Preload("Category").
+		First(transaction,
+			"transaction_id = ? AND item_id = ? AND user_id = ?",
+			transaction.TransactionID,
+			transaction.ItemID,
+			transaction.UserID,
+		).Error; err != nil {
 		return nil, err
 	}
 	return transaction, nil
