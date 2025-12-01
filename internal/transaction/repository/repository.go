@@ -87,13 +87,11 @@ func (r *Repository) GetTransactionsWithCategory(
 			t.user_id,
 			t.title,
 			t.price,
-			t.quantity,
 			t.date,
 			t.type,
 			t.category_id,
 			c.category_name,
-			c.color_code,
-			c.budget
+			c.color_code AS category_color_code,
 		FROM transactions t
 		LEFT JOIN categories c 
 			ON c.category_id = t.category_id
@@ -105,4 +103,3 @@ func (r *Repository) GetTransactionsWithCategory(
 
 	return list, err
 }
-
