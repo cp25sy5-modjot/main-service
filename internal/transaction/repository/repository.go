@@ -26,7 +26,6 @@ func (r *Repository) Create(transaction *e.Transaction) (*e.Transaction, error) 
 func (r *Repository) findAllUncategorizedByUserID(userID string) ([]e.Transaction, error) {
 	var transactions []e.Transaction
 	err := r.db.
-		Preload("Category"). // load related Category
 		Where("user_id = ? AND category_id IS NULL", userID).
 		Order("date DESC").
 		Find(&transactions).Error
@@ -47,7 +46,6 @@ func (r *Repository) FindAllByUserIDAndFiltered(userID string, start, end time.T
 	var transactions []e.Transaction
 
 	err := r.db.
-		Preload("Category").
 		Where("user_id = ? AND date >= ? AND date < ?", userID, start, end).
 		Order("date DESC").
 		Find(&transactions).Error
@@ -58,7 +56,6 @@ func (r *Repository) FindAllByUserIDAndFiltered(userID string, start, end time.T
 func (r *Repository) FindByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
 	var transaction e.Transaction
 	err := r.db.
-		Preload("Category").
 		First(&transaction,
 			"transaction_id = ? AND item_id = ? AND user_id = ?",
 			params.TransactionID,
