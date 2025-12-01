@@ -88,23 +88,6 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 		UserID:     userID,
 	}
 
-	isIncludeTransactions, err := isIncludeTransactions(c)
-	if err != nil {
-		return err
-	}
-
-	if isIncludeTransactions {
-		date := c.Query("date")
-		filter := &m.TransactionFilter{
-			Date: utils.ConvertStringToTime(date),
-		}
-		category, err := h.service.GetByIDWithTransactions(params, filter)
-		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
-		}
-		return sresp.OK(c, buildCategoryResponse(category), "Category with transactions retrieved successfully")
-	}
-
 	category, err := h.service.GetByID(params)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())

@@ -49,8 +49,6 @@ func (r *Repository) FindAllByUserIDWithTransactionsFiltered(
 	var categories []e.Category
 
 	err := r.db.
-		// preload เฉพาะ transactions ที่อยู่ในช่วงวันที่ที่ต้องการ
-		Preload("Transactions", "user_id = ? AND date >= ? AND date < ?", userID, start, end).
 		Where("user_id = ?", userID).
 		Order("created_at ASC").
 		Find(&categories).Error
@@ -65,7 +63,6 @@ func (r *Repository) FindByIDWithTransactionsFiltered(
 	var category e.Category
 
 	err := r.db.
-		Preload("Transactions", "user_id = ? AND date >= ? AND date < ?", params.UserID, start, end).
 		First(
 			&category,
 			"category_id = ? AND user_id = ?",
@@ -88,7 +85,7 @@ func (r *Repository) Delete(params *m.CategorySearchParams) error {
 }
 
 func (r *Repository) GetCategoriesAndTransactions(
-	userID string,
+	userId string,
 	start, end time.Time,
 ) ([]m.CategoryRes, error) {
 
@@ -111,7 +108,7 @@ func (r *Repository) GetCategoriesAndTransactions(
 		WHERE c.user_id = ?
 		GROUP BY c.category_id, c.category_name, c.color_code, c.budget
 		ORDER BY budget_usage DESC
-	`, start, end, userID).Scan(&list).Error
+	`, start, end, userId).Scan(&list).Error
 
 	return list, err
 }

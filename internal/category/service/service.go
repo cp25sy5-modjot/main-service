@@ -16,7 +16,6 @@ type Service interface {
 	GetAllByUserID(userID string) ([]e.Category, error)
 	GetAllByUserIDWithTransactions(userID string, filter *m.TransactionFilter) ([]m.CategoryRes, error)
 	GetByID(params *m.CategorySearchParams) (*e.Category, error)
-	GetByIDWithTransactions(params *m.CategorySearchParams, filter *m.TransactionFilter) (*e.Category, error)
 	Update(params *m.CategorySearchParams, input *CategoryUpdateInput) (*e.Category, error)
 	Delete(params *m.CategorySearchParams) error
 
@@ -68,20 +67,6 @@ func (s *service) GetAllByUserIDWithTransactions(userID string, filter *m.Transa
 
 func (s *service) GetByID(params *m.CategorySearchParams) (*e.Category, error) {
 	category, err := s.categoryrepo.FindByID(params)
-	if err != nil {
-		return nil, err
-	}
-	return category, nil
-}
-
-func (s *service) GetByIDWithTransactions(params *m.CategorySearchParams, filter *m.TransactionFilter) (*e.Category, error) {
-	if filter.Date == nil {
-		now := time.Now()
-		filter.Date = &now
-	}
-	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
-
-	category, err := s.categoryrepo.FindByIDWithTransactionsFiltered(params, start, end)
 	if err != nil {
 		return nil, err
 	}
