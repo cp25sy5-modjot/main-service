@@ -6,24 +6,29 @@ import (
 	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
 
 	u "github.com/cp25sy5-modjot/main-service/internal/user/service"
+	c "github.com/cp25sy5-modjot/main-service/internal/category/service"
 	"github.com/gofiber/fiber/v2"
 )
 
 // MockLoginHandler handles mock login requests for testing purposes Only in non-production environments.
-func MockLoginHandler(c *fiber.Ctx, service u.Service, config *config.Auth) error {
+func MockLoginHandler(c *fiber.Ctx, usvc u.Service, csvc c.Service, config *config.Auth) error {
 	userName := c.FormValue("userName")
 
 	if userName == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "userName is required")
 	}
 
-	user, err := service.GetByID(userName)
+	user, err := usvc.GetByID(userName)
 	if err != nil {
-		user, err = service.CreateMockUser(&u.UserCreateInput{
+		user, err = usvc.CreateMockUser(&u.UserCreateInput{
 			Name: userName,
 		}, userName)
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "Failed to create user")
+		}
+		// Create default categories for the new mock user
+		if err := csvc.CreateDefaultCategories(user.UserID); err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "Failed to create default categories for mock user")
 		}
 	}
 

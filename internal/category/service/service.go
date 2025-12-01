@@ -14,11 +14,13 @@ import (
 type Service interface {
 	Create(userId string, input *CategoryCreateInput) (*e.Category, error)
 	GetAllByUserID(userID string) ([]e.Category, error)
-	GetAllByUserIDWithTransactions(userID string, filter *m.TransactionFilter) ([]e.Category, error)
+	GetAllByUserIDWithTransactions(userID string, filter *m.TransactionFilter) ([]m.CategoryRes, error)
 	GetByID(params *m.CategorySearchParams) (*e.Category, error)
 	GetByIDWithTransactions(params *m.CategorySearchParams, filter *m.TransactionFilter) (*e.Category, error)
 	Update(params *m.CategorySearchParams, input *CategoryUpdateInput) (*e.Category, error)
 	Delete(params *m.CategorySearchParams) error
+
+	CreateDefaultCategories(userID string) error
 }
 
 type service struct {
@@ -50,14 +52,14 @@ func (s *service) GetAllByUserID(userID string) ([]e.Category, error) {
 	return categories, nil
 }
 
-func (s *service) GetAllByUserIDWithTransactions(userID string, filter *m.TransactionFilter) ([]e.Category, error) {
+func (s *service) GetAllByUserIDWithTransactions(userID string, filter *m.TransactionFilter) ([]m.CategoryRes, error) {
 	if filter.Date == nil {
 		now := time.Now()
 		filter.Date = &now
 	}
 	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
 
-	categories, err := s.categoryrepo.FindAllByUserIDWithTransactionsFiltered(userID, start, end)
+	categories, err := s.categoryrepo.GetCategoriesAndTransactions(userID, start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +112,24 @@ func (s *service) Delete(params *m.CategorySearchParams) error {
 		return err
 	}
 	return s.categoryrepo.Delete(params)
+}
+
+func (s *service) CreateDefaultCategories(userID string) error {
+	defaultCategories := []string{"อาหาร", "การเดินทาง", "ความบันเทิง", "ชอปปิ้ง", "อื่นๆ"}
+	for _, categoryName := range defaultCategories {
+		_, err := s.categoryrepo.Create(&e.Category{
+			CategoryID:   uuid.New().String(),
+			CategoryName: categoryName,
+			UserID:       userID,
+			Budget:       1000.0,
+			ColorCode:    utils.GenerateRandomColor(),
+			CreatedAt:    time.Now(),
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // utils functions for service

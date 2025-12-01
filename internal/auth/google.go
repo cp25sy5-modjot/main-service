@@ -8,6 +8,7 @@ import (
 	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
 	"gorm.io/gorm"
 
+	c "github.com/cp25sy5-modjot/main-service/internal/category/service"
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
@@ -18,7 +19,7 @@ import (
 	"google.golang.org/api/idtoken"
 )
 
-func HandleGoogleTokenExchange(c *fiber.Ctx, service u.Service, config *config.Config) error {
+func HandleGoogleTokenExchange(c *fiber.Ctx, usvc u.Service, csvc c.Service, config *config.Config) error {
 	var req GoogleTokenRequest
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
@@ -29,7 +30,7 @@ func HandleGoogleTokenExchange(c *fiber.Ctx, service u.Service, config *config.C
 		return fiber.NewError(fiber.StatusUnauthorized, "Invalid ID token")
 	}
 
-	userInfo, err := getUserInfoFromPayload(payload, service)
+	userInfo, err := getUserInfoFromPayload(payload, usvc, csvc)
 	if err != nil {
 		return err
 	}
@@ -53,7 +54,7 @@ func validateIDToken(idToken string, config *config.Google) (*idtoken.Payload, e
 	return payload, nil
 }
 
-func getUserInfoFromPayload(payload *idtoken.Payload, service u.Service) (*jwt.UserInfo, error) {
+func getUserInfoFromPayload(payload *idtoken.Payload, usvc u.Service, csvc c.Service) (*jwt.UserInfo, error) {
 	if payload == nil {
 		return nil, fiber.NewError(fiber.StatusBadRequest, "invalid token payload")
 	}
@@ -64,7 +65,7 @@ func getUserInfoFromPayload(payload *idtoken.Payload, service u.Service) (*jwt.U
 	}
 
 	// 1. ลองหา user จาก GoogleID
-	user, err := service.GetByGoogleID(googleID)
+	user, err := usvc.GetByGoogleID(googleID)
 	if err != nil {
 		// ถ้าเป็น error อื่นที่ไม่ใช่ not found → คืน error เลย
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -84,7 +85,7 @@ func getUserInfoFromPayload(payload *idtoken.Payload, service u.Service) (*jwt.U
 			name = "New User"
 		}
 
-		user, err = service.Create(&u.UserCreateInput{
+		user, err = usvc.Create(&u.UserCreateInput{
 			Name: name,
 			UserBinding: e.UserBinding{
 				GoogleID: googleID,
@@ -93,7 +94,11 @@ func getUserInfoFromPayload(payload *idtoken.Payload, service u.Service) (*jwt.U
 		if err != nil || user == nil {
 			return nil, fiber.NewError(fiber.StatusInternalServerError, "failed to create user")
 		}
-		log.Printf("Created new user! id=%s", user.UserID)
+
+		// Create default categories for the new user
+		if err := csvc.CreateDefaultCategories(user.UserID); err != nil {
+			log.Printf("failed to create default categories for user %s: %v", user.UserID, err)
+		}
 	}
 
 	// 3. ตรงนี้มั่นใจได้แล้วว่า user != nil

@@ -3,7 +3,6 @@ package usersvc
 import (
 	"time"
 
-	catsvc "github.com/cp25sy5-modjot/main-service/internal/category/service"
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	userrepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
@@ -26,11 +25,10 @@ type Service interface {
 
 type service struct {
 	repo *userrepo.Repository
-	cat  catsvc.Service
 }
 
-func NewService(repo *userrepo.Repository, cat catsvc.Service) *service {
-	return &service{repo: repo, cat: cat}
+func NewService(repo *userrepo.Repository) *service {
+	return &service{repo: repo}
 }
 
 func (s *service) Create(input *UserCreateInput) (*e.User, error) {
@@ -40,11 +38,6 @@ func (s *service) Create(input *UserCreateInput) (*e.User, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	if err := createDefaultCategories(s, UserID); err != nil {
-		return nil, err
-	}
-
 	return userCreated, nil
 }
 
@@ -54,11 +47,6 @@ func (s *service) CreateMockUser(input *UserCreateInput, uid string) (*e.User, e
 	if err != nil {
 		return nil, err
 	}
-
-	if err := createDefaultCategories(s, uid); err != nil {
-		return nil, err
-	}
-
 	return userCreated, nil
 }
 
@@ -121,19 +109,4 @@ func buildUserObjectToCreate(uid string, input *UserCreateInput) *e.User {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-}
-
-func createDefaultCategories(s *service, uid string) error {
-	defaultCategories := []string{"อาหาร", "การเดินทาง", "ความบันเทิง", "ชอปปิ้ง", "อื่นๆ"}
-	for _, categoryName := range defaultCategories {
-		_, err := s.cat.Create(uid, &catsvc.CategoryCreateInput{
-			CategoryName: categoryName,
-			Budget:       1000.0,
-			ColorCode:    utils.GenerateRandomColor(),
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }

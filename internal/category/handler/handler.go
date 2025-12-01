@@ -65,7 +65,7 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "failed to retrieve categories with transactions")
 		}
-		return sresp.OK(c, buildCategoryResponses(categories), "Categories with transactions retrieved successfully")
+		return sresp.OK(c, categories, "Categories with transactions retrieved successfully")
 	}
 
 	categories, err := h.service.GetAllByUserID(userID)
@@ -175,28 +175,12 @@ func isIncludeTransactions(c *fiber.Ctx) (bool, error) {
 }
 
 func buildCategoryResponse(cat *e.Category) *m.CategoryRes {
-	if cat.Transactions == nil {
-		return &m.CategoryRes{
-			CategoryID:   &cat.CategoryID,
-			CategoryName: cat.CategoryName,
-			Budget:       cat.Budget,
-			ColorCode:    cat.ColorCode,
-			CreatedAt:    cat.CreatedAt,
-		}
-	} else {
-		budgetUsage := 0.0
-		for _, tx := range cat.Transactions {
-			_ = tx // just to avoid unused variable warning
-			budgetUsage += tx.Price * tx.Quantity
-		}
-		return &m.CategoryRes{
-			CategoryID:   &cat.CategoryID,
-			CategoryName: cat.CategoryName,
-			Budget:       cat.Budget,
-			ColorCode:    cat.ColorCode,
-			CreatedAt:    cat.CreatedAt,
-			BudgetUsage:  budgetUsage,
-		}
+	return &m.CategoryRes{
+		CategoryID:   &cat.CategoryID,
+		CategoryName: cat.CategoryName,
+		Budget:       cat.Budget,
+		ColorCode:    cat.ColorCode,
+		CreatedAt:    cat.CreatedAt,
 	}
 }
 

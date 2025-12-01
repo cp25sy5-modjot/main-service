@@ -52,7 +52,7 @@ func initializeServices(s *fiberServer) *Services {
 	overviewRepo := overviewrepo.NewRepository(s.db.GetDb())
 
 	categorySvc := catsvc.NewService(categoryRepo, transactionRepo)
-	userSvc := usersvc.NewService(userRepo, categorySvc)
+	userSvc := usersvc.NewService(userRepo)
 	transactionSvc := txsvc.NewService(transactionRepo, categoryRepo, s.aiClient)
 	overviewSvc := overviewsvc.NewService(overviewRepo)
 
@@ -93,13 +93,13 @@ func initializeAuthRoutes(s *fiberServer, services *Services) {
 
 	authApi := s.app.Group("/v1/auth")
 	authApi.Post("/mock-login", func(c *fiber.Ctx) error {
-		return auth.MockLoginHandler(c, services.UserService, s.conf.Auth)
+		return auth.MockLoginHandler(c, services.UserService, services.CategoryService, s.conf.Auth)
 	})
 	authApi.Post("/refresh-token", func(c *fiber.Ctx) error {
 		return auth.RefreshHandler(c, s.conf.Auth)
 	})
 	authApi.Post("/google", func(c *fiber.Ctx) error {
-		return auth.HandleGoogleTokenExchange(c, services.UserService, s.conf)
+		return auth.HandleGoogleTokenExchange(c, services.UserService, services.CategoryService, s.conf)
 	})
 
 }

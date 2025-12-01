@@ -87,3 +87,31 @@ func (r *Repository) Delete(params *m.CategorySearchParams) error {
 	return r.db.Delete(&e.Category{}, "category_id = ? AND user_id = ?", params.CategoryID, params.UserID).Error
 }
 
+func (r *Repository) GetCategoriesAndTransactions(
+	userID string,
+	start, end time.Time,
+) ([]m.CategoryRes, error) {
+
+	var list []m.CategoryRes
+
+	err := r.db.Raw(`
+		SELECT 
+			c.category_id,
+			c.category_name,
+			c.budget,
+			c.color_code,
+			c.created_at,
+			COALESCE(SUM(t.price), 0) AS budget_usage
+		FROM categories c
+		LEFT JOIN transactions t
+			ON t.category_id = c.category_id
+			AND t.user_id = c.user_id
+			AND t.date >= ?
+			AND t.date < ?
+		WHERE c.user_id = ?
+		GROUP BY c.category_id, c.category_name, c.color_code, c.budget
+		ORDER BY budget_usage DESC
+	`, start, end, userID).Scan(&list).Error
+
+	return list, err
+}
