@@ -14,9 +14,13 @@ type Transaction struct {
 	Date          time.Time
 	Type          string
 
-	// make nullable if you really want OnDelete:SET NULL
+	// ทำ nullable ไว้ ถ้าอยากใช้ OnDelete:SET NULL เวลา category ถูกลบ
 	CategoryID *string
 
+	// belongs-to User (เพื่อให้ DB มี FK user_id ด้วย)
+	User User `gorm:"foreignKey:UserID;references:UserID"`
+
+	// belongs-to Category (composite key)
 	Category Category `gorm:"foreignKey:UserID,CategoryID;references:UserID,CategoryID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
 
