@@ -166,8 +166,6 @@ func buildTransactionResponse(tx *e.Transaction) *m.TransactionRes {
 		Date:              tx.Date,
 		Type:              tx.Type,
 		CategoryID:        tx.CategoryID,
-		CategoryName:      tx.Category.CategoryName,
-		CategoryColorCode: tx.Category.ColorCode,
 	}
 }
 
