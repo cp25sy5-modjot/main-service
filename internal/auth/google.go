@@ -76,7 +76,6 @@ func getUserInfoFromPayload(payload *idtoken.Payload, usvc u.Service, csvc c.Ser
 	// 2. ถ้ายังไม่มี user (nil) → สร้างใหม่
 	if user == nil {
 		var name string
-
 		if v, ok := payload.Claims["given_name"].(string); ok && v != "" {
 			name = v
 		} else if v, ok := payload.Claims["name"].(string); ok && v != "" {
@@ -94,6 +93,7 @@ func getUserInfoFromPayload(payload *idtoken.Payload, usvc u.Service, csvc c.Ser
 		if err != nil || user == nil {
 			return nil, fiber.NewError(fiber.StatusInternalServerError, "failed to create user")
 		}
+		log.Printf("created new user with googleID %s", googleID)
 
 		// Create default categories for the new user
 		if err := csvc.CreateDefaultCategories(user.UserID); err != nil {
