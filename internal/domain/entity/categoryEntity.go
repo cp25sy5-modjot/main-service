@@ -7,7 +7,7 @@ import (
 // category.go
 type Category struct {
 	CategoryID   string `gorm:"primaryKey;autoIncrement:false"`
-	UserID       string `gorm:"index"` // แค่ index พอ ไม่ต้อง composite PK
+	UserID       string `gorm:"index"` 
 	CategoryName string `gorm:"length:20"`
 	Budget       float64
 	ColorCode    string    `gorm:"length:7"`

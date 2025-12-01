@@ -15,8 +15,8 @@ type Transaction struct {
 	Date          time.Time
 	Type          string
 
-	CategoryID    *string
-	Category Category `gorm:"foreignKey:CategoryID;references:CategoryID;constraint:OnDelete:SET NULL"`
+	CategoryID *string
+	Category   Category `gorm:"foreignKey:CategoryID;references:CategoryID;"`
 }
 
 // Next Release: Split Transaction into Transaction and TransactionItem
