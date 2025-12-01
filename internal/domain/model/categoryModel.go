@@ -21,7 +21,7 @@ type CategoryRes struct {
 	ColorCode    string    `json:"color_code"`
 	CreatedAt    time.Time `json:"created_at"`
 
-	BudgetUsage float64 `json:"budget_usage,omitempty"`
+	BudgetUsage float64 `json:"budget_usage"`
 }
 
 type CategorySearchParams struct {
