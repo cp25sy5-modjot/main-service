@@ -24,11 +24,16 @@ type UserUpdateReq struct {
 	DOB  time.Time `json:"dob"`
 }
 
+// added for onboarding flow in release 2
+// type UserUpdateOnboardingReq struct {
+// 	Onboarding bool `json:"onboarding" validate:"required"`
+// }
+
 type UserRes struct {
 	UserBinding UserBinding `json:"user_binding"`
 	Name        string      `json:"name"`
 	DOB         time.Time   `json:"dob"`
-	Status      string  `json:"status"`
+	Status      string      `json:"status"`
 	Onboarding  bool        `json:"onboarding"`
 	CreatedAt   time.Time   `json:"created_at"`
 }

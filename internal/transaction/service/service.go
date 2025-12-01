@@ -123,7 +123,8 @@ func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(userID string,
 	}
 
 	// --- Previous Month ---
-	previous, err := s.repo.FindAllByUserIDAndFiltered(userID, start.AddDate(0, -1, 0), end.AddDate(0, -1, 0))
+	previousStart, previousEnd := utils.GetStartAndEndOfPreviousMonth(*filter.Date)
+	previous, err := s.repo.FindAllByUserIDAndFiltered(userID, previousStart, previousEnd)
 	if err != nil {
 		return nil, err
 	}

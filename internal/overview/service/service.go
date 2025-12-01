@@ -28,7 +28,7 @@ func (s *service) GetOverview(userID string, t time.Time) (*m.OverviewResponse, 
 	// Normalize baseDate just to be safe; use its location for month range
 	start, end := utils.GetStartAndEndOfMonth(t)
 	// 1) last 3 transactions (global, not month-limited)
-	lastTx, err := s.repo.GetLastTransactions(userID,  3)
+	lastTx, err := s.repo.GetLastTransactions(userID, 3)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,8 @@ func (s *service) GetOverview(userID string, t time.Time) (*m.OverviewResponse, 
 	}
 
 	// 4) previous month total
-	previousMonthTotal, err := s.repo.GetMonthTotal(userID, start.AddDate(0, -1, 0), end.AddDate(0, -1, 0))
+	previousStart, previousEnd := utils.GetStartAndEndOfPreviousMonth(t)
+	previousMonthTotal, err := s.repo.GetMonthTotal(userID, previousStart, previousEnd)
 	if err != nil {
 		return nil, err
 	}
@@ -59,4 +60,3 @@ func (s *service) GetOverview(userID string, t time.Time) (*m.OverviewResponse, 
 		PreviousMonthTotal: previousMonthTotal,
 	}, nil
 }
-
