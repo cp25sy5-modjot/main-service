@@ -14,15 +14,15 @@ type TransactionInsertReq struct {
 	Title      string    `json:"title" validate:"required,min=2,max=20"`
 	Price      float64   `json:"price" validate:"required"`
 	Quantity   float64   `json:"quantity" validate:"required"`
-	CategoryID string   `json:"category_id"`
+	CategoryID string    `json:"category_id" validate:"required"`
 	Date       time.Time `json:"date"`
 }
 
 type TransactionUpdateReq struct {
-	Title      string    `json:"title" validate:"required,min=2,max=20"`
-	Price      float64   `json:"price" validate:"required"`
-	Quantity   float64   `json:"quantity" validate:"required"`
-	CategoryID string   `json:"category_id"`
+	Title      string     `json:"title" validate:"required,min=2,max=20"`
+	Price      float64    `json:"price" validate:"required"`
+	Quantity   float64    `json:"quantity" validate:"required"`
+	CategoryID string     `json:"category_id" validate:"required"`
 	Date       *time.Time `json:"date" validate:"required"`
 }
 
@@ -33,17 +33,17 @@ type TransactionRes struct {
 	Price             float64   `json:"price"`
 	Date              time.Time `json:"date"`
 	Type              string    `json:"type"`
-	CategoryID        string   `json:"category_id"`
+	CategoryID        string    `json:"category_id"`
 	CategoryName      string    `json:"category_name"`
 	CategoryColorCode string    `json:"category_color_code"`
 }
 
 type TransactionFilter struct {
-	Date          *time.Time `json:"date"`
+	Date *time.Time `json:"date"`
 }
 
 type TransactionCompareMonthResponse struct {
-	Transactions []TransactionRes `json:"transactions"`
-	CurrentMonthTotal float64     `json:"current_month_total"`
-	PreviousMonthTotal float64    `json:"previous_month_total"`
+	Transactions       []TransactionRes `json:"transactions"`
+	CurrentMonthTotal  float64          `json:"current_month_total"`
+	PreviousMonthTotal float64          `json:"previous_month_total"`
 }

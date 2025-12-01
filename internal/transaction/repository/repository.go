@@ -58,6 +58,17 @@ func (r *Repository) FindAllByUserIDAndFiltered(userID string, start, end time.T
 func (r *Repository) FindByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
 	var transaction e.Transaction
 	err := r.db.
+		First(&transaction,
+			"transaction_id = ? AND item_id = ? AND user_id = ?",
+			params.TransactionID,
+			params.ItemID,
+			params.UserID).Error
+	return &transaction, err
+}
+
+func (r *Repository) FindByIDWithCategory(params *m.TransactionSearchParams) (*e.Transaction, error) {
+	var transaction e.Transaction
+	err := r.db.
 		Preload("Category").
 		First(&transaction,
 			"transaction_id = ? AND item_id = ? AND user_id = ?",

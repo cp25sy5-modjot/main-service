@@ -136,7 +136,7 @@ func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(userID string,
 }
 
 func (s *service) GetByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
-	tx, err := s.repo.FindByID(params)
+	tx, err := s.repo.FindByIDWithCategory(params)
 	if err != nil {
 		return nil, err
 	}
