@@ -74,6 +74,45 @@ func (r *Repository) Delete(params *m.TransactionSearchParams) error {
 	return r.db.Delete(&e.Transaction{}, "transaction_id = ? AND item_id = ?", params.TransactionID, params.ItemID).Error
 }
 
+
+func (r *Repository) GetTransactionWithCategory(params *m.TransactionSearchParams) (*m.TransactionRes, error) {
+	var res m.TransactionRes
+
+	err := r.db.Raw(`
+		SELECT
+			t.transaction_id,
+			t.item_id,
+			t.user_id,
+			t.title,
+			t.price,
+			t.quantity,
+			t.date,
+			t.type,
+			t.category_id,
+			c.category_name,
+			c.color_code AS category_color_code,
+			c.budget
+		FROM transactions t
+		LEFT JOIN categories c
+			ON c.category_id = t.category_id
+		   AND c.user_id = t.user_id
+		WHERE t.transaction_id = ?
+		  AND t.item_id = ?
+		  AND t.user_id = ?
+		LIMIT 1
+	`,
+		params.TransactionID,
+		params.ItemID,
+		params.UserID,
+	).Scan(&res).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 func (r *Repository) GetTransactionsWithCategory(
 	userId string,
 	start, end time.Time,

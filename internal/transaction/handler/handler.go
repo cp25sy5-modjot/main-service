@@ -86,7 +86,7 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Transaction not found")
 	}
 
-	return sresp.OK(c, buildTransactionResponse(resp), "Transaction retrieved successfully")
+	return sresp.OK(c, resp, "Transaction retrieved successfully")
 }
 
 // PUT /transactions/:transaction_id/product/:item_id

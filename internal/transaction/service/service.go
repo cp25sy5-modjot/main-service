@@ -23,7 +23,7 @@ type Service interface {
 	GetAllByUserIDWithFilter(userID string, filter *m.TransactionFilter) ([]m.TransactionRes, error)
 	GetAllComparePreviousMonthAndByUserIDWithFilter(userID string, filter *m.TransactionFilter) (*MonthlyResult, error)
 
-	GetByID(params *m.TransactionSearchParams) (*e.Transaction, error)
+	GetByID(params *m.TransactionSearchParams) (*m.TransactionRes, error)
 	Update(params *m.TransactionSearchParams, input *TransactionUpdateInput) (*e.Transaction, error)
 	Delete(params *m.TransactionSearchParams) error
 }
@@ -135,8 +135,8 @@ func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(userID string,
 	}, nil
 }
 
-func (s *service) GetByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
-	tx, err := s.repo.FindByID(params)
+func (s *service) GetByID(params *m.TransactionSearchParams) (*m.TransactionRes, error) {
+	tx, err := s.repo.GetTransactionWithCategory(params)
 	if err != nil {
 		return nil, err
 	}
