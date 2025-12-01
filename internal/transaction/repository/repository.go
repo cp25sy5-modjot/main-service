@@ -26,6 +26,7 @@ func (r *Repository) Create(transaction *e.Transaction) (*e.Transaction, error) 
 func (r *Repository) findAllUncategorizedByUserID(userID string) ([]e.Transaction, error) {
 	var transactions []e.Transaction
 	err := r.db.
+		Preload("Category"). // load related Category
 		Where("user_id = ? AND category_id IS NULL", userID).
 		Order("date DESC").
 		Find(&transactions).Error
@@ -35,6 +36,7 @@ func (r *Repository) findAllUncategorizedByUserID(userID string) ([]e.Transactio
 func (r *Repository) FindAllByUserID(userID string) ([]e.Transaction, error) {
 	var transactions []e.Transaction
 	err := r.db.
+		Preload("Category"). // load related Category
 		Where("user_id = ?", userID).
 		Order("date DESC").
 		Find(&transactions).Error
@@ -45,6 +47,7 @@ func (r *Repository) FindAllByUserIDAndFiltered(userID string, start, end time.T
 	var transactions []e.Transaction
 
 	err := r.db.
+		Preload("Category").
 		Where("user_id = ? AND date >= ? AND date < ?", userID, start, end).
 		Order("date DESC").
 		Find(&transactions).Error
@@ -55,6 +58,7 @@ func (r *Repository) FindAllByUserIDAndFiltered(userID string, start, end time.T
 func (r *Repository) FindByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
 	var transaction e.Transaction
 	err := r.db.
+		Preload("Category").
 		First(&transaction,
 			"transaction_id = ? AND item_id = ? AND user_id = ?",
 			params.TransactionID,
@@ -72,73 +76,4 @@ func (r *Repository) Update(transaction *e.Transaction) (*e.Transaction, error) 
 
 func (r *Repository) Delete(params *m.TransactionSearchParams) error {
 	return r.db.Delete(&e.Transaction{}, "transaction_id = ? AND item_id = ?", params.TransactionID, params.ItemID).Error
-}
-
-
-func (r *Repository) GetTransactionWithCategory(params *m.TransactionSearchParams) (*m.TransactionRes, error) {
-	var res m.TransactionRes
-
-	err := r.db.Raw(`
-		SELECT
-			t.transaction_id,
-			t.item_id,
-			t.user_id,
-			t.title,
-			t.price,
-			t.quantity,
-			t.date,
-			t.type,
-			t.category_id,
-			c.category_name,
-			c.color_code AS category_color_code,
-			c.budget
-		FROM transactions t
-		LEFT JOIN categories c
-			ON c.category_id = t.category_id
-		   AND c.user_id = t.user_id
-		WHERE t.transaction_id = ?
-		  AND t.item_id = ?
-		  AND t.user_id = ?
-		LIMIT 1
-	`,
-		params.TransactionID,
-		params.ItemID,
-		params.UserID,
-	).Scan(&res).Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-func (r *Repository) GetTransactionsWithCategory(
-	userId string,
-	start, end time.Time,
-) ([]m.TransactionRes, error) {
-	var list []m.TransactionRes
-
-	err := r.db.Raw(`
-		SELECT 
-			t.transaction_id,
-			t.item_id,
-			t.user_id,
-			t.title,
-			t.price,
-			t.date,
-			t.type,
-			t.category_id,
-			c.category_name,
-			c.color_code AS category_color_code
-		FROM transactions t
-		LEFT JOIN categories c 
-			ON c.category_id = t.category_id
-		   AND c.user_id = t.user_id
-		WHERE t.user_id = ? 
-		  AND t.date >= ? AND t.date < ?
-		ORDER BY t.date DESC, t.transaction_id, t.item_id
-	`, userId, start, end).Scan(&list).Error
-
-	return list, err
 }

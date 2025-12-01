@@ -15,6 +15,8 @@ type Transaction struct {
 	Date          time.Time
 	Type          string
 	CategoryID    *string
+
+	Category Category
 }
 
 // Next Release: Split Transaction into Transaction and TransactionItem

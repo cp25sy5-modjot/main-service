@@ -65,10 +65,12 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve transactions")
 	}
+	currMonth := buildTransactionResponses(months.CurrentMonth)
+	previousMonth := buildTransactionResponses(months.PreviousMonth)
 	resp := m.TransactionCompareMonthResponse{
-		Transactions:       months.CurrentMonth,
-		CurrentMonthTotal:  calculateTotal(months.CurrentMonth),
-		PreviousMonthTotal: calculateTotal(months.PreviousMonth),
+		Transactions:       currMonth,
+		CurrentMonthTotal:  calculateTotal(currMonth),
+		PreviousMonthTotal: calculateTotal(previousMonth),
 	}
 
 	return sresp.OK(c, resp, "Transactions retrieved successfully")
@@ -86,7 +88,7 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Transaction not found")
 	}
 
-	return sresp.OK(c, resp, "Transaction retrieved successfully")
+	return sresp.OK(c, buildTransactionResponse(resp), "Transaction retrieved successfully")
 }
 
 // PUT /transactions/:transaction_id/product/:item_id
@@ -157,13 +159,15 @@ func createTransactionSearchParams(c *fiber.Ctx) (*m.TransactionSearchParams, er
 
 func buildTransactionResponse(tx *e.Transaction) *m.TransactionRes {
 	return &m.TransactionRes{
-		TransactionID: tx.TransactionID,
-		ItemID:        tx.ItemID,
-		Title:         tx.Title,
-		Price:         tx.Price,
-		Date:          tx.Date,
-		Type:          tx.Type,
-		CategoryID:    tx.CategoryID,
+		TransactionID:     tx.TransactionID,
+		ItemID:            tx.ItemID,
+		Title:             tx.Title,
+		Price:             tx.Price,
+		Date:              tx.Date,
+		Type:              tx.Type,
+		CategoryID:        tx.CategoryID,
+		CategoryName:      tx.Category.CategoryName,
+		CategoryColorCode: tx.Category.ColorCode,
 	}
 }
 
