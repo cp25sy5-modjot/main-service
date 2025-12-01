@@ -20,7 +20,7 @@ type Service interface {
 	ProcessUploadedFile(fileData []byte, userID string) (*e.Transaction, error)
 
 	GetAllByUserID(userID string) ([]e.Transaction, error)
-	GetAllByUserIDWithFilter(userID string, filter *m.TransactionFilter) ([]e.Transaction, error)
+	GetAllByUserIDWithFilter(userID string, filter *m.TransactionFilter) ([]m.TransactionRes, error)
 	GetAllComparePreviousMonthAndByUserIDWithFilter(userID string, filter *m.TransactionFilter) (*MonthlyResult, error)
 
 	GetByID(params *m.TransactionSearchParams) (*e.Transaction, error)
@@ -90,41 +90,41 @@ func (s *service) GetAllByUserID(userID string) ([]e.Transaction, error) {
 	return transactions, nil
 }
 
-func (s *service) GetAllByUserIDWithFilter(userID string, filter *m.TransactionFilter) ([]e.Transaction, error) {
+func (s *service) GetAllByUserIDWithFilter(userID string, filter *m.TransactionFilter) ([]m.TransactionRes, error) {
 	if filter.Date == nil {
 		now := time.Now()
 		filter.Date = &now
 	}
 	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
-	transactions, err := s.repo.FindAllByUserIDAndFiltered(userID, start, end)
+	transactions, err := s.repo.GetTransactionsWithCategory(userID, start, end)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if transactions == nil {
-		return []e.Transaction{}, nil
+		return []m.TransactionRes{}, nil
 	}
 
 	return transactions, nil
 }
 
 type MonthlyResult struct {
-	CurrentMonth  []e.Transaction `json:"current_month"`
-	PreviousMonth []e.Transaction `json:"previous_month"`
+	CurrentMonth  []m.TransactionRes `json:"current_month"`
+	PreviousMonth []m.TransactionRes `json:"previous_month"`
 }
 
 func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(userID string, filter *m.TransactionFilter) (*MonthlyResult, error) {
 	// --- Current Month ---
 	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
-	current, err := s.repo.FindAllByUserIDAndFiltered(userID, start, end)
+	current, err := s.repo.GetTransactionsWithCategory(userID, start, end)
 	if err != nil {
 		return nil, err
 	}
 
 	// --- Previous Month ---
 	previousStart, previousEnd := utils.GetStartAndEndOfPreviousMonth(*filter.Date)
-	previous, err := s.repo.FindAllByUserIDAndFiltered(userID, previousStart, previousEnd)
+	previous, err := s.repo.GetTransactionsWithCategory(userID, previousStart, previousEnd)
 	if err != nil {
 		return nil, err
 	}
