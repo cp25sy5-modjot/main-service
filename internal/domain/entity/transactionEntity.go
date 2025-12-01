@@ -16,7 +16,6 @@ type Transaction struct {
 	Type          string
 	CategoryID    *string
 
-	User     User     `gorm:"foreignKey:UserID;references:UserID"`
 	Category Category `gorm:"foreignKey:UserID,CategoryID;references:UserID,CategoryID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
 
