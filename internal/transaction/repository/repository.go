@@ -91,7 +91,7 @@ func (r *Repository) GetTransactionsWithCategory(
 			t.type,
 			t.category_id,
 			c.category_name,
-			c.color_code AS category_color_code,
+			c.color_code AS category_color_code
 		FROM transactions t
 		LEFT JOIN categories c 
 			ON c.category_id = t.category_id
