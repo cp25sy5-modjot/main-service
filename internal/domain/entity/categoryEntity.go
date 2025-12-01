@@ -12,11 +12,13 @@ type Category struct {
 	ColorCode    string    `gorm:"length:7"`
 	CreatedAt    time.Time `gorm:"autoCreateTime"`
 
-	// belongs-to User
+	// belongs-to User (ให้มี FK จาก categories.user_id -> users.user_id แค่ทางเดียว)
 	User User `gorm:"foreignKey:UserID;references:UserID"`
 
-	// has-many Transactions – ลบ category แล้วลบทุก transaction ใน category นี้
-	Transactions []Transaction `gorm:"foreignKey:UserID,CategoryID;references:UserID,CategoryID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	// ถ้าไม่อยากให้ GORM สร้าง FK/constraint เพิ่มบน users/transactions
+	// เอา constraint ออก เหลือแค่ preload relationship เฉย ๆ ก็ได้
+	Transactions []Transaction `gorm:"foreignKey:UserID,CategoryID;references:UserID,CategoryID"`
 }
+
 
 
