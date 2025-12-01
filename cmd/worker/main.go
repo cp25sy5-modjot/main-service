@@ -23,7 +23,6 @@ func main() {
 
 	// DB
 	db := database.NewPostgresDatabase(conf)
-	database.AutoMigrate(db.GetDb())
 
 	// gRPC AI client (same as API server)
 	grpcConn, err := grpc.Dial(conf.AIService.Url, grpc.WithTransportCredentials(insecure.NewCredentials()))
