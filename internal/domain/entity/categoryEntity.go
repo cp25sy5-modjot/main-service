@@ -13,6 +13,5 @@ type Category struct {
 	ColorCode    string    `gorm:"length:7"`
 	CreatedAt    time.Time `gorm:"autoCreateTime"`
 
-	// เอา constraint ออกไว้ก่อน ให้มีไว้แค่ preload relationship
-	Transactions []Transaction `gorm:"foreignKey:UserID,CategoryID;references:UserID,CategoryID"`
+	Transactions []Transaction `gorm:"foreignKey:CategoryID;references:CategoryID"`
 }
