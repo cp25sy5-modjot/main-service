@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// transaction.go
 type Transaction struct {
 	TransactionID string `gorm:"primaryKey;autoIncrement:false"`
 	ItemID        string `gorm:"primaryKey;autoIncrement:false"`
@@ -13,16 +14,11 @@ type Transaction struct {
 	Quantity      float64
 	Date          time.Time
 	Type          string
+	CategoryID    *string
 
-	CategoryID *string
-
-	// belongs-to User → ให้มี FK จาก transactions.user_id -> users.user_id
-	User User `gorm:"foreignKey:UserID;references:UserID"`
-
-	// belongs-to Category → เวลาลบ category ให้ set null แทนลบ transaction
+	User     User     `gorm:"foreignKey:UserID;references:UserID"`
 	Category Category `gorm:"foreignKey:UserID,CategoryID;references:UserID,CategoryID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
-
 
 // Next Release: Split Transaction into Transaction and TransactionItem
 // This will allow multiple items per transaction in the future
