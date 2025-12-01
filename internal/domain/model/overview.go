@@ -23,6 +23,8 @@ type TopCategoryUsage struct {
 }
 
 type OverviewResponse struct {
-	LastTransactions []LastTransaction  `json:"last_transactions"`
-	TopCategories    []TopCategoryUsage `json:"top_categories"`
+	LastTransactions   []LastTransaction  `json:"last_transactions"`
+	TopCategories      []TopCategoryUsage `json:"top_categories"`
+	CurrentMonthTotal  float64            `json:"current_month_total"`
+	PreviousMonthTotal float64            `json:"previous_month_total"`
 }

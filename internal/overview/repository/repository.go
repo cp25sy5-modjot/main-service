@@ -19,7 +19,7 @@ func NewRepository(db *gorm.DB) *Repository {
 // internal/overview/repository.go (cont.)
 
 // --- Last N transactions (price already = price * quantity) ---
-func (r *Repository) GetLastTransactions(userID string, limit int) ([]m.LastTransaction, error) {
+func (r *Repository) GetLastTransactions(userID string, start, end time.Time, limit int) ([]m.LastTransaction, error) {
 	var list []m.LastTransaction
 
 	err := r.db.
@@ -36,7 +36,7 @@ func (r *Repository) GetLastTransactions(userID string, limit int) ([]m.LastTran
 			COALESCE(c.color_code, '')   AS category_color_code
 		`).
 		Joins("LEFT JOIN categories c ON c.category_id = t.category_id AND c.user_id = t.user_id").
-		Where("t.user_id = ?", userID).
+		Where("t.user_id = ? AND t.date >= ? AND t.date < ?", userID, start, end).
 		Order("t.date DESC").
 		Limit(limit).
 		Scan(&list).Error
@@ -73,4 +73,16 @@ func (r *Repository) GetTopCategoriesBySpending(
 	`, start, end, userID, limit).Scan(&list).Error
 
 	return list, err
+}
+
+func (r *Repository) GetMonthTotal(userID string, start, end time.Time) (float64, error) {
+	var total float64
+
+	err := r.db.
+		Table("transactions").
+		Select("COALESCE(SUM(price), 0)").
+		Where("user_id = ? AND date >= ? AND date < ?", userID, start, end).
+		Scan(&total).Error
+
+	return total, err
 }

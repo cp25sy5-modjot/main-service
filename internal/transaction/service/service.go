@@ -123,9 +123,7 @@ func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(userID string,
 	}
 
 	// --- Previous Month ---
-	date := filter.Date.AddDate(0, -1, 0) // move filter date to previous month
-	previousStart, previousEnd := utils.GetStartAndEndOfMonth(date)
-	previous, err := s.repo.FindAllByUserIDAndFiltered(userID, previousStart, previousEnd)
+	previous, err := s.repo.FindAllByUserIDAndFiltered(userID, start.AddDate(0, -1, 0), end.AddDate(0, -1, 0))
 	if err != nil {
 		return nil, err
 	}
@@ -281,33 +279,4 @@ func saveNewTransaction(s *service, tx *e.Transaction) (*e.Transaction, error) {
 		return nil, err
 	}
 	return txWithCat, nil
-}
-
-func getMonthRange(filter *m.TransactionFilter) (time.Time, time.Time) {
-
-	t := filter.Date
-	loc := t.Location()
-	// First day of current month at 00:00
-	firstOfCurrent := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, loc)
-
-	// Last day of previous month = firstOfCurrent - 1 day
-	lastOfPrevious := firstOfCurrent.AddDate(0, 0, -1)
-
-	// Last day of current month = first of next month - 1 day
-	firstOfNext := firstOfCurrent.AddDate(0, 1, 0)
-	lastOfCurrent := firstOfNext.AddDate(0, 0, -1)
-
-	// Set final times to 17:00:00
-	startRange := time.Date(
-		lastOfPrevious.Year(), lastOfPrevious.Month(), lastOfPrevious.Day(),
-		17, 0, 0, 0,
-		loc,
-	)
-
-	endRange := time.Date(
-		lastOfCurrent.Year(), lastOfCurrent.Month(), lastOfCurrent.Day(),
-		17, 0, 0, 0,
-		loc,
-	)
-	return startRange, endRange
 }
