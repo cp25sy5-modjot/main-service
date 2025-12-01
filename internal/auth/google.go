@@ -2,15 +2,17 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
+	"gorm.io/gorm"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
-	u "github.com/cp25sy5-modjot/main-service/internal/user/service"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
+	u "github.com/cp25sy5-modjot/main-service/internal/user/service"
 
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/api/idtoken"
@@ -27,8 +29,10 @@ func HandleGoogleTokenExchange(c *fiber.Ctx, service u.Service, config *config.C
 		return fiber.NewError(fiber.StatusUnauthorized, "Invalid ID token")
 	}
 
-	userInfo := getUserInfoFromPayload(payload, service)
-
+	userInfo, err := getUserInfoFromPayload(payload, service)
+	if err != nil {
+		return err
+	}
 	accessToken, refreshToken, err := jwt.GenerateTokens(userInfo, config.Auth)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to generate tokens")
@@ -49,32 +53,52 @@ func validateIDToken(idToken string, config *config.Google) (*idtoken.Payload, e
 	return payload, nil
 }
 
-func getUserInfoFromPayload(payload *idtoken.Payload, service u.Service) *jwt.UserInfo {
-	googleID := payload.Subject
+func getUserInfoFromPayload(payload *idtoken.Payload, service u.Service) (*jwt.UserInfo, error) {
+	if payload == nil {
+		return nil, fiber.NewError(fiber.StatusBadRequest, "invalid token payload")
+	}
 
+	googleID := payload.Subject
+	if googleID == "" {
+		return nil, fiber.NewError(fiber.StatusBadRequest, "google id not found in token")
+	}
+
+	// 1. ลองหา user จาก GoogleID
 	user, err := service.GetByGoogleID(googleID)
 	if err != nil {
-		name := payload.Claims["given_name"].(string)
-		if name == "" {
-			name = payload.Claims["name"].(string)
+		// ถ้าเป็น error อื่นที่ไม่ใช่ not found → คืน error เลย
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fiber.NewError(fiber.StatusInternalServerError, "failed to get user")
 		}
-		if name == "" {
+	}
+
+	// 2. ถ้ายังไม่มี user (nil) → สร้างใหม่
+	if user == nil {
+		var name string
+
+		if v, ok := payload.Claims["given_name"].(string); ok && v != "" {
+			name = v
+		} else if v, ok := payload.Claims["name"].(string); ok && v != "" {
+			name = v
+		} else {
 			name = "New User"
 		}
+
 		user, err = service.Create(&u.UserCreateInput{
 			Name: name,
 			UserBinding: e.UserBinding{
 				GoogleID: googleID,
 			},
 		})
-		if err != nil {
-			fiber.NewError(fiber.StatusInternalServerError, "Failed to create user")
+		if err != nil || user == nil {
+			return nil, fiber.NewError(fiber.StatusInternalServerError, "failed to create user")
 		}
-		log.Printf("Created new user!")
+		log.Printf("Created new user! id=%s", user.UserID)
 	}
 
+	// 3. ตรงนี้มั่นใจได้แล้วว่า user != nil
 	return &jwt.UserInfo{
 		UserID: user.UserID,
 		Name:   user.Name,
-	}
+	}, nil
 }
