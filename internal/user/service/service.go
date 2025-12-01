@@ -4,8 +4,8 @@ import (
 	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
-	userrepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
+	userrepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
 	"github.com/google/uuid"
 )
 
@@ -51,23 +51,43 @@ func (s *service) CreateMockUser(input *UserCreateInput, uid string) (*e.User, e
 }
 
 func (s *service) GetAll() ([]*e.User, error) {
-	return s.repo.FindAll()
+	users, err := s.repo.FindAll()
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 func (s *service) GetByID(user_id string) (*e.User, error) {
-	return s.repo.FindByID(user_id)
+	user, err := s.repo.FindByID(user_id)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (s *service) GetByGoogleID(google_id string) (*e.User, error) {
-	return s.repo.FindByGoogleID(google_id)
+	user, err := s.repo.FindByGoogleID(google_id)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (s *service) GetByFacebookID(facebook_id string) (*e.User, error) {
-	return s.repo.FindByFacebookID(facebook_id)
+	user, err := s.repo.FindByFacebookID(facebook_id)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (s *service) GetByAppleID(apple_id string) (*e.User, error) {
-	return s.repo.FindByAppleID(apple_id)
+	user, err := s.repo.FindByAppleID(apple_id)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (s *service) Update(userID string, input *UserUpdateInput) (*e.User, error) {

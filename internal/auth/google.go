@@ -67,7 +67,6 @@ func getUserInfoFromPayload(payload *idtoken.Payload, usvc u.Service, csvc c.Ser
 	// 1. ลองหา user จาก GoogleID
 	user, err := usvc.GetByGoogleID(googleID)
 	if err != nil {
-		// ถ้าเป็น error อื่นที่ไม่ใช่ not found → คืน error เลย
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fiber.NewError(fiber.StatusInternalServerError, "failed to get user")
 		}
