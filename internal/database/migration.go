@@ -9,9 +9,9 @@ import (
 // AutoMigrate runs GORM's automigrate for all entities
 func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
-		&e.Transaction{},
 		&e.User{},
 		&e.Category{},
+		&e.Transaction{},
 		// &e.TransactionItem{},
 	)
 }
