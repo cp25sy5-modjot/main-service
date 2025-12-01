@@ -14,9 +14,9 @@ type Transaction struct {
 	Quantity      float64
 	Date          time.Time
 	Type          string
-	CategoryID    *string
 
-	Category Category
+	CategoryID *string
+	Category   Category
 }
 
 // Next Release: Split Transaction into Transaction and TransactionItem

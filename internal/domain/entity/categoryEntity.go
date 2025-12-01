@@ -12,4 +12,6 @@ type Category struct {
 	Budget       float64
 	ColorCode    string    `gorm:"length:7"`
 	CreatedAt    time.Time `gorm:"autoCreateTime"`
+
+	Transactions []Transaction 
 }
