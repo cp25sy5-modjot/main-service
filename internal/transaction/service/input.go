@@ -16,6 +16,6 @@ type TransactionUpdateInput struct {
 	Title      string
 	Price      float64
 	Quantity   float64
-	CategoryID *string
+	CategoryID string
 	Date       *time.Time
 }
