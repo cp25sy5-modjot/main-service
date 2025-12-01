@@ -25,6 +25,6 @@ type CategoryRes struct {
 }
 
 type CategorySearchParams struct {
-	CategoryID *string
+	CategoryID string
 	UserID     string
 }

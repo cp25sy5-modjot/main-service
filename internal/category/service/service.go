@@ -146,7 +146,7 @@ func saveNewCategory(s *service, cat *e.Category) (*e.Category, error) {
 	}
 	// Reload with preload
 	catWithDetails, err := s.categoryrepo.FindByID(&m.CategorySearchParams{
-		CategoryID: &newCat.CategoryID,
+		CategoryID: newCat.CategoryID,
 		UserID:     newCat.UserID,
 	})
 	if err != nil {

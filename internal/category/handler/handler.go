@@ -84,7 +84,7 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 
 	categoryID := c.Params("id")
 	params := &m.CategorySearchParams{
-		CategoryID: &categoryID,
+		CategoryID: categoryID,
 		UserID:     userID,
 	}
 
@@ -127,7 +127,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 
 	categoryID := c.Params("id")
 	params := &m.CategorySearchParams{
-		CategoryID: &categoryID,
+		CategoryID: categoryID,
 		UserID:     userID,
 	}
 
@@ -153,7 +153,7 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 
 	categoryID := c.Params("id")
 	params := &m.CategorySearchParams{
-		CategoryID: &categoryID,
+		CategoryID: categoryID,
 		UserID:     userID,
 	}
 

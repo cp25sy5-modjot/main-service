@@ -249,7 +249,7 @@ func processTransaction(tResponse *pb.TransactionResponse, categories []e.Catego
 	if err != nil {
 		return nil, err
 	}
-	transaction.CategoryID = &match.CategoryID
+	transaction.CategoryID = match.CategoryID
 	txId := uuid.New().String()
 
 	tx := buildTransactionObjectToCreate(txId, userID, "image_upload", transaction)

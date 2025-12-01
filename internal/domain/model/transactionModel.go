@@ -14,7 +14,7 @@ type TransactionInsertReq struct {
 	Title      string    `json:"title" validate:"required,min=2,max=20"`
 	Price      float64   `json:"price" validate:"required"`
 	Quantity   float64   `json:"quantity" validate:"required"`
-	CategoryID *string   `json:"category_id"`
+	CategoryID string   `json:"category_id"`
 	Date       time.Time `json:"date"`
 }
 
@@ -33,7 +33,7 @@ type TransactionRes struct {
 	Price             float64   `json:"price"`
 	Date              time.Time `json:"date"`
 	Type              string    `json:"type"`
-	CategoryID        *string   `json:"category_id"`
+	CategoryID        string   `json:"category_id"`
 	CategoryName      string    `json:"category_name"`
 	CategoryColorCode string    `json:"category_color_code"`
 }

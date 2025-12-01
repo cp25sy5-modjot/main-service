@@ -15,7 +15,7 @@ type Transaction struct {
 	Date          time.Time
 	Type          string
 
-	CategoryID *string
+	CategoryID string
 	Category   Category
 }
 
