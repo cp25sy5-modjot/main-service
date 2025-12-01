@@ -35,7 +35,6 @@ func (r *Repository) findAllUncategorizedByUserID(userID string) ([]e.Transactio
 func (r *Repository) FindAllByUserID(userID string) ([]e.Transaction, error) {
 	var transactions []e.Transaction
 	err := r.db.
-		Preload("Category"). // load related Category
 		Where("user_id = ?", userID).
 		Order("date DESC").
 		Find(&transactions).Error
@@ -74,3 +73,29 @@ func (r *Repository) Update(transaction *e.Transaction) (*e.Transaction, error) 
 func (r *Repository) Delete(params *m.TransactionSearchParams) error {
 	return r.db.Delete(&e.Transaction{}, "transaction_id = ? AND item_id = ?", params.TransactionID, params.ItemID).Error
 }
+
+// func (r *Repository) GetTransactionsByUserIDWithCategory(
+// 	userId string,
+// 	start, end time.Time,
+// ) ([]m.TransactionRes, error) {
+
+// 	var list []m.TransactionRes
+
+// 	err := r.db.Raw(`
+// 		SELECT 
+// 			t.transaction_id,
+// 			t.item_id,
+// 			t.title,
+// 			t.price,
+// 			t.date,
+// 			t.type,
+// 			t.category_id
+// 		FROM transactions t
+// 		LEFT JOIN categories c ON c.category_id = t.category_id AND c.user_id = t.user_id
+// 		WHERE t.user_id = ? AND t.date >= ? AND t.date < ?
+// 		GROUP BY t.transaction_id, t.item_id, t.title, t.price, t.date, t.type, t.category_id
+// 		ORDER BY t.date DESC
+// 	`, userId, start, end).Scan(&list).Error
+
+// 	return list, err
+// }
