@@ -21,7 +21,7 @@ type UserInsertReq struct {
 
 type UserUpdateReq struct {
 	Name string    `json:"name" validate:"min=1,max=15"`
-	DOB  time.Time `json:"dob"`
+	DOB  time.Time `json:"dob" validate:"required"`
 }
 
 // added for onboarding flow in release 2
