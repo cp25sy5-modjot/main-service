@@ -271,7 +271,7 @@ func saveNewTransaction(s *service, tx *e.Transaction) (*e.Transaction, error) {
 		return nil, err
 	}
 	// Reload with preload
-	txWithCat, err := s.repo.FindByID(&m.TransactionSearchParams{
+	txWithCat, err := s.repo.FindByIDWithCategory(&m.TransactionSearchParams{
 		TransactionID: newTx.TransactionID,
 		ItemID:        newTx.ItemID,
 		UserID:        newTx.UserID,
