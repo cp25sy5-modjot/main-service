@@ -19,7 +19,7 @@ func NewRepository(db *gorm.DB) *Repository {
 // internal/overview/repository.go (cont.)
 
 // --- Last N transactions (price already = price * quantity) ---
-func (r *Repository) GetLastTransactions(userID string, start, end time.Time, limit int) ([]m.LastTransaction, error) {
+func (r *Repository) GetLastTransactions(userID string, limit int) ([]m.LastTransaction, error) {
 	var list []m.LastTransaction
 
 	err := r.db.
@@ -36,7 +36,7 @@ func (r *Repository) GetLastTransactions(userID string, start, end time.Time, li
 			COALESCE(c.color_code, '')   AS category_color_code
 		`).
 		Joins("LEFT JOIN categories c ON c.category_id = t.category_id AND c.user_id = t.user_id").
-		Where("t.user_id = ? AND t.date >= ? AND t.date < ?", userID, start, end).
+		Where("t.user_id = ?", userID).
 		Order("t.date DESC").
 		Limit(limit).
 		Scan(&list).Error
