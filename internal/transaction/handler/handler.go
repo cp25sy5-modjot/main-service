@@ -1,6 +1,8 @@
 package transactionhandler
 
 import (
+	"time"
+
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
@@ -13,7 +15,7 @@ import (
 )
 
 type Handler struct {
-	service     txsvc.Service      // <- use interface, not *Service
+	service     txsvc.Service // <- use interface, not *Service
 	asynqClient *asynq.Client
 	storage     storage.Storage
 }
@@ -99,6 +101,11 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	TransactionSearchParams, err := createTransactionSearchParams(c)
 	if err != nil {
 		return err
+	}
+
+	if req.Date == nil {
+		date := time.Now()
+		req.Date = &date
 	}
 
 	input := parseTransactionUpdateReqToServiceInput(&req)

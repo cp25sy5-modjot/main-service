@@ -23,7 +23,7 @@ type TransactionUpdateReq struct {
 	Price      float64   `json:"price" validate:"required"`
 	Quantity   float64   `json:"quantity" validate:"required"`
 	CategoryID *string   `json:"category_id"`
-	Date       time.Time `json:"date" validate:"required"`
+	Date       *time.Time `json:"date" validate:"required"`
 }
 
 type TransactionRes struct {
