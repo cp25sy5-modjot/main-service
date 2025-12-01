@@ -65,7 +65,7 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "failed to retrieve categories with transactions")
 		}
-		return sresp.OK(c, categories, "Categories with transactions retrieved successfully")
+		return sresp.OK(c, buildCategoryResponses(categories), "Categories with transactions retrieved successfully")
 	}
 
 	categories, err := h.service.GetAllByUserID(userID)
@@ -86,6 +86,23 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 	params := &m.CategorySearchParams{
 		CategoryID: &categoryID,
 		UserID:     userID,
+	}
+
+	isIncludeTransactions, err := isIncludeTransactions(c)
+	if err != nil {
+		return err
+	}
+
+	if isIncludeTransactions {
+		date := c.Query("date")
+		filter := &m.TransactionFilter{
+			Date: utils.ConvertStringToTime(date),
+		}
+		category, err := h.service.GetByIDWithTransactions(params, filter)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
+		return sresp.OK(c, buildCategoryResponse(category), "Category with transactions retrieved successfully")
 	}
 
 	category, err := h.service.GetByID(params)
@@ -158,12 +175,28 @@ func isIncludeTransactions(c *fiber.Ctx) (bool, error) {
 }
 
 func buildCategoryResponse(cat *e.Category) *m.CategoryRes {
-	return &m.CategoryRes{
-		CategoryID:   &cat.CategoryID,
-		CategoryName: cat.CategoryName,
-		Budget:       cat.Budget,
-		ColorCode:    cat.ColorCode,
-		CreatedAt:    cat.CreatedAt,
+	if cat.Transactions == nil {
+		return &m.CategoryRes{
+			CategoryID:   &cat.CategoryID,
+			CategoryName: cat.CategoryName,
+			Budget:       cat.Budget,
+			ColorCode:    cat.ColorCode,
+			CreatedAt:    cat.CreatedAt,
+		}
+	} else {
+		budgetUsage := 0.0
+		for _, tx := range cat.Transactions {
+			_ = tx // just to avoid unused variable warning
+			budgetUsage += tx.Price * tx.Quantity
+		}
+		return &m.CategoryRes{
+			CategoryID:   &cat.CategoryID,
+			CategoryName: cat.CategoryName,
+			Budget:       cat.Budget,
+			ColorCode:    cat.ColorCode,
+			CreatedAt:    cat.CreatedAt,
+			BudgetUsage:  budgetUsage,
+		}
 	}
 }
 

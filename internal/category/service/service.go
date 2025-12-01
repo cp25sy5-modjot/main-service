@@ -14,11 +14,11 @@ import (
 type Service interface {
 	Create(userId string, input *CategoryCreateInput) (*e.Category, error)
 	GetAllByUserID(userID string) ([]e.Category, error)
-	GetAllByUserIDWithTransactions(userID string, filter *m.TransactionFilter) ([]m.CategoryRes, error)
+	GetAllByUserIDWithTransactions(userID string, filter *m.TransactionFilter) ([]e.Category, error)
 	GetByID(params *m.CategorySearchParams) (*e.Category, error)
+	GetByIDWithTransactions(params *m.CategorySearchParams, filter *m.TransactionFilter) (*e.Category, error)
 	Update(params *m.CategorySearchParams, input *CategoryUpdateInput) (*e.Category, error)
 	Delete(params *m.CategorySearchParams) error
-
 	CreateDefaultCategories(userID string) error
 }
 
@@ -51,14 +51,14 @@ func (s *service) GetAllByUserID(userID string) ([]e.Category, error) {
 	return categories, nil
 }
 
-func (s *service) GetAllByUserIDWithTransactions(userID string, filter *m.TransactionFilter) ([]m.CategoryRes, error) {
+func (s *service) GetAllByUserIDWithTransactions(userID string, filter *m.TransactionFilter) ([]e.Category, error) {
 	if filter.Date == nil {
 		now := time.Now()
 		filter.Date = &now
 	}
 	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
 
-	categories, err := s.categoryrepo.GetCategoriesAndTransactions(userID, start, end)
+	categories, err := s.categoryrepo.FindAllByUserIDWithTransactionsFiltered(userID, start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -67,6 +67,20 @@ func (s *service) GetAllByUserIDWithTransactions(userID string, filter *m.Transa
 
 func (s *service) GetByID(params *m.CategorySearchParams) (*e.Category, error) {
 	category, err := s.categoryrepo.FindByID(params)
+	if err != nil {
+		return nil, err
+	}
+	return category, nil
+}
+
+func (s *service) GetByIDWithTransactions(params *m.CategorySearchParams, filter *m.TransactionFilter) (*e.Category, error) {
+	if filter.Date == nil {
+		now := time.Now()
+		filter.Date = &now
+	}
+	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
+
+	category, err := s.categoryrepo.FindByIDWithTransactionsFiltered(params, start, end)
 	if err != nil {
 		return nil, err
 	}
