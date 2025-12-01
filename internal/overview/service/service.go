@@ -39,9 +39,24 @@ func (s *service) GetOverview(userID string, t time.Time) (*m.OverviewResponse, 
 		return nil, err
 	}
 
-	// 3) build response
+	// 3) current month total
+	currentMonthTotal, err := s.repo.GetMonthTotal(userID, start, end)
+	if err != nil {
+		return nil, err
+	}
+
+	// 4) previous month total
+	previousStart, previousEnd := utils.GetStartAndEndOfPreviousMonth(t)
+	previousMonthTotal, err := s.repo.GetMonthTotal(userID, previousStart, previousEnd)
+	if err != nil {
+		return nil, err
+	}
+
+	// 5) build response
 	return &m.OverviewResponse{
-		LastTransactions: lastTx,
-		TopCategories:    topCats,
+		LastTransactions:   lastTx,
+		TopCategories:      topCats,
+		CurrentMonthTotal:  currentMonthTotal,
+		PreviousMonthTotal: previousMonthTotal,
 	}, nil
 }

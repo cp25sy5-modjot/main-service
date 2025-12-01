@@ -74,3 +74,15 @@ func (r *Repository) GetTopCategoriesBySpending(
 
 	return list, err
 }
+
+func (r *Repository) GetMonthTotal(userID string, start, end time.Time) (float64, error) {
+	var total float64
+
+	err := r.db.
+		Table("transactions").
+		Select("COALESCE(SUM(price), 0)").
+		Where("user_id = ? AND date >= ? AND date < ?", userID, start, end).
+		Scan(&total).Error
+
+	return total, err
+}
