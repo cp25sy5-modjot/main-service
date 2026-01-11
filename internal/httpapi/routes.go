@@ -17,10 +17,11 @@ import (
 	txhandler "github.com/cp25sy5-modjot/main-service/internal/transaction/handler"
 	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
+	txirepo "github.com/cp25sy5-modjot/main-service/internal/transaction_item/repository"
 	userhandler "github.com/cp25sy5-modjot/main-service/internal/user/handler"
 	userepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
 	usersvc "github.com/cp25sy5-modjot/main-service/internal/user/service"
-	pb "github.com/cp25sy5-modjot/proto/gen/ai/v1"
+	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -49,11 +50,12 @@ func initializeServices(s *fiberServer) *Services {
 	categoryRepo := catrepo.NewRepository(s.db.GetDb())
 	userRepo := userepo.NewRepository(s.db.GetDb())
 	transactionRepo := txrepo.NewRepository(s.db.GetDb())
+	transactionItemRepo := txirepo.NewRepository(s.db.GetDb())
 	overviewRepo := overviewrepo.NewRepository(s.db.GetDb())
 
 	categorySvc := catsvc.NewService(categoryRepo, transactionRepo)
 	userSvc := usersvc.NewService(userRepo)
-	transactionSvc := txsvc.NewService(transactionRepo, categoryRepo, s.aiClient)
+	transactionSvc := txsvc.NewService(transactionRepo, transactionItemRepo, categoryRepo, s.aiClient)
 	overviewSvc := overviewsvc.NewService(overviewRepo)
 
 	return &Services{

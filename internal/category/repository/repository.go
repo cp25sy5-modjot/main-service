@@ -49,7 +49,12 @@ func (r *Repository) FindAllByUserIDWithTransactionsFiltered(
 	var categories []e.Category
 
 	err := r.db.
-		Preload("Transactions", "user_id = ? AND date >= ? AND date < ?", userID, start, end).
+		Preload("TransactionItems", func(tx *gorm.DB) *gorm.DB {
+			return tx.
+				Joins("JOIN transactions t ON t.transaction_id = transaction_items.transaction_id").
+				Where("t.user_id = ? AND t.date >= ? AND t.date < ?", userID, start, end)
+		}).
+		Preload("TransactionItems.Transaction").
 		Where("user_id = ?", userID).
 		Order("created_at ASC").
 		Find(&categories).Error
@@ -64,7 +69,17 @@ func (r *Repository) FindByIDWithTransactionsFiltered(
 	var category e.Category
 
 	err := r.db.
-		Preload("Transactions", "user_id = ? AND date >= ? AND date < ?", params.UserID, start, end).
+		Preload("TransactionItems", func(tx *gorm.DB) *gorm.DB {
+			return tx.
+				Joins("JOIN transactions t ON t.transaction_id = transaction_items.transaction_id").
+				Where(
+					"t.user_id = ? AND t.date >= ? AND t.date < ?",
+					params.UserID,
+					start,
+					end,
+				)
+		}).
+		Preload("TransactionItems.Transaction").
 		First(
 			&category,
 			"category_id = ? AND user_id = ?",
@@ -85,4 +100,3 @@ func (r *Repository) Update(category *e.Category) (*e.Category, error) {
 func (r *Repository) Delete(params *m.CategorySearchParams) error {
 	return r.db.Delete(&e.Category{}, "category_id = ? AND user_id = ?", params.CategoryID, params.UserID).Error
 }
-

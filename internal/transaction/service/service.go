@@ -3,6 +3,7 @@ package transactionsvc
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -11,8 +12,10 @@ import (
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
-	pb "github.com/cp25sy5-modjot/proto/gen/ai/v1"
+	txirepo "github.com/cp25sy5-modjot/main-service/internal/transaction_item/repository"
+	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Service interface {
@@ -30,32 +33,41 @@ type Service interface {
 
 // concrete implementation
 type service struct {
+	db       *gorm.DB
 	repo     *txrepo.Repository
+	txirepo  *txirepo.Repository
 	catrepo  *catrepo.Repository
 	aiClient pb.AiWrapperServiceClient
 }
 
-func NewService(repo *txrepo.Repository, catrepo *catrepo.Repository, aiClient pb.AiWrapperServiceClient) *service {
-	return &service{repo: repo, catrepo: catrepo, aiClient: aiClient}
+func NewService(repo *txrepo.Repository, txirepo *txirepo.Repository, catrepo *catrepo.Repository, aiClient pb.AiWrapperServiceClient) *service {
+	return &service{repo: repo, txirepo: txirepo, catrepo: catrepo, aiClient: aiClient}
 }
 
-func (s *service) Create(userID string, input *TransactionCreateInput) (*e.Transaction, error) {
-	txId := uuid.New().String()
+func (s *service) Create(
+	userID string,
+	input *TransactionCreateInput,
+) (*e.Transaction, error) {
+	return s.createInternal(userID, e.TransactionManual, input)
+}
 
-	_, err := s.catrepo.FindByID(&m.CategorySearchParams{
-		CategoryID: input.CategoryID,
-		UserID:     userID,
-	})
-	if err != nil {
+func (s *service) createInternal(
+	userID string,
+	txType e.TransactionType,
+	input *TransactionCreateInput,
+) (*e.Transaction, error) {
+
+	// 1. validate
+	if err := s.validateCreateInput(userID, input); err != nil {
 		return nil, err
 	}
 
-	tx := buildTransactionObjectToCreate(txId, userID, "manual", input)
-	txWithCat, err := saveNewTransaction(s, tx)
-	if err != nil {
-		return nil, err
-	}
-	return txWithCat, nil
+	// 2. build
+	txID := uuid.New().String()
+	tx, items := buildTransactionToCreate(txID, userID, txType, input)
+
+	// 3. save (atomic)
+	return s.saveNewTransaction(tx, items)
 }
 
 func (s *service) ProcessUploadedFile(fileData []byte, userID string) (*e.Transaction, error) {
@@ -78,7 +90,7 @@ func (s *service) ProcessUploadedFile(fileData []byte, userID string) (*e.Transa
 	log.Printf("AI Service Response: %+v", resp)
 
 	// 3. process into real transaction (same as before)
-	return processTransaction(resp, categories, userID, s)
+	return s.processTransaction(resp, categories, userID)
 }
 
 func (s *service) GetAllByUserID(userID string) ([]e.Transaction, error) {
@@ -136,7 +148,7 @@ func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(userID string,
 }
 
 func (s *service) GetByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
-	tx, err := s.repo.FindByIDWithCategory(params)
+	tx, err := s.repo.FindByIDWithRelations(params)
 	if err != nil {
 		return nil, err
 	}
@@ -183,42 +195,47 @@ func isDefaultDate(t time.Time) bool {
 	return t.Year() == 1 && t.Month() == time.January && t.Day() == 1
 }
 
-func buildTransactionObjectToCreate(txId, userID, txType string, tx *TransactionCreateInput) *e.Transaction {
-	if isDefaultDate(tx.Date) {
-		tx.Date = time.Now()
+func buildTransactionToCreate(
+	txID, userID string,
+	txType e.TransactionType,
+	input *TransactionCreateInput,
+) (*e.Transaction, []e.TransactionItem) {
+
+	if isDefaultDate(input.Date) {
+		input.Date = time.Now()
 	}
-	return &e.Transaction{
-		TransactionID: txId,
-		ItemID:        uuid.New().String(),
+
+	items := make([]e.TransactionItem, 0, len(input.Items))
+	for _, it := range input.Items {
+		items = append(items, e.TransactionItem{
+			TransactionID: txID,
+			ItemID:        uuid.New().String(),
+			Title:         it.Title,
+			Price:         it.Price,
+			CategoryID:    it.CategoryID,
+		})
+	}
+
+	tx := &e.Transaction{
+		TransactionID: txID,
 		UserID:        userID,
 		Type:          txType,
-		Quantity:      tx.Quantity,
-		Title:         tx.Title,
-		Price:         tx.Price,
-		CategoryID:    tx.CategoryID,
-		Date:          tx.Date,
+		Date:          input.Date,
 	}
+
+	return tx, items
 }
 
-// func buildTransactionObjectToCreates(txId, userID, txType string,  txs []*TransactionCreateInput) []*e.Transaction {
-// 	var transactions []*e.Transaction
-// 	for _, tx := range txs {
-// 		newTx := buildTransactionObjectToCreate(txId, userID, txType, tx)
-// 		transactions = append(transactions, newTx)
-// 	}
-// 	return transactions
-// }
-
 func matchCategoryFromName(categories []e.Category, categoryName string) *e.Category {
-	for _, cat := range categories {
-		if cat.CategoryName == categoryName {
-			return &cat
+	for i := range categories {
+		if categories[i].CategoryName == categoryName {
+			return &categories[i]
 		}
 	}
 	return nil
 }
 
-func callAIServiceToBuildTransaction(fileData []byte, categories []e.Category, aiClient pb.AiWrapperServiceClient) (*pb.TransactionResponse, error) {
+func callAIServiceToBuildTransaction(fileData []byte, categories []e.Category, aiClient pb.AiWrapperServiceClient) (*pb.TransactionResponseV2, error) {
 	//get category names to send to ai service
 	categoryNames, err := GetCategoryNames(categories)
 	if err != nil {
@@ -239,45 +256,119 @@ func callAIServiceToBuildTransaction(fileData []byte, categories []e.Category, a
 	return tResponse, nil
 }
 
-func processTransaction(tResponse *pb.TransactionResponse, categories []e.Category, userID string, s *service) (*e.Transaction, error) {
-	match := matchCategoryFromName(categories, tResponse.Category)
-	if match == nil {
-		return nil, errors.New("category does not exist")
-	}
-	transaction := &TransactionCreateInput{}
-	err := utils.MapStructs(tResponse, transaction)
-	if err != nil {
-		return nil, err
-	}
-	transaction.CategoryID = match.CategoryID
-	txId := uuid.New().String()
+func (s *service) processTransaction(
+	tResponse *pb.TransactionResponseV2,
+	categories []e.Category,
+	userID string,
+) (*e.Transaction, error) {
 
-	tx := buildTransactionObjectToCreate(txId, userID, "image_upload", transaction)
-	txWithCat, err := saveNewTransaction(s, tx)
-	if err != nil {
-		return nil, err
+	if len(tResponse.Items) == 0 {
+		return nil, errors.New("no transaction items")
 	}
-	return txWithCat, nil
+
+	// parse date
+	date := time.Now()
+	if tResponse.Date != "" {
+		if parsed, err := time.Parse(time.RFC3339, tResponse.Date); err == nil {
+			date = parsed
+		}
+	}
+
+	var items []TransactionItemInput
+
+	for _, res := range tResponse.Items {
+		// match category per item
+		match := matchCategoryFromName(categories, res.Category)
+		if match == nil {
+			return nil, fmt.Errorf("category not found: %s", res.Category)
+		}
+
+		item := TransactionItemInput{
+			Title:      res.Title,
+			Price:      res.Price,
+			CategoryID: match.CategoryID,
+		}
+
+		items = append(items, item)
+	}
+
+	input := &TransactionCreateInput{
+		Date:  date,
+		Items: items,
+	}
+
+	return s.createInternal(userID, e.TransactionUpload, input)
 }
 
-func saveNewTransaction(s *service, tx *e.Transaction) (*e.Transaction, error) {
-	if tx.Quantity != 1 {
-		//quantity will be remove in future, so we multiply price with quantity and set quantity to 1
-		tx.Price *= float64(tx.Quantity)
-		tx.Quantity = 1
+func (s *service) saveNewTransaction(
+	tx *e.Transaction,
+	items []e.TransactionItem,
+) (*e.Transaction, error) {
+
+	if tx == nil {
+		return nil, errors.New("transaction is nil")
 	}
-	newTx, err := s.repo.Create(tx)
-	if err != nil {
-		return nil, err
+	if len(items) == 0 {
+		return nil, errors.New("no transaction items to save")
 	}
-	// Reload with preload
-	txWithCat, err := s.repo.FindByIDWithCategory(&m.TransactionSearchParams{
-		TransactionID: newTx.TransactionID,
-		ItemID:        newTx.ItemID,
-		UserID:        newTx.UserID,
+
+	err := s.db.Transaction(func(db *gorm.DB) error {
+		if err := s.repo.WithTx(db).Create(tx); err != nil {
+			return err
+		}
+
+		if err := s.txirepo.WithTx(db).CreateMany(items); err != nil {
+			return err
+		}
+
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	return txWithCat, nil
+
+	return s.repo.FindByIDWithRelations(&m.TransactionSearchParams{
+		TransactionID: tx.TransactionID,
+		UserID:        tx.UserID,
+	})
+}
+
+func (s *service) validateCreateInput(
+	userID string,
+	input *TransactionCreateInput,
+) error {
+
+	if input == nil {
+		return errors.New("input is required")
+	}
+
+	if len(input.Items) == 0 {
+		return errors.New("at least one item is required")
+	}
+	categories, err := s.catrepo.FindAllByUserID(userID)
+	if err != nil {
+		return err
+	}
+
+	for _, it := range input.Items {
+		if it.Title == "" {
+			return errors.New("item title is required")
+		}
+		if it.Price <= 0 {
+			return errors.New("item price must be positive")
+		}
+		categoryMap := map[string]bool{}
+		for _, c := range categories {
+			categoryMap[c.CategoryID] = true
+		}
+
+		for _, it := range input.Items {
+			if !categoryMap[it.CategoryID] {
+				return errors.New("invalid category")
+			}
+		}
+
+	}
+
+	return nil
 }

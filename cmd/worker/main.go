@@ -13,7 +13,8 @@ import (
 	"github.com/cp25sy5-modjot/main-service/internal/storage/localfs"
 	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
-	pb "github.com/cp25sy5-modjot/proto/gen/ai/v1"
+	txirepo "github.com/cp25sy5-modjot/main-service/internal/transaction_item/repository"
+	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -34,8 +35,9 @@ func main() {
 
 	// Services
 	txRepo := txrepo.NewRepository(db.GetDb())
+	txiRepo := txirepo.NewRepository(db.GetDb())
 	catRepo := catrepo.NewRepository(db.GetDb())
-	txService := txsvc.NewService(txRepo, catRepo, aiClient)
+	txService := txsvc.NewService(txRepo, txiRepo, catRepo, aiClient)
 
 	// Storage
 	uploadDir := conf.UploadDir

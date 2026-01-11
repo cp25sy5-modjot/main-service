@@ -5,37 +5,30 @@ import (
 )
 
 type TransactionSearchParams struct {
-	TransactionID string `json:"transaction_id" validate:"required"`
-	ItemID        string `json:"item_id" validate:"required"`
+	TransactionID string `json:"transaction_id"`
 	UserID        string `json:"user_id" validate:"required"`
+}
+type TransactionItemReq struct {
+	Title      string  `json:"title" validate:"required,min=2,max=20"`
+	Price      float64 `json:"price" validate:"required"`
+	CategoryID string  `json:"category_id" validate:"required"`
 }
 
 type TransactionInsertReq struct {
-	Title      string    `json:"title" validate:"required,min=2,max=20"`
-	Price      float64   `json:"price" validate:"required"`
-	Quantity   float64   `json:"quantity" validate:"required"`
-	CategoryID string    `json:"category_id" validate:"required"`
-	Date       time.Time `json:"date"`
+	Items []TransactionItemReq `json:"items" validate:"required,min=1,dive"`
+	Date  time.Time            `json:"date"`
 }
 
 type TransactionUpdateReq struct {
-	Title      string     `json:"title" validate:"required,min=2,max=20"`
-	Price      float64    `json:"price" validate:"required"`
-	Quantity   float64    `json:"quantity" validate:"required"`
-	CategoryID string     `json:"category_id" validate:"required"`
-	Date       *time.Time `json:"date" validate:"required"`
+	Items []TransactionItemReq `json:"items" validate:"required,min=1,dive"`
+	Date  *time.Time           `json:"date" validate:"required"`
 }
 
 type TransactionRes struct {
-	TransactionID     string    `json:"transaction_id"`
-	ItemID            string    `json:"item_id"`
-	Title             string    `json:"title"`
-	Price             float64   `json:"price"`
-	Date              time.Time `json:"date"`
-	Type              string    `json:"type"`
-	CategoryID        string    `json:"category_id"`
-	CategoryName      string    `json:"category_name"`
-	CategoryColorCode string    `json:"category_color_code"`
+	TransactionID string               `json:"transaction_id"`
+	Date          time.Time            `json:"date"`
+	Type          string               `json:"type"`
+	Items         []TransactionItemRes `json:"items"`
 }
 
 type TransactionFilter struct {

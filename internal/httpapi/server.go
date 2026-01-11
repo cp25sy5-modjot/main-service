@@ -10,7 +10,7 @@ import (
 	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	"github.com/cp25sy5-modjot/main-service/internal/storage"
 	"github.com/cp25sy5-modjot/main-service/internal/storage/localfs"
-	pb "github.com/cp25sy5-modjot/proto/gen/ai/v1"
+	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
 	"github.com/hibiken/asynq"
 
 	// "github.com/gofiber/contrib/swagger"
