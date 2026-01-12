@@ -104,7 +104,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	}
 
 	if req.Date == nil {
-		date := time.Now()
+		date := time.Now().UTC()
 		req.Date = &date
 	}
 
@@ -169,8 +169,8 @@ func buildTransactionResponses(transactions []e.Transaction) []m.TransactionRes 
 		return []m.TransactionRes{}
 	}
 	transactionResponses := make([]m.TransactionRes, 0, len(transactions))
-	for _, tx := range transactions {
-		res := buildTransactionResponse(&tx)
+	for i := range transactions {
+		res := buildTransactionResponse(&transactions[i])
 		transactionResponses = append(transactionResponses, *res)
 	}
 	return transactionResponses
@@ -193,8 +193,8 @@ func buildTransactionItemResponses(items []e.TransactionItem) []m.TransactionIte
 		return []m.TransactionItemRes{}
 	}
 	itemResponses := make([]m.TransactionItemRes, 0, len(items))
-	for _, item := range items {
-		res := buildTransactionItemResponse(&item)
+	for i := range items {
+		res := buildTransactionItemResponse(&items[i])
 		itemResponses = append(itemResponses, *res)
 	}
 	return itemResponses

@@ -120,12 +120,12 @@ func buildUserObjectToCreate(uid string, input *UserCreateInput) *e.User {
 	return &e.User{
 		UserID: uid,
 		UserBinding: e.UserBinding{
-			GoogleID:   input.UserBinding.GoogleID,
+			GoogleID: input.UserBinding.GoogleID,
 			// FacebookID: input.UserBinding.FacebookID,
 			// AppleID:    input.UserBinding.AppleID,
 		},
 		Name:      input.Name,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 }

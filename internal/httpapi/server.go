@@ -70,5 +70,6 @@ func (s *fiberServer) Start() {
 func initMiddleware(app *fiber.App) {
 	app.Use(middleware.RequestIDMiddleware)
 	app.Use(middleware.LoggerMiddleware)
+	app.Use(middleware.EnforceUTC())
 	// app.Use(swagger.New(swagger.ConfigDefault))
 }

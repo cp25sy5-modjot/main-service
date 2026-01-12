@@ -29,7 +29,7 @@ func ConvertStringToTime(s string) *time.Time {
 	t, err := time.Parse(time.DateOnly, s)
 	if err != nil {
 		log.Printf("Failed to parse date: %v will use current date", err)
-		now := time.Now()
+		now := time.Now().UTC()
 		return &now
 	}
 	return &t

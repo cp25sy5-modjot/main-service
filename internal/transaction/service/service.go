@@ -104,7 +104,7 @@ func (s *service) GetAllByUserID(userID string) ([]e.Transaction, error) {
 
 func (s *service) GetAllByUserIDWithFilter(userID string, filter *m.TransactionFilter) ([]e.Transaction, error) {
 	if filter.Date == nil {
-		now := time.Now()
+		now := time.Now().UTC()
 		filter.Date = &now
 	}
 	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
@@ -161,6 +161,11 @@ func (s *service) Update(params *m.TransactionSearchParams, input *TransactionUp
 		return nil, err
 	}
 
+	if input.Date != nil {
+		utc := input.Date.UTC()
+		input.Date = &utc
+	}
+
 	err = utils.MapStructs(input, exists)
 	if err != nil {
 		return nil, err
@@ -202,7 +207,7 @@ func buildTransactionToCreate(
 ) (*e.Transaction, []e.TransactionItem) {
 
 	if isDefaultDate(input.Date) {
-		input.Date = time.Now()
+		input.Date = time.Now().UTC()
 	}
 
 	items := make([]e.TransactionItem, 0, len(input.Items))
@@ -220,7 +225,7 @@ func buildTransactionToCreate(
 		TransactionID: txID,
 		UserID:        userID,
 		Type:          txType,
-		Date:          input.Date,
+		Date:          input.Date.UTC(),
 	}
 
 	return tx, items
@@ -267,10 +272,10 @@ func (s *service) processTransaction(
 	}
 
 	// parse date
-	date := time.Now()
+	date := time.Now().UTC()
 	if tResponse.Date != "" {
 		if parsed, err := time.Parse(time.RFC3339, tResponse.Date); err == nil {
-			date = parsed
+			date = parsed.UTC()
 		}
 	}
 
@@ -350,6 +355,11 @@ func (s *service) validateCreateInput(
 		return err
 	}
 
+	categoryMap := map[string]bool{}
+	for _, c := range categories {
+		categoryMap[c.CategoryID] = true
+	}
+
 	for _, it := range input.Items {
 		if it.Title == "" {
 			return errors.New("item title is required")
@@ -357,17 +367,9 @@ func (s *service) validateCreateInput(
 		if it.Price <= 0 {
 			return errors.New("item price must be positive")
 		}
-		categoryMap := map[string]bool{}
-		for _, c := range categories {
-			categoryMap[c.CategoryID] = true
+		if !categoryMap[it.CategoryID] {
+			return errors.New("invalid category")
 		}
-
-		for _, it := range input.Items {
-			if !categoryMap[it.CategoryID] {
-				return errors.New("invalid category")
-			}
-		}
-
 	}
 
 	return nil
