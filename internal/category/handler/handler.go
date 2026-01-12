@@ -65,7 +65,7 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "failed to retrieve categories with transactions")
 		}
-		return sresp.OK(c, buildCategoryResponses(categories), "Categories with transactions retrieved successfully")
+		return sresp.OK(c, categories, "Categories with transactions retrieved successfully")
 	}
 
 	categories, err := h.service.GetAllByUserID(userID)
