@@ -40,8 +40,8 @@ type service struct {
 	aiClient pb.AiWrapperServiceClient
 }
 
-func NewService(repo *txrepo.Repository, txirepo *txirepo.Repository, catrepo *catrepo.Repository, aiClient pb.AiWrapperServiceClient) *service {
-	return &service{repo: repo, txirepo: txirepo, catrepo: catrepo, aiClient: aiClient}
+func NewService(db *gorm.DB, repo *txrepo.Repository, txirepo *txirepo.Repository, catrepo *catrepo.Repository, aiClient pb.AiWrapperServiceClient) *service {
+	return &service{db: db, repo: repo, txirepo: txirepo, catrepo: catrepo, aiClient: aiClient}
 }
 
 func (s *service) Create(

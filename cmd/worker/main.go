@@ -37,7 +37,7 @@ func main() {
 	txRepo := txrepo.NewRepository(db.GetDb())
 	txiRepo := txirepo.NewRepository(db.GetDb())
 	catRepo := catrepo.NewRepository(db.GetDb())
-	txService := txsvc.NewService(txRepo, txiRepo, catRepo, aiClient)
+	txService := txsvc.NewService(db.GetDb(), txRepo, txiRepo, catRepo, aiClient)
 
 	// Storage
 	uploadDir := conf.UploadDir
