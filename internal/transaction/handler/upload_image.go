@@ -3,6 +3,7 @@ package transactionhandler
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -84,7 +85,11 @@ func getImageData(c *fiber.Ctx) ([]byte, error) {
 	if err != nil {
 		return nil, fiber.NewError(fiber.StatusInternalServerError, "Failed to process uploaded image")
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("failed to close file: %v", err)
+		}
+	}()
 
 	imageData := make([]byte, image.Size)
 	_, err = file.Read(imageData)
