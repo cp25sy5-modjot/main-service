@@ -35,7 +35,7 @@ func (s *service) GetAllByUserID(userID string) ([]e.TransactionItem, error) {
 }
 
 func (s *service) GetByID(params *m.TransactionItemSearchParams) (*e.TransactionItem, error) {
-	tx, err := s.repo.FindByID(params)
+	tx, err := s.repo.FindByIDWithCategory(params)
 	if err != nil {
 		return nil, err
 	}
