@@ -15,11 +15,25 @@ func main() {
 	conf := config.LoadConfig()
 	db := database.NewPostgresDatabase(conf)
 
-	grpcConn, err := grpc.Dial(conf.AIService.Url, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// grpcConn, err := grpc.Dial(conf.AIService.Url, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// if err != nil {
+	// 	log.Fatalf("Failed to connect to gRPC server: %v", err)
+	// }
+	// defer grpcConn.Close()
+	grpcConn, err := grpc.NewClient(
+		conf.AIService.Url,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server: %v", err)
 	}
-	defer grpcConn.Close()
+
+	defer func() {
+		if err := grpcConn.Close(); err != nil {
+			log.Printf("failed to close grpc connection: %v", err)
+		}
+	}()
+
 	aiClient := pb.NewAiWrapperServiceClient(grpcConn)
 
 	server.NewFiberServer(conf, db, aiClient).Start()

@@ -26,11 +26,20 @@ func main() {
 	db := database.NewPostgresDatabase(conf)
 
 	// gRPC AI client (same as API server)
-	grpcConn, err := grpc.Dial(conf.AIService.Url, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcConn, err := grpc.NewClient(
+		conf.AIService.Url,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server: %v", err)
 	}
-	defer grpcConn.Close()
+
+	defer func() {
+		if err := grpcConn.Close(); err != nil {
+			log.Printf("failed to close grpc connection: %v", err)
+		}
+	}()
+	
 	aiClient := pb.NewAiWrapperServiceClient(grpcConn)
 
 	// Services

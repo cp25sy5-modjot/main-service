@@ -108,18 +108,6 @@ func buildTransactionItemResponse(item *e.TransactionItem) *m.TransactionItemRes
 	}
 }
 
-func buildTransactionItemResponses(items []e.TransactionItem) []m.TransactionItemRes {
-	if len(items) == 0 {
-		return []m.TransactionItemRes{}
-	}
-	itemResponses := make([]m.TransactionItemRes, 0, len(items))
-	for _, item := range items {
-		res := buildTransactionItemResponse(&item)
-		itemResponses = append(itemResponses, *res)
-	}
-	return itemResponses
-}
-
 func parseTransactionUpdateReqToServiceInput(
 	req *m.TransactionItemUpdateReq,
 ) *txisvc.TransactionItemUpdateInput {

@@ -132,13 +132,6 @@ func (s *service) CreateDefaultCategories(userID string) error {
 }
 
 // utils functions for service
-
-func applyUpdates(cat *e.Category, in *CategoryUpdateInput) {
-	cat.CategoryName = in.CategoryName
-	cat.Budget = in.Budget
-	cat.ColorCode = in.ColorCode
-}
-
 func saveNewCategory(s *service, cat *e.Category) (*e.Category, error) {
 	newCat, err := s.categoryrepo.Create(cat)
 	if err != nil {
