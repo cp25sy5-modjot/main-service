@@ -76,7 +76,7 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 	return sresp.OK(c, resp, "Transactions retrieved successfully")
 }
 
-// GET /transactions/:transaction_id/product/:item_id
+// GET /transactions/:transaction_id
 func (h *Handler) GetByID(c *fiber.Ctx) error {
 	TransactionSearchParams, err := createTransactionSearchParams(c)
 	if err != nil {
@@ -91,7 +91,7 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 	return sresp.OK(c, buildTransactionResponse(resp), "Transaction retrieved successfully")
 }
 
-// PUT /transactions/:transaction_id/product/:item_id
+// PUT /transactions/:transaction_id
 func (h *Handler) Update(c *fiber.Ctx) error {
 	var req m.TransactionUpdateReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
@@ -117,7 +117,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	return sresp.OK(c, buildTransactionResponse(resp), "Transaction updated successfully")
 }
 
-// DELETE /transactions/:transaction_id/product/:item_id
+// DELETE /transactions/:transaction_id
 func (h *Handler) Delete(c *fiber.Ctx) error {
 	TransactionSearchParams, err := createTransactionSearchParams(c)
 	if err != nil {

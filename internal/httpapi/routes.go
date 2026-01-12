@@ -18,6 +18,8 @@ import (
 	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
 	txirepo "github.com/cp25sy5-modjot/main-service/internal/transaction_item/repository"
+	txihandler "github.com/cp25sy5-modjot/main-service/internal/transaction_item/handler"
+	txisvc "github.com/cp25sy5-modjot/main-service/internal/transaction_item/service"
 	userhandler "github.com/cp25sy5-modjot/main-service/internal/user/handler"
 	userepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
 	usersvc "github.com/cp25sy5-modjot/main-service/internal/user/service"
@@ -29,6 +31,7 @@ import (
 type Services struct {
 	UserService        usersvc.Service
 	TransactionService txsvc.Service
+	TransactionItemService txisvc.Service
 	CategoryService    catsvc.Service
 	OverviewService    overviewsvc.Service
 }
@@ -40,10 +43,12 @@ func RegisterRoutes(
 
 	initializeHealthCheckRoutes(s)
 	initializeTransactionRoutes(s, services)
+	initializeTransactionItemRoutes(s, services)
 	initializeAuthRoutes(s, services)
 	initializeCategoryRoutes(s, services)
 	initializeOverviewRoutes(s, services)
 }
+
 func initializeServices(s *fiberServer) *Services {
 
 	// Category Service
@@ -56,11 +61,13 @@ func initializeServices(s *fiberServer) *Services {
 	categorySvc := catsvc.NewService(categoryRepo, transactionRepo)
 	userSvc := usersvc.NewService(userRepo)
 	transactionSvc := txsvc.NewService(transactionRepo, transactionItemRepo, categoryRepo, s.aiClient)
+	transactionItemSvc := txisvc.NewService(transactionItemRepo)
 	overviewSvc := overviewsvc.NewService(overviewRepo)
 
 	return &Services{
 		UserService:        userSvc,
 		TransactionService: transactionSvc,
+		TransactionItemService: transactionItemSvc,
 		CategoryService:    categorySvc,
 		OverviewService:    overviewSvc,
 	}
@@ -119,9 +126,21 @@ func initializeTransactionRoutes(s *fiberServer, services *Services) {
 	txApi.Post("/manual", transactionHandler.Create)
 	txApi.Post("/upload", transactionHandler.UploadImage) // async
 	txApi.Get("", transactionHandler.GetAll)
-	txApi.Get("/:transaction_id/item/:item_id", transactionHandler.GetByID)
-	txApi.Put("/:transaction_id/item/:item_id", transactionHandler.Update)
-	txApi.Delete("/:transaction_id/item/:item_id", transactionHandler.Delete)
+	txApi.Get("/:transaction_id", transactionHandler.GetByID)
+	txApi.Put("/:transaction_id", transactionHandler.Update)
+	txApi.Delete("/:transaction_id", transactionHandler.Delete)
+}
+
+func initializeTransactionItemRoutes(s *fiberServer, services *Services) {
+	transactionItemHandler := txihandler.NewHandler(services.TransactionItemService)
+
+	// Register routes
+	txItemApi := s.app.Group("/v1/transaction/:transaction_id/item")
+	txItemApi.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
+
+	txItemApi.Get("/:item_id", transactionItemHandler.GetByID)
+	txItemApi.Put("/:item_id", transactionItemHandler.Update)
+	txItemApi.Delete("/:item_id", transactionItemHandler.Delete)
 }
 
 func initializeCategoryRoutes(s *fiberServer, services *Services) {
