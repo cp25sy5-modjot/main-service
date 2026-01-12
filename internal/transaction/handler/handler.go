@@ -178,6 +178,7 @@ func buildTransactionResponses(transactions []e.Transaction) []m.TransactionRes 
 
 func buildTransactionItemResponse(item *e.TransactionItem) *m.TransactionItemRes {
 	return &m.TransactionItemRes{
+		TransactionID:     item.TransactionID,
 		ItemID:            item.ItemID,
 		Title:             item.Title,
 		Price:             item.Price,

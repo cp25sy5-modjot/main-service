@@ -20,22 +20,7 @@ func NewHandler(svc txisvc.Service) *Handler {
 	}
 }
 
-// GET /transaction_items
-func (h *Handler) GetAll(c *fiber.Ctx) error {
-	userID, err := jwt.GetUserIDFromClaims(c)
-	if err != nil {
-		return err
-	}
-
-	items, err := h.service.GetAllByUserID(userID)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve transactions")
-	}
-
-	return sresp.OK(c, items, "Transaction items retrieved successfully")
-}
-
-// GET /transaction_items/:transaction_id/item/:item_id
+// GET /transactions/:transaction_id/item/:item_id
 func (h *Handler) GetByID(c *fiber.Ctx) error {
 	TransactionItemSearchParams, err := createTransactionItemSearchParams(c)
 	if err != nil {

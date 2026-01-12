@@ -202,9 +202,10 @@ func buildCategoryResponse(cat *e.Category) *m.CategoryRes {
 
 func buildCategoryResponses(categories []e.Category) []m.CategoryRes {
 	categoryResponses := make([]m.CategoryRes, 0, len(categories))
-	for _, cat := range categories {
-		res := buildCategoryResponse(&cat)
+	for i := range categories {
+		res := buildCategoryResponse(&categories[i]) // ✅
 		categoryResponses = append(categoryResponses, *res)
 	}
 	return categoryResponses
 }
+
