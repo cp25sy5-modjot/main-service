@@ -36,8 +36,8 @@ func (r *Repository) FindAllByUserID(userID string) ([]e.Transaction, error) {
 func (r *Repository) FindAllByUserIDWithRelations(userID string) ([]e.Transaction, error) {
 	var transactions []e.Transaction
 	err := r.db.
-		Preload("TransactionItems").
-		Preload("TransactionItems.Category").
+		Preload("Items").
+		Preload("Items.Category").
 		Where("user_id = ?", userID).
 		Order("date DESC").
 		Find(&transactions).Error
@@ -59,8 +59,8 @@ func (r *Repository) FindAllByUserIDWithRelationsAndFiltered(userID string, star
 	var transactions []e.Transaction
 
 	err := r.db.
-		Preload("TransactionItems").
-		Preload("TransactionItems.Category").
+		Preload("Items").
+		Preload("Items.Category").
 		Where("user_id = ? AND date >= ? AND date < ?", userID, start, end).
 		Order("date DESC").
 		Find(&transactions).Error
@@ -84,8 +84,8 @@ func (r *Repository) FindByIDWithRelations(
 
 	var transaction e.Transaction
 	err := r.db.
-		Preload("TransactionItems").
-		Preload("TransactionItems.Category").
+		Preload("Items").
+		Preload("Items.Category").
 		First(&transaction,
 			"transaction_id = ? AND user_id = ?",
 			params.TransactionID,
