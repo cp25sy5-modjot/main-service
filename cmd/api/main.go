@@ -15,10 +15,6 @@ func main() {
 	conf := config.LoadConfig()
 	db := database.NewPostgresDatabase(conf)
 
-	if err := database.RunMigrations(db.GetDb(), "db/migrations"); err != nil {
-		log.Fatalf("failed to migrate database: %v", err)
-	}
-
 	grpcConn, err := grpc.Dial(conf.AIService.Url, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server: %v", err)

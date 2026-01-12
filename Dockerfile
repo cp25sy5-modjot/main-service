@@ -27,8 +27,6 @@ WORKDIR /
 # Copy binaries from build stage
 COPY --from=build /app/api /api
 COPY --from=build /app/worker /worker
-COPY --from=build /app/db/migrations /db/migrations
-RUN chown -R appuser:appuser /db/migrations
 
 # Run as unprivileged user
 USER appuser
