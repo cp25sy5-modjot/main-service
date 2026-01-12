@@ -49,11 +49,7 @@ func (r *Repository) FindAllByUserIDWithTransactionsFiltered(
 	var categories []e.Category
 
 	err := r.db.
-		Preload("TransactionItems", func(tx *gorm.DB) *gorm.DB {
-			return tx.
-				Joins("JOIN transactions t ON t.transaction_id = transaction_items.transaction_id").
-				Where("t.user_id = ? AND t.date >= ? AND t.date < ?", userID, start, end)
-		}).
+		Preload("TransactionItems").
 		Preload("TransactionItems.Transaction").
 		Where("user_id = ?", userID).
 		Order("created_at ASC").
