@@ -121,8 +121,8 @@ func buildUserObjectToCreate(uid string, input *UserCreateInput) *e.User {
 		UserID: uid,
 		UserBinding: e.UserBinding{
 			GoogleID:   input.UserBinding.GoogleID,
-			FacebookID: input.UserBinding.FacebookID,
-			AppleID:    input.UserBinding.AppleID,
+			// FacebookID: input.UserBinding.FacebookID,
+			// AppleID:    input.UserBinding.AppleID,
 		},
 		Name:      input.Name,
 		DOB:       input.DOB,

@@ -41,8 +41,8 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	input := &svc.UserCreateInput{
 		UserBinding: e.UserBinding{
 			GoogleID:   req.UserBinding.GoogleID,
-			FacebookID: req.UserBinding.FacebookID,
-			AppleID:    req.UserBinding.AppleID,
+			// FacebookID: req.UserBinding.FacebookID,
+			// AppleID:    req.UserBinding.AppleID,
 		},
 		Name: req.Name,
 		DOB:  req.DOB,
@@ -102,8 +102,8 @@ func buildUserResponse(user *e.User) *m.UserRes {
 		CreatedAt: user.CreatedAt,
 		UserBinding: m.UserBinding{
 			GoogleID:   user.UserBinding.GoogleID,
-			FacebookID: user.UserBinding.FacebookID,
-			AppleID:    user.UserBinding.AppleID,
+			// FacebookID: user.UserBinding.FacebookID,
+			// AppleID:    user.UserBinding.AppleID,
 		},
 	}
 }
