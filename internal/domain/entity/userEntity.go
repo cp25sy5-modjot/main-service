@@ -13,7 +13,6 @@ type User struct {
 	UserID      string      `gorm:"primaryKey;autoIncrement:false"`
 	UserBinding UserBinding `gorm:"embedded"`
 	Name        string      `gorm:"length:15"`
-	DOB         time.Time
 	Status      UserStatus `gorm:"default:'pre-active'"`
 	Onboarding  bool       `gorm:"default:false"`
 	CreatedAt   time.Time  `gorm:"autoCreateTime"`

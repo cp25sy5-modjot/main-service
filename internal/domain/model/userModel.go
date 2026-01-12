@@ -16,12 +16,10 @@ const (
 type UserInsertReq struct {
 	UserBinding entity.UserBinding `json:"user_binding"`
 	Name        string             `json:"name" validate:"required,min=1,max=15"`
-	DOB         time.Time          `json:"dob"`
 }
 
 type UserUpdateReq struct {
 	Name string    `json:"name" validate:"min=1,max=15"`
-	DOB  time.Time `json:"dob" validate:"required"`
 }
 
 // added for onboarding flow in release 2
@@ -32,7 +30,6 @@ type UserUpdateReq struct {
 type UserRes struct {
 	UserBinding UserBinding `json:"user_binding"`
 	Name        string      `json:"name"`
-	DOB         time.Time   `json:"dob"`
 	Status      string      `json:"status"`
 	Onboarding  bool        `json:"onboarding"`
 	CreatedAt   time.Time   `json:"created_at"`
@@ -40,6 +37,6 @@ type UserRes struct {
 
 type UserBinding struct {
 	GoogleID   string `json:"google_id"`
-	FacebookID string `json:"facebook_id"`
-	AppleID    string `json:"apple_id"`
+	// FacebookID string `json:"facebook_id"`
+	// AppleID    string `json:"apple_id"`
 }

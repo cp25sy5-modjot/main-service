@@ -16,8 +16,8 @@ type Service interface {
 	GetAll() ([]*e.User, error)
 	GetByID(user_id string) (*e.User, error)
 	GetByGoogleID(google_id string) (*e.User, error)
-	GetByFacebookID(facebook_id string) (*e.User, error)
-	GetByAppleID(apple_id string) (*e.User, error)
+	// GetByFacebookID(facebook_id string) (*e.User, error)
+	// GetByAppleID(apple_id string) (*e.User, error)
 
 	Update(userID string, input *UserUpdateInput) (*e.User, error)
 	Delete(user_id string) error
@@ -74,21 +74,21 @@ func (s *service) GetByGoogleID(google_id string) (*e.User, error) {
 	return user, nil
 }
 
-func (s *service) GetByFacebookID(facebook_id string) (*e.User, error) {
-	user, err := s.repo.FindByFacebookID(facebook_id)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
+// func (s *service) GetByFacebookID(facebook_id string) (*e.User, error) {
+// 	user, err := s.repo.FindByFacebookID(facebook_id)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return user, nil
+// }
 
-func (s *service) GetByAppleID(apple_id string) (*e.User, error) {
-	user, err := s.repo.FindByAppleID(apple_id)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
+// func (s *service) GetByAppleID(apple_id string) (*e.User, error) {
+// 	user, err := s.repo.FindByAppleID(apple_id)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return user, nil
+// }
 
 func (s *service) Update(userID string, input *UserUpdateInput) (*e.User, error) {
 	exists, err := s.repo.FindByID(userID)
@@ -125,7 +125,6 @@ func buildUserObjectToCreate(uid string, input *UserCreateInput) *e.User {
 			// AppleID:    input.UserBinding.AppleID,
 		},
 		Name:      input.Name,
-		DOB:       input.DOB,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
