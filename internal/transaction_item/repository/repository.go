@@ -97,3 +97,7 @@ func (r *Repository) Update(items *e.TransactionItem) (*e.TransactionItem, error
 func (r *Repository) Delete(params *m.TransactionItemSearchParams) error {
 	return r.db.Delete(&e.TransactionItem{}, "transaction_id = ? AND item_id = ?", params.TransactionID, params.ItemID).Error
 }
+
+func (r *Repository) DeleteByTransactionID(transactionID string) error {
+	return r.db.Delete(&e.TransactionItem{}, "transaction_id = ?", transactionID).Error
+}
