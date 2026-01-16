@@ -23,21 +23,22 @@ func (r *Repository) GetLastTransactions(userID string, limit int) ([]m.LastTran
 	var list []m.LastTransaction
 
 	err := r.db.
-		Table("transactions t").
+		Table("transaction_items ti").
 		Select(`
-			t.transaction_id,
-			t.item_id,
-			t.title,
-			t.price,
-			t.date,
-			t.type,
-			t.category_id,
+			ti.transaction_id,
+			ti.item_id,
+			ti.title,
+			ti.price,
+			tr.date,
+			tr.type,
+			ti.category_id,
 			COALESCE(c.category_name, '') AS category_name,
 			COALESCE(c.color_code, '')   AS category_color_code
 		`).
-		Joins("LEFT JOIN categories c ON c.category_id = t.category_id AND c.user_id = t.user_id").
-		Where("t.user_id = ?", userID).
-		Order("t.date DESC").
+		Joins("JOIN transactions tr ON tr.transaction_id = ti.transaction_id").
+		Joins("LEFT JOIN categories c ON c.category_id = ti.category_id AND c.user_id = tr.user_id").
+		Where("tr.user_id = ?", userID).
+		Order("tr.date DESC").
 		Limit(limit).
 		Scan(&list).Error
 
@@ -59,13 +60,15 @@ func (r *Repository) GetTopCategoriesBySpending(
 			c.category_name,
 			c.color_code,
 			c.budget,
-			COALESCE(SUM(t.price), 0) AS budget_usage
+			COALESCE(SUM(ti.price), 0) AS budget_usage
 		FROM categories c
-		LEFT JOIN transactions t
-			ON t.category_id = c.category_id
-			AND t.user_id = c.user_id
-			AND t.date >= ?
-			AND t.date < ?
+		LEFT JOIN transaction_items ti
+			ON ti.category_id = c.category_id
+		LEFT JOIN transactions tr
+			ON tr.transaction_id = ti.transaction_id
+			AND tr.user_id = c.user_id
+			AND tr.date >= ?
+			AND tr.date < ?
 		WHERE c.user_id = ?
 		GROUP BY c.category_id, c.category_name, c.color_code, c.budget
 		ORDER BY budget_usage DESC
@@ -79,10 +82,12 @@ func (r *Repository) GetMonthTotal(userID string, start, end time.Time) (float64
 	var total float64
 
 	err := r.db.
-		Table("transactions").
-		Select("COALESCE(SUM(price), 0)").
-		Where("user_id = ? AND date >= ? AND date < ?", userID, start, end).
+		Table("transaction_items ti").
+		Select("COALESCE(SUM(ti.price), 0)").
+		Joins("JOIN transactions tr ON tr.transaction_id = ti.transaction_id").
+		Where("tr.user_id = ? AND tr.date >= ? AND tr.date < ?", userID, start, end).
 		Scan(&total).Error
 
 	return total, err
 }
+
