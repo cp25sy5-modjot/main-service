@@ -37,8 +37,8 @@ func GenerateTokens(user *UserInfo, conf *config.Auth) (accessToken string, refr
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   user.UserID,
 			Issuer:    conf.Issuer,
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(parseTime(conf.AccessTokenTTL))),
+			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(parseTime(conf.AccessTokenTTL))),
 		},
 	}
 	accessToken, err = createToken(accessClaims, conf.AccessTokenSecret)
@@ -52,8 +52,8 @@ func GenerateTokens(user *UserInfo, conf *config.Auth) (accessToken string, refr
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   user.UserID,
 			Issuer:    conf.Issuer,
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(parseTime(conf.RefreshTokenTTL))),
+			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(parseTime(conf.RefreshTokenTTL))),
 		},
 	}
 	refreshToken, err = createToken(refreshClaims, conf.RefreshTokenSecret)

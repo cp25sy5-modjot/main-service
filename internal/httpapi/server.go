@@ -10,7 +10,7 @@ import (
 	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	"github.com/cp25sy5-modjot/main-service/internal/storage"
 	"github.com/cp25sy5-modjot/main-service/internal/storage/localfs"
-	pb "github.com/cp25sy5-modjot/proto/gen/ai/v1"
+	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
 	"github.com/hibiken/asynq"
 
 	// "github.com/gofiber/contrib/swagger"
@@ -70,5 +70,6 @@ func (s *fiberServer) Start() {
 func initMiddleware(app *fiber.App) {
 	app.Use(middleware.RequestIDMiddleware)
 	app.Use(middleware.LoggerMiddleware)
+	app.Use(middleware.EnforceUTC())
 	// app.Use(swagger.New(swagger.ConfigDefault))
 }

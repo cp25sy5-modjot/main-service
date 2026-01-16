@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
-	"github.com/cp25sy5-modjot/main-service/internal/overview/service"
+	overviewsvc "github.com/cp25sy5-modjot/main-service/internal/overview/service"
 	sresp "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
 )
 
@@ -28,7 +28,7 @@ func (h *Handler) GetOverview(c *fiber.Ctx) error {
 	var base time.Time
 
 	if dateStr == "" {
-		base = time.Now()
+		base = time.Now().UTC()
 	} else {
 		base, err = time.Parse("2006-01-02", dateStr)
 		if err != nil {

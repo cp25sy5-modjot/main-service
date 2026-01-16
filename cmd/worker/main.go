@@ -13,7 +13,8 @@ import (
 	"github.com/cp25sy5-modjot/main-service/internal/storage/localfs"
 	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
-	pb "github.com/cp25sy5-modjot/proto/gen/ai/v1"
+	txirepo "github.com/cp25sy5-modjot/main-service/internal/transaction_item/repository"
+	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -25,17 +26,27 @@ func main() {
 	db := database.NewPostgresDatabase(conf)
 
 	// gRPC AI client (same as API server)
-	grpcConn, err := grpc.Dial(conf.AIService.Url, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcConn, err := grpc.NewClient(
+		conf.AIService.Url,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server: %v", err)
 	}
-	defer grpcConn.Close()
+
+	defer func() {
+		if err := grpcConn.Close(); err != nil {
+			log.Printf("failed to close grpc connection: %v", err)
+		}
+	}()
+	
 	aiClient := pb.NewAiWrapperServiceClient(grpcConn)
 
 	// Services
 	txRepo := txrepo.NewRepository(db.GetDb())
+	txiRepo := txirepo.NewRepository(db.GetDb())
 	catRepo := catrepo.NewRepository(db.GetDb())
-	txService := txsvc.NewService(txRepo, catRepo, aiClient)
+	txService := txsvc.NewService(db.GetDb(), txRepo, txiRepo, catRepo, aiClient)
 
 	// Storage
 	uploadDir := conf.UploadDir

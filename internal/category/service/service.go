@@ -38,7 +38,7 @@ func (s *service) Create(userId string, input *CategoryCreateInput) (*e.Category
 		UserID:       userId,
 		Budget:       input.Budget,
 		ColorCode:    input.ColorCode,
-		CreatedAt:    time.Now(),
+		CreatedAt:    time.Now().UTC(),
 	}
 	return saveNewCategory(s, cate)
 }
@@ -53,7 +53,7 @@ func (s *service) GetAllByUserID(userID string) ([]e.Category, error) {
 
 func (s *service) GetAllByUserIDWithTransactions(userID string, filter *m.TransactionFilter) ([]e.Category, error) {
 	if filter.Date == nil {
-		now := time.Now()
+		now := time.Now().UTC()
 		filter.Date = &now
 	}
 	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
@@ -75,7 +75,7 @@ func (s *service) GetByID(params *m.CategorySearchParams) (*e.Category, error) {
 
 func (s *service) GetByIDWithTransactions(params *m.CategorySearchParams, filter *m.TransactionFilter) (*e.Category, error) {
 	if filter.Date == nil {
-		now := time.Now()
+		now := time.Now().UTC()
 		filter.Date = &now
 	}
 	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
@@ -122,7 +122,7 @@ func (s *service) CreateDefaultCategories(userID string) error {
 			UserID:       userID,
 			Budget:       1000.0,
 			ColorCode:    utils.GenerateRandomColor(),
-			CreatedAt:    time.Now(),
+			CreatedAt:    time.Now().UTC(),
 		})
 		if err != nil {
 			return err
@@ -132,13 +132,6 @@ func (s *service) CreateDefaultCategories(userID string) error {
 }
 
 // utils functions for service
-
-func applyUpdates(cat *e.Category, in *CategoryUpdateInput) {
-	cat.CategoryName = in.CategoryName
-	cat.Budget = in.Budget
-	cat.ColorCode = in.ColorCode
-}
-
 func saveNewCategory(s *service, cat *e.Category) (*e.Category, error) {
 	newCat, err := s.categoryrepo.Create(cat)
 	if err != nil {

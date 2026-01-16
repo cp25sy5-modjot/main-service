@@ -41,11 +41,10 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	input := &svc.UserCreateInput{
 		UserBinding: e.UserBinding{
 			GoogleID:   req.UserBinding.GoogleID,
-			FacebookID: req.UserBinding.FacebookID,
-			AppleID:    req.UserBinding.AppleID,
+			// FacebookID: req.UserBinding.FacebookID,
+			// AppleID:    req.UserBinding.AppleID,
 		},
 		Name: req.Name,
-		DOB:  req.DOB,
 	}
 
 	user, err := h.service.Create(input)
@@ -70,7 +69,6 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	}
 	input := &svc.UserUpdateInput{
 		Name: req.Name,
-		DOB:  req.DOB,
 	}
 
 	updated, err := h.service.Update(userID, input)
@@ -97,13 +95,12 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 func buildUserResponse(user *e.User) *m.UserRes {
 	return &m.UserRes{
 		Name:      user.Name,
-		DOB:       user.DOB,
 		Status:    string(user.Status),
 		CreatedAt: user.CreatedAt,
 		UserBinding: m.UserBinding{
 			GoogleID:   user.UserBinding.GoogleID,
-			FacebookID: user.UserBinding.FacebookID,
-			AppleID:    user.UserBinding.AppleID,
+			// FacebookID: user.UserBinding.FacebookID,
+			// AppleID:    user.UserBinding.AppleID,
 		},
 	}
 }

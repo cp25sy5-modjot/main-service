@@ -175,7 +175,7 @@ func isIncludeTransactions(c *fiber.Ctx) (bool, error) {
 }
 
 func buildCategoryResponse(cat *e.Category) *m.CategoryRes {
-	if cat.Transactions == nil {
+	if cat.TransactionItems == nil {
 		return &m.CategoryRes{
 			CategoryID:   &cat.CategoryID,
 			CategoryName: cat.CategoryName,
@@ -185,9 +185,9 @@ func buildCategoryResponse(cat *e.Category) *m.CategoryRes {
 		}
 	} else {
 		budgetUsage := 0.0
-		for _, tx := range cat.Transactions {
-			_ = tx // just to avoid unused variable warning
-			budgetUsage += tx.Price * tx.Quantity
+		for _, txi := range cat.TransactionItems {
+			_ = txi // just to avoid unused variable warning
+			budgetUsage += txi.Price
 		}
 		return &m.CategoryRes{
 			CategoryID:   &cat.CategoryID,
@@ -202,9 +202,10 @@ func buildCategoryResponse(cat *e.Category) *m.CategoryRes {
 
 func buildCategoryResponses(categories []e.Category) []m.CategoryRes {
 	categoryResponses := make([]m.CategoryRes, 0, len(categories))
-	for _, cat := range categories {
-		res := buildCategoryResponse(&cat)
+	for i := range categories {
+		res := buildCategoryResponse(&categories[i]) // ✅
 		categoryResponses = append(categoryResponses, *res)
 	}
 	return categoryResponses
 }
+

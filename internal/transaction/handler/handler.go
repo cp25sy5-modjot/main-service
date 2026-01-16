@@ -76,7 +76,7 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 	return sresp.OK(c, resp, "Transactions retrieved successfully")
 }
 
-// GET /transactions/:transaction_id/product/:item_id
+// GET /transactions/:transaction_id
 func (h *Handler) GetByID(c *fiber.Ctx) error {
 	TransactionSearchParams, err := createTransactionSearchParams(c)
 	if err != nil {
@@ -91,7 +91,7 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 	return sresp.OK(c, buildTransactionResponse(resp), "Transaction retrieved successfully")
 }
 
-// PUT /transactions/:transaction_id/product/:item_id
+// PUT /transactions/:transaction_id
 func (h *Handler) Update(c *fiber.Ctx) error {
 	var req m.TransactionUpdateReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
@@ -104,7 +104,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	}
 
 	if req.Date == nil {
-		date := time.Now()
+		date := time.Now().UTC()
 		req.Date = &date
 	}
 
@@ -117,7 +117,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	return sresp.OK(c, buildTransactionResponse(resp), "Transaction updated successfully")
 }
 
-// DELETE /transactions/:transaction_id/product/:item_id
+// DELETE /transactions/:transaction_id
 func (h *Handler) Delete(c *fiber.Ctx) error {
 	TransactionSearchParams, err := createTransactionSearchParams(c)
 	if err != nil {
@@ -132,17 +132,16 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 }
 
 // utils
-func getTxIDAndProdID(c *fiber.Ctx) (string, string, error) {
+func getTxIDAndProdID(c *fiber.Ctx) (string, error) {
 	tx_id := c.Params("transaction_id")
-	item_id := c.Params("item_id")
-	if tx_id == "" || item_id == "" {
-		return "", "", fiber.NewError(fiber.StatusBadRequest, "transaction_id and item_id parameters are required")
+	if tx_id == "" {
+		return "", fiber.NewError(fiber.StatusBadRequest, "transaction_id and item_id parameters are required")
 	}
-	return tx_id, item_id, nil
+	return tx_id, nil
 }
 
 func createTransactionSearchParams(c *fiber.Ctx) (*m.TransactionSearchParams, error) {
-	tx_id, item_id, err := getTxIDAndProdID(c)
+	tx_id, err := getTxIDAndProdID(c)
 	if err != nil {
 		return nil, err
 	}
@@ -152,22 +151,16 @@ func createTransactionSearchParams(c *fiber.Ctx) (*m.TransactionSearchParams, er
 	}
 	return &m.TransactionSearchParams{
 		TransactionID: tx_id,
-		ItemID:        item_id,
 		UserID:        userID,
 	}, nil
 }
 
 func buildTransactionResponse(tx *e.Transaction) *m.TransactionRes {
 	return &m.TransactionRes{
-		TransactionID:     tx.TransactionID,
-		ItemID:            tx.ItemID,
-		Title:             tx.Title,
-		Price:             tx.Price,
-		Date:              tx.Date,
-		Type:              tx.Type,
-		CategoryID:        tx.CategoryID,
-		CategoryName:      tx.Category.CategoryName,
-		CategoryColorCode: tx.Category.ColorCode,
+		TransactionID: tx.TransactionID,
+		Date:          tx.Date,
+		Type:          string(tx.Type),
+		Items:         buildTransactionItemResponses(tx.Items),
 	}
 }
 
@@ -176,31 +169,68 @@ func buildTransactionResponses(transactions []e.Transaction) []m.TransactionRes 
 		return []m.TransactionRes{}
 	}
 	transactionResponses := make([]m.TransactionRes, 0, len(transactions))
-	for _, tx := range transactions {
-		res := buildTransactionResponse(&tx)
+	for i := range transactions {
+		res := buildTransactionResponse(&transactions[i])
 		transactionResponses = append(transactionResponses, *res)
 	}
 	return transactionResponses
 }
 
-func parseTransactionInsertReqToServiceInput(req *m.TransactionInsertReq) *txsvc.TransactionCreateInput {
-	return &txsvc.TransactionCreateInput{
-		Title:      req.Title,
-		Price:      req.Price,
-		Quantity:   req.Quantity,
-		Date:       req.Date,
-		CategoryID: req.CategoryID,
+func buildTransactionItemResponse(item *e.TransactionItem) *m.TransactionItemRes {
+	return &m.TransactionItemRes{
+		TransactionID:     item.TransactionID,
+		ItemID:            item.ItemID,
+		Title:             item.Title,
+		Price:             item.Price,
+		CategoryID:        item.CategoryID,
+		CategoryName:      item.Category.CategoryName,
+		CategoryColorCode: item.Category.ColorCode,
 	}
 }
 
-func parseTransactionUpdateReqToServiceInput(req *m.TransactionUpdateReq) *txsvc.TransactionUpdateInput {
-	return &txsvc.TransactionUpdateInput{
-		Title:      req.Title,
-		Price:      req.Price,
-		Quantity:   req.Quantity,
-		Date:       req.Date,
-		CategoryID: req.CategoryID,
+func buildTransactionItemResponses(items []e.TransactionItem) []m.TransactionItemRes {
+	if len(items) == 0 {
+		return []m.TransactionItemRes{}
 	}
+	itemResponses := make([]m.TransactionItemRes, 0, len(items))
+	for i := range items {
+		res := buildTransactionItemResponse(&items[i])
+		itemResponses = append(itemResponses, *res)
+	}
+	return itemResponses
+}
+
+func parseTransactionInsertReqToServiceInput(
+	req *m.TransactionInsertReq,
+) *txsvc.TransactionCreateInput {
+	return &txsvc.TransactionCreateInput{
+		Date:  req.Date,
+		Items: mapTransactionItemReqToServiceInput(req.Items),
+	}
+}
+
+func parseTransactionUpdateReqToServiceInput(
+	req *m.TransactionUpdateReq,
+) *txsvc.TransactionUpdateInput {
+	return &txsvc.TransactionUpdateInput{
+		Date:  req.Date,
+		Items: mapTransactionItemReqToServiceInput(req.Items),
+	}
+}
+
+func mapTransactionItemReqToServiceInput(items []m.TransactionItemReq) []txsvc.TransactionItemInput {
+	if len(items) == 0 {
+		return []txsvc.TransactionItemInput{}
+	}
+	mappedItems := make([]txsvc.TransactionItemInput, len(items))
+	for i, item := range items {
+		mappedItems[i] = txsvc.TransactionItemInput{
+			Title:      item.Title,
+			Price:      item.Price,
+			CategoryID: item.CategoryID,
+		}
+	}
+	return mappedItems
 }
 
 func calculateTotal(transactions []m.TransactionRes) float64 {
@@ -209,7 +239,9 @@ func calculateTotal(transactions []m.TransactionRes) float64 {
 	}
 	total := 0.0
 	for _, tx := range transactions {
-		total += tx.Price
+		for _, item := range tx.Items {
+			total += item.Price
+		}
 	}
 	return total
 }

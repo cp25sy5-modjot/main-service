@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"log"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -22,4 +23,12 @@ func RequestIDMiddleware(c *fiber.Ctx) error {
 func LoggerMiddleware(c *fiber.Ctx) error {
 	log.Printf("[%s] %s %s", c.Locals("request_id"), c.Method(), c.OriginalURL())
 	return c.Next()
+}
+
+func EnforceUTC() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// บังคับ timezone ของ request context เป็น UTC
+		c.Locals("timezone", time.UTC)
+		return c.Next()
+	}
 }
