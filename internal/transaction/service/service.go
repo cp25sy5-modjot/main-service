@@ -155,27 +155,43 @@ func (s *service) GetByID(params *m.TransactionSearchParams) (*e.Transaction, er
 	return tx, nil
 }
 
-func (s *service) Update(params *m.TransactionSearchParams, input *TransactionUpdateInput) (*e.Transaction, error) {
+func (s *service) Update(
+	params *m.TransactionSearchParams,
+	input *TransactionUpdateInput,
+) (*e.Transaction, error) {
+
 	exists, err := s.repo.FindByIDWithRelations(params)
 	if err != nil {
 		return nil, err
 	}
 
+	// --- Date ---
 	if input.Date != nil {
 		utc := input.Date.UTC()
-		input.Date = &utc
+		exists.Date = utc
 	}
 
-	err = utils.MapStructs(input, exists)
-	if err != nil {
-		return nil, err
+	// --- Items (PATCH replace semantics) ---
+	if input.Items != nil {
+		err := s.txirepo.DeleteByTransactionID(exists.TransactionID)
+		if err != nil {
+			return nil, err
+		}
+
+		newItems, err := ReplaceTransactionItems(
+			exists.TransactionID,
+			input.Items,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := s.txirepo.CreateMany(newItems); err != nil {
+			return nil, err
+		}
 	}
 
-	updatedTx, err := s.repo.Update(exists)
-	if err != nil {
-		return nil, err
-	}
-	return updatedTx, nil
+	return s.repo.FindByIDWithRelations(params)
 }
 
 func (s *service) Delete(params *m.TransactionSearchParams) error {
@@ -373,4 +389,28 @@ func (s *service) validateCreateInput(
 	}
 
 	return nil
+}
+
+func ReplaceTransactionItems(
+	txID string,
+	input []TransactionItemInput,
+) ([]e.TransactionItem, error) {
+
+	if len(input) == 0 {
+		return nil, errors.New("items cannot be empty")
+	}
+
+	items := make([]e.TransactionItem, 0, len(input))
+
+	for _, it := range input {
+		items = append(items, e.TransactionItem{
+			TransactionID: txID,
+			ItemID:        uuid.New().String(),
+			Title:         it.Title,
+			Price:         it.Price,
+			CategoryID:    it.CategoryID,
+		})
+	}
+
+	return items, nil
 }

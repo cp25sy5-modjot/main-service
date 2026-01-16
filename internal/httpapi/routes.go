@@ -17,8 +17,8 @@ import (
 	txhandler "github.com/cp25sy5-modjot/main-service/internal/transaction/handler"
 	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
-	txirepo "github.com/cp25sy5-modjot/main-service/internal/transaction_item/repository"
 	txihandler "github.com/cp25sy5-modjot/main-service/internal/transaction_item/handler"
+	txirepo "github.com/cp25sy5-modjot/main-service/internal/transaction_item/repository"
 	txisvc "github.com/cp25sy5-modjot/main-service/internal/transaction_item/service"
 	userhandler "github.com/cp25sy5-modjot/main-service/internal/user/handler"
 	userepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
@@ -29,11 +29,11 @@ import (
 )
 
 type Services struct {
-	UserService        usersvc.Service
-	TransactionService txsvc.Service
+	UserService            usersvc.Service
+	TransactionService     txsvc.Service
 	TransactionItemService txisvc.Service
-	CategoryService    catsvc.Service
-	OverviewService    overviewsvc.Service
+	CategoryService        catsvc.Service
+	OverviewService        overviewsvc.Service
 }
 
 func RegisterRoutes(
@@ -65,11 +65,11 @@ func initializeServices(s *fiberServer) *Services {
 	overviewSvc := overviewsvc.NewService(overviewRepo)
 
 	return &Services{
-		UserService:        userSvc,
-		TransactionService: transactionSvc,
+		UserService:            userSvc,
+		TransactionService:     transactionSvc,
 		TransactionItemService: transactionItemSvc,
-		CategoryService:    categorySvc,
-		OverviewService:    overviewSvc,
+		CategoryService:        categorySvc,
+		OverviewService:        overviewSvc,
 	}
 }
 
@@ -127,7 +127,7 @@ func initializeTransactionRoutes(s *fiberServer, services *Services) {
 	txApi.Post("/upload", transactionHandler.UploadImage) // async
 	txApi.Get("", transactionHandler.GetAll)
 	txApi.Get("/:transaction_id", transactionHandler.GetByID)
-	txApi.Put("/:transaction_id", transactionHandler.Update)
+	txApi.Patch("/:transaction_id", transactionHandler.Update)
 	txApi.Delete("/:transaction_id", transactionHandler.Delete)
 }
 
