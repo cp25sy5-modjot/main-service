@@ -69,8 +69,8 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 	previousMonth := buildTransactionResponses(months.PreviousMonth)
 	resp := m.TransactionCompareMonthResponse{
 		Transactions:       currMonth,
-		CurrentMonthTotal:  calculateTotal(currMonth),
-		PreviousMonthTotal: calculateTotal(previousMonth),
+		CurrentMonthTotal:  calculateMonthTotal(currMonth),
+		PreviousMonthTotal: calculateMonthTotal(previousMonth),
 	}
 
 	return sresp.OK(c, resp, "Transactions retrieved successfully")
@@ -156,11 +156,14 @@ func createTransactionSearchParams(c *fiber.Ctx) (*m.TransactionSearchParams, er
 }
 
 func buildTransactionResponse(tx *e.Transaction) *m.TransactionRes {
+	items := buildTransactionItemResponses(tx.Items)
+	total := calculateTotal(items)
 	return &m.TransactionRes{
 		TransactionID: tx.TransactionID,
 		Date:          tx.Date,
 		Type:          string(tx.Type),
-		Items:         buildTransactionItemResponses(tx.Items),
+		Total:        total,
+		Items:        items,
 	}
 }
 
@@ -233,7 +236,7 @@ func mapTransactionItemReqToServiceInput(items []m.TransactionItemReq) []txsvc.T
 	return mappedItems
 }
 
-func calculateTotal(transactions []m.TransactionRes) float64 {
+func calculateMonthTotal(transactions []m.TransactionRes) float64 {
 	if len(transactions) == 0 {
 		return 0
 	}
@@ -242,6 +245,17 @@ func calculateTotal(transactions []m.TransactionRes) float64 {
 		for _, item := range tx.Items {
 			total += item.Price
 		}
+	}
+	return total
+}
+
+func calculateTotal(items []m.TransactionItemRes) float64 {
+	if len(items) == 0 {
+		return 0
+	}
+	total := 0.0
+	for _, item := range items {
+		total += item.Price
 	}
 	return total
 }

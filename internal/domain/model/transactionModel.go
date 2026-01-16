@@ -28,6 +28,7 @@ type TransactionRes struct {
 	TransactionID string               `json:"transaction_id"`
 	Date          time.Time            `json:"date"`
 	Type          string               `json:"type"`
+	Total         float64              `json:"total"`
 	Items         []TransactionItemRes `json:"items"`
 }
 
