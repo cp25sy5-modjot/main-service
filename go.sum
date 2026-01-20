@@ -19,8 +19,8 @@ github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XL
 github.com/clipperhouse/uax29/v2 v2.2.0 h1:ChwIKnQN3kcZteTXMgb1wztSgaU+ZemkgWdohwgs8tY=
 github.com/clipperhouse/uax29/v2 v2.2.0/go.mod h1:EFJ2TJMRUaplDxHKj1qAEhCtQPW2tJSwu5BF98AuoVM=
 github.com/coreos/go-systemd/v22 v22.5.0/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSVTIJ3seZv2GcEnc=
-github.com/cp25sy5-modjot/proto v1.1.0 h1:ZiJTEGsrhReukU+JL2605cf8nGC+a45okVp/oyUjEXE=
-github.com/cp25sy5-modjot/proto v1.1.0/go.mod h1:Z+Cri+nfClVdXQrj0kkdwdBPZCixAWrZvesraLqx40M=
+github.com/cp25sy5-modjot/proto v1.2.0 h1:GelVvmNOzyuAc4pLu2jQAvWCLTZhnl4yEeZxaV1QM7k=
+github.com/cp25sy5-modjot/proto v1.2.0/go.mod h1:Z+Cri+nfClVdXQrj0kkdwdBPZCixAWrZvesraLqx40M=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

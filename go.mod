@@ -4,7 +4,7 @@ go 1.24.6
 
 require (
 	dario.cat/mergo v1.0.2
-	github.com/cp25sy5-modjot/proto v1.1.0
+	github.com/cp25sy5-modjot/proto v1.2.0
 	github.com/go-playground/validator/v10 v10.30.1
 	github.com/gofiber/contrib/jwt v1.1.2
 	github.com/gofiber/fiber/v2 v2.52.10
