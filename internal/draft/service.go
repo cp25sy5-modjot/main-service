@@ -113,11 +113,6 @@ func (s *service) SaveDraft(
 	req NewDraftRequest,
 ) (*DraftTxn, error) {
 
-	// validate input
-	if len(req.Items) == 0 {
-		return nil, errors.New("items cannot be empty")
-	}
-
 	for _, it := range req.Items {
 		if it.Price <= 0 {
 			return nil, errors.New("price must be > 0")
@@ -127,7 +122,7 @@ func (s *service) SaveDraft(
 	d := &DraftTxn{
 		TraceID: traceID,
 		UserID:  userID,
-		Status:  DraftStatusWaitingConfirm,
+		Status:  DraftStatusProcessing,
 		Date:    req.Date,
 		Items:   req.Items,
 	}
@@ -157,6 +152,10 @@ func (s *service) ConfirmDraft(
 
 	if d.Status != DraftStatusWaitingConfirm {
 		return nil, errors.New("draft not ready")
+	}
+	
+	if len(d.Items) == 0 {
+		return nil, errors.New("cannot confirm empty draft")
 	}
 
 	if len(req.Items) > 0 {
