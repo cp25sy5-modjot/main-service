@@ -12,6 +12,7 @@ import (
 	"github.com/cp25sy5-modjot/main-service/internal/storage/localfs"
 	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
 	"github.com/hibiken/asynq"
+	"github.com/redis/go-redis/v9"
 
 	// "github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
@@ -24,6 +25,7 @@ type Server interface {
 type fiberServer struct {
 	app         *fiber.App
 	db          database.Database
+	rdb         *redis.Client
 	conf        *config.Config
 	aiClient    pb.AiWrapperServiceClient
 	asynqClient *asynq.Client
@@ -40,6 +42,10 @@ func NewFiberServer(conf *config.Config, db database.Database, aiClient pb.AiWra
 		Addr: conf.Redis.Addr,
 	})
 
+	rdb := redis.NewClient(&redis.Options{
+		Addr: conf.Redis.Addr,
+	})
+
 	uploadDir := conf.UploadDir
 	if uploadDir == "" {
 		uploadDir = "./uploads"
@@ -52,6 +58,7 @@ func NewFiberServer(conf *config.Config, db database.Database, aiClient pb.AiWra
 	return &fiberServer{
 		app:         app,
 		db:          db,
+		rdb:         rdb,
 		conf:        conf,
 		aiClient:    aiClient,
 		asynqClient: asynqClient,

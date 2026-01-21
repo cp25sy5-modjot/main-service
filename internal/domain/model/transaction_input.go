@@ -1,10 +1,11 @@
-package transactionsvc
+package model
 
 import (
 	"time"
 )
 
 type TransactionCreateInput struct {
+	title string
 	Date  time.Time
 	Items []TransactionItemInput
 }
@@ -16,6 +17,7 @@ type TransactionItemInput struct {
 }
 
 type TransactionUpdateInput struct {
+	Title string
 	Date  *time.Time
 	Items []TransactionItemInput
 }

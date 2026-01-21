@@ -15,13 +15,15 @@ type TransactionItemReq struct {
 }
 
 type TransactionInsertReq struct {
-	Items []TransactionItemReq `json:"items" validate:"required,min=1,dive"`
+	Title string               `json:"title" validate:"required,min=2,max=20"`
 	Date  time.Time            `json:"date"`
+	Items []TransactionItemReq `json:"items" validate:"required,min=1,dive"`
 }
 
 type TransactionUpdateReq struct {
-	Items []TransactionItemReq `json:"items" validate:"required,min=1,dive"`
+	Title string               `json:"title" validate:"required,min=2,max=20"`
 	Date  *time.Time           `json:"date" validate:"required"`
+	Items []TransactionItemReq `json:"items" validate:"required,min=1,dive"`
 }
 
 type TransactionRes struct {

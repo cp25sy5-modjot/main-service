@@ -9,6 +9,7 @@ import (
 	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	
 )
 
 func main() {
@@ -35,6 +36,5 @@ func main() {
 	}()
 
 	aiClient := pb.NewAiWrapperServiceClient(grpcConn)
-
 	server.NewFiberServer(conf, db, aiClient).Start()
 }

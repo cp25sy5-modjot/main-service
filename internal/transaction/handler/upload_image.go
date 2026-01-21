@@ -11,12 +11,14 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/rs/xid"
 
+	draft "github.com/cp25sy5-modjot/main-service/internal/draft"
 	"github.com/cp25sy5-modjot/main-service/internal/jobs/tasks"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
 )
 
 func (h *Handler) UploadImage(c *fiber.Ctx) error {
+
 	imageData, err := getImageData(c)
 	if err != nil {
 		return err
@@ -47,26 +49,38 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 
 	traceID := xid.New().String()
 
-	// 2. Build async job
-	task, err := tasks.NewBuildTransactionTask(userID, path, traceID)
+	_, err = h.draftService.SaveDraft(ctx, traceID, userID, draft.NewDraftRequest{
+		Date:  time.Now(),
+		Items: []draft.DraftItem{},
+	})
+
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to create job")
+		return fiber.NewError(500, "failed to create draft")
 	}
 
-	// 3. Enqueue
+	// 3. Build async job
+	task, err := tasks.NewBuildTransactionTask(userID, path, traceID)
+	if err != nil {
+		return fiber.NewError(500, "Failed to create job")
+	}
+
+	// 4. Enqueue
 	info, err := h.asynqClient.Enqueue(task,
 		asynq.MaxRetry(3),
 		asynq.Timeout(10*time.Minute),
 	)
+
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to enqueue job")
+		// rollback draft ถ้า enqueue ไม่ผ่าน
+		h.draftService.DeleteDraft(ctx, traceID)
+
+		return fiber.NewError(500, "Failed to enqueue job")
 	}
 
 	return r.OK(c, fiber.Map{
 		"job_id":   info.ID,
 		"status":   "queued",
 		"trace_id": traceID,
-		"path":     path,
 	}, "Image uploaded. Transaction will be processed asynchronously.")
 }
 

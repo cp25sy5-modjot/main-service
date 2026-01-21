@@ -20,6 +20,7 @@ type TransactionItemRes struct {
 	CategoryID        string  `json:"category_id"`
 	CategoryName      string  `json:"category_name"`
 	CategoryColorCode string  `json:"category_color_code"`
+	Icon              string  `json:"icon"`
 }
 
 type TransactionItemSearchParams struct {

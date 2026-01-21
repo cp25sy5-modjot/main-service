@@ -19,6 +19,7 @@ type CategoryRes struct {
 	CategoryName string    `json:"category_name"`
 	Budget       float64   `json:"budget"`
 	ColorCode    string    `json:"color_code"`
+	Icon         string    `json:"icon"`
 	CreatedAt    time.Time `json:"created_at"`
 
 	BudgetUsage float64 `json:"budget_usage"`

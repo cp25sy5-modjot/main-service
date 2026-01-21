@@ -10,6 +10,7 @@ import (
 	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	"github.com/cp25sy5-modjot/main-service/internal/storage"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
+	draft "github.com/cp25sy5-modjot/main-service/internal/draft"
 	"github.com/gofiber/fiber/v2"
 	"github.com/hibiken/asynq"
 )
@@ -18,13 +19,15 @@ type Handler struct {
 	service     txsvc.Service // <- use interface, not *Service
 	asynqClient *asynq.Client
 	storage     storage.Storage
+	draftService   draft.Service
 }
 
-func NewHandler(svc txsvc.Service, client *asynq.Client, st storage.Storage) *Handler {
+func NewHandler(svc txsvc.Service, client *asynq.Client, st storage.Storage, draftSvc draft.Service) *Handler {
 	return &Handler{
 		service:     svc,
 		asynqClient: client,
 		storage:     st,
+		draftService: draftSvc,
 	}
 }
 
@@ -205,8 +208,8 @@ func buildTransactionItemResponses(items []e.TransactionItem) []m.TransactionIte
 
 func parseTransactionInsertReqToServiceInput(
 	req *m.TransactionInsertReq,
-) *txsvc.TransactionCreateInput {
-	return &txsvc.TransactionCreateInput{
+) *m.TransactionCreateInput {
+	return &m.TransactionCreateInput{
 		Date:  req.Date,
 		Items: mapTransactionItemReqToServiceInput(req.Items),
 	}
@@ -214,20 +217,20 @@ func parseTransactionInsertReqToServiceInput(
 
 func parseTransactionUpdateReqToServiceInput(
 	req *m.TransactionUpdateReq,
-) *txsvc.TransactionUpdateInput {
-	return &txsvc.TransactionUpdateInput{
+) *m.TransactionUpdateInput {
+	return &m.TransactionUpdateInput{
 		Date:  req.Date,
 		Items: mapTransactionItemReqToServiceInput(req.Items),
 	}
 }
 
-func mapTransactionItemReqToServiceInput(items []m.TransactionItemReq) []txsvc.TransactionItemInput {
+func mapTransactionItemReqToServiceInput(items []m.TransactionItemReq) []m.TransactionItemInput {
 	if len(items) == 0 {
-		return []txsvc.TransactionItemInput{}
+		return []m.TransactionItemInput{}
 	}
-	mappedItems := make([]txsvc.TransactionItemInput, len(items))
+	mappedItems := make([]m.TransactionItemInput, len(items))
 	for i, item := range items {
-		mappedItems[i] = txsvc.TransactionItemInput{
+		mappedItems[i] = m.TransactionItemInput{
 			Title:      item.Title,
 			Price:      item.Price,
 			CategoryID: item.CategoryID,

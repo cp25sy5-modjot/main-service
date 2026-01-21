@@ -11,6 +11,7 @@ import (
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
+	draft "github.com/cp25sy5-modjot/main-service/internal/draft"
 	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
 	txirepo "github.com/cp25sy5-modjot/main-service/internal/transaction_item/repository"
 	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
@@ -19,15 +20,15 @@ import (
 )
 
 type Service interface {
-	Create(userID string, input *TransactionCreateInput) (*e.Transaction, error)
-	ProcessUploadedFile(fileData []byte, userID string) (*e.Transaction, error)
+	Create(userID string, input *m.TransactionCreateInput) (*e.Transaction, error)
+	ProcessUploadedFile(fileData []byte, userID string) (*draft.DraftTxn, error)
 
 	GetAllByUserID(userID string) ([]e.Transaction, error)
 	GetAllByUserIDWithFilter(userID string, filter *m.TransactionFilter) ([]e.Transaction, error)
 	GetAllComparePreviousMonthAndByUserIDWithFilter(userID string, filter *m.TransactionFilter) (*MonthlyResult, error)
 
 	GetByID(params *m.TransactionSearchParams) (*e.Transaction, error)
-	Update(params *m.TransactionSearchParams, input *TransactionUpdateInput) (*e.Transaction, error)
+	Update(params *m.TransactionSearchParams, input *m.TransactionUpdateInput) (*e.Transaction, error)
 	Delete(params *m.TransactionSearchParams) error
 }
 
@@ -37,6 +38,9 @@ type service struct {
 	repo     *txrepo.Repository
 	txirepo  *txirepo.Repository
 	catrepo  *catrepo.Repository
+
+	draftRepo *draft.DraftRepository
+
 	aiClient pb.AiWrapperServiceClient
 }
 
@@ -46,15 +50,15 @@ func NewService(db *gorm.DB, repo *txrepo.Repository, txirepo *txirepo.Repositor
 
 func (s *service) Create(
 	userID string,
-	input *TransactionCreateInput,
+	input *m.TransactionCreateInput,
 ) (*e.Transaction, error) {
-	return s.createInternal(userID, e.TransactionManual, input)
+	return s.CreateInternal(userID, e.TransactionManual, input)
 }
 
-func (s *service) createInternal(
+func (s *service) CreateInternal(
 	userID string,
 	txType e.TransactionType,
-	input *TransactionCreateInput,
+	input *m.TransactionCreateInput,
 ) (*e.Transaction, error) {
 
 	// 1. validate
@@ -70,7 +74,11 @@ func (s *service) createInternal(
 	return s.saveNewTransaction(tx, items)
 }
 
-func (s *service) ProcessUploadedFile(fileData []byte, userID string) (*e.Transaction, error) {
+func (s *service) ProcessUploadedFile(
+	fileData []byte,
+	userID string,
+) (*draft.DraftTxn, error) {
+
 	if s.aiClient == nil {
 		return nil, errors.New("AI client not configured (this method should only be used in worker process)")
 	}
@@ -89,8 +97,7 @@ func (s *service) ProcessUploadedFile(fileData []byte, userID string) (*e.Transa
 
 	log.Printf("AI Service Response: %+v", resp)
 
-	// 3. process into real transaction (same as before)
-	return s.processTransaction(resp, categories, userID)
+	return mapToDraft(resp, categories, userID)
 }
 
 func (s *service) GetAllByUserID(userID string) ([]e.Transaction, error) {
@@ -157,7 +164,7 @@ func (s *service) GetByID(params *m.TransactionSearchParams) (*e.Transaction, er
 
 func (s *service) Update(
 	params *m.TransactionSearchParams,
-	input *TransactionUpdateInput,
+	input *m.TransactionUpdateInput,
 ) (*e.Transaction, error) {
 
 	exists, err := s.repo.FindByIDWithRelations(params)
@@ -219,7 +226,7 @@ func isDefaultDate(t time.Time) bool {
 func buildTransactionToCreate(
 	txID, userID string,
 	txType e.TransactionType,
-	input *TransactionCreateInput,
+	input *m.TransactionCreateInput,
 ) (*e.Transaction, []e.TransactionItem) {
 
 	if isDefaultDate(input.Date) {
@@ -277,50 +284,6 @@ func callAIServiceToBuildTransaction(fileData []byte, categories []e.Category, a
 	return tResponse, nil
 }
 
-func (s *service) processTransaction(
-	tResponse *pb.TransactionResponseV2,
-	categories []e.Category,
-	userID string,
-) (*e.Transaction, error) {
-
-	if len(tResponse.Items) == 0 {
-		return nil, errors.New("no transaction items")
-	}
-
-	// parse date
-	date := time.Now().UTC()
-	if tResponse.Date != "" {
-		if parsed, err := time.Parse(time.RFC3339, tResponse.Date); err == nil {
-			date = parsed.UTC()
-		}
-	}
-
-	var items []TransactionItemInput
-
-	for _, res := range tResponse.Items {
-		// match category per item
-		match := matchCategoryFromName(categories, res.Category)
-		if match == nil {
-			return nil, fmt.Errorf("category not found: %s", res.Category)
-		}
-
-		item := TransactionItemInput{
-			Title:      res.Title,
-			Price:      res.Price,
-			CategoryID: match.CategoryID,
-		}
-
-		items = append(items, item)
-	}
-
-	input := &TransactionCreateInput{
-		Date:  date,
-		Items: items,
-	}
-
-	return s.createInternal(userID, e.TransactionUpload, input)
-}
-
 func (s *service) saveNewTransaction(
 	tx *e.Transaction,
 	items []e.TransactionItem,
@@ -356,7 +319,7 @@ func (s *service) saveNewTransaction(
 
 func (s *service) validateCreateInput(
 	userID string,
-	input *TransactionCreateInput,
+	input *m.TransactionCreateInput,
 ) error {
 
 	if input == nil {
@@ -380,7 +343,7 @@ func (s *service) validateCreateInput(
 		if it.Title == "" {
 			return errors.New("item title is required")
 		}
-		if it.Price <= 0 {
+		if it.Price < 0 {
 			return errors.New("item price must be positive")
 		}
 		if !categoryMap[it.CategoryID] {
@@ -393,7 +356,7 @@ func (s *service) validateCreateInput(
 
 func ReplaceTransactionItems(
 	txID string,
-	input []TransactionItemInput,
+	input []m.TransactionItemInput,
 ) ([]e.TransactionItem, error) {
 
 	if len(input) == 0 {
@@ -413,4 +376,49 @@ func ReplaceTransactionItems(
 	}
 
 	return items, nil
+}
+
+func mapToDraft(
+	resp *pb.TransactionResponseV2,
+	categories []e.Category,
+	userID string,
+) (*draft.DraftTxn, error) {
+
+	if len(resp.Items) == 0 {
+		return nil, errors.New("no transaction items")
+	}
+
+	// parse date
+	date := time.Now().UTC()
+	if resp.Date != "" {
+		if parsed, err := time.Parse(time.RFC3339, resp.Date); err == nil {
+			date = parsed.UTC()
+		}
+	}
+
+	var items []draft.DraftItem
+
+	for _, res := range resp.Items {
+
+		match := matchCategoryFromName(categories, res.Category)
+		if match == nil {
+			return nil, fmt.Errorf("category not found: %s", res.Category)
+		}
+
+		items = append(items, draft.DraftItem{
+			Title:      res.Title,
+			Price:      res.Price,
+			CategoryID: match.CategoryID,
+		})
+	}
+
+	return &draft.DraftTxn{
+		UserID: userID,
+		Status: draft.DraftStatusWaitingConfirm,
+
+		Date:  date,
+		Items: items,
+
+		CreatedAt: time.Now(),
+	}, nil
 }

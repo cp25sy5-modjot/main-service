@@ -9,6 +9,7 @@ import (
 	catrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
 	catsvc "github.com/cp25sy5-modjot/main-service/internal/category/service"
 
+	draft "github.com/cp25sy5-modjot/main-service/internal/draft"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	overviewhandler "github.com/cp25sy5-modjot/main-service/internal/overview/handler"
 	overviewrepo "github.com/cp25sy5-modjot/main-service/internal/overview/repository"
@@ -33,7 +34,9 @@ type Services struct {
 	TransactionService     txsvc.Service
 	TransactionItemService txisvc.Service
 	CategoryService        catsvc.Service
-	OverviewService        overviewsvc.Service
+
+	OverviewService overviewsvc.Service
+	DraftService    draft.Service
 }
 
 func RegisterRoutes(
@@ -42,25 +45,44 @@ func RegisterRoutes(
 	services := initializeServices(s)
 
 	initializeHealthCheckRoutes(s)
+	initializeDraftRoutes(s, services)
+
 	initializeTransactionRoutes(s, services)
 	initializeTransactionItemRoutes(s, services)
 	initializeAuthRoutes(s, services)
 	initializeCategoryRoutes(s, services)
 	initializeOverviewRoutes(s, services)
+
 }
 
 func initializeServices(s *fiberServer) *Services {
 
-	// Category Service
 	categoryRepo := catrepo.NewRepository(s.db.GetDb())
 	userRepo := userepo.NewRepository(s.db.GetDb())
 	transactionRepo := txrepo.NewRepository(s.db.GetDb())
 	transactionItemRepo := txirepo.NewRepository(s.db.GetDb())
 	overviewRepo := overviewrepo.NewRepository(s.db.GetDb())
 
+	draftRepo := draft.NewDraftRepository(s.rdb)
+
+	transactionSvc := txsvc.NewService(
+		s.db.GetDb(),
+		transactionRepo,
+		transactionItemRepo,
+		categoryRepo,
+		s.aiClient,
+	)
+
+	// 👇 สำคัญ: inject createInternal
+	draftSvc := draft.NewService(
+		draftRepo,
+		transactionSvc.CreateInternal,
+	)
+
+	// ======================
+
 	categorySvc := catsvc.NewService(categoryRepo, transactionRepo)
 	userSvc := usersvc.NewService(userRepo)
-	transactionSvc := txsvc.NewService(s.db.GetDb(), transactionRepo, transactionItemRepo, categoryRepo, s.aiClient)
 	transactionItemSvc := txisvc.NewService(transactionItemRepo)
 	overviewSvc := overviewsvc.NewService(overviewRepo)
 
@@ -70,6 +92,8 @@ func initializeServices(s *fiberServer) *Services {
 		TransactionItemService: transactionItemSvc,
 		CategoryService:        categorySvc,
 		OverviewService:        overviewSvc,
+
+		DraftService: draftSvc,
 	}
 }
 
@@ -118,6 +142,7 @@ func initializeTransactionRoutes(s *fiberServer, services *Services) {
 		services.TransactionService,
 		s.asynqClient,
 		s.storage,
+		services.DraftService,
 	)
 
 	txApi := s.app.Group("/v1/transaction")
@@ -165,4 +190,17 @@ func initializeOverviewRoutes(s *fiberServer, services *Services) {
 	api.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
 
 	api.Get("", overviewHandler.GetOverview)
+}
+
+func initializeDraftRoutes(s *fiberServer, services *Services) {
+	handler := draft.NewHandler(
+		services.DraftService,
+	)
+
+	api := s.app.Group("/v1/draft")
+	api.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
+
+	api.Get("", handler.ListDraft)
+	api.Get("/:traceID", handler.GetDraft)
+	api.Post("/:traceID/confirm", handler.Confirm)
 }

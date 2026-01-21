@@ -11,10 +11,12 @@ import (
 	jobsserver "github.com/cp25sy5-modjot/main-service/internal/jobs/server"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
 	"github.com/cp25sy5-modjot/main-service/internal/storage/localfs"
+	d "github.com/cp25sy5-modjot/main-service/internal/draft"
 	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
 	txirepo "github.com/cp25sy5-modjot/main-service/internal/transaction_item/repository"
 	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -39,7 +41,7 @@ func main() {
 			log.Printf("failed to close grpc connection: %v", err)
 		}
 	}()
-	
+
 	aiClient := pb.NewAiWrapperServiceClient(grpcConn)
 
 	// Services
@@ -66,13 +68,20 @@ func main() {
 	if redisAddr == "" {
 		redisAddr = "localhost:6379"
 	}
+	// ===== REDIS FOR DRAFT =====
+	rdb := redis.NewClient(&redis.Options{
+		Addr: redisAddr,
+	})
+
+	// สร้าง draft repo
+	draftRepo := d.NewDraftRepository(rdb)
 
 	// Asynq server
 	srv := jobsserver.NewAsynqServer(redisAddr, 5)
 	mux := asynq.NewServeMux()
 
 	// Job processor
-	p := processor.NewProcessor(txService, st)
+	p := processor.NewProcessor(txService, st, draftRepo)
 	p.Register(mux)
 
 	log.Printf("Starting worker with Redis at %s", redisAddr)

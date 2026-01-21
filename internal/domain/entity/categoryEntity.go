@@ -10,6 +10,7 @@ type Category struct {
 	CategoryName string `gorm:"length:20"`
 	Budget       float64
 	ColorCode    string    `gorm:"length:7"`
+	Icon         string    
 	CreatedAt    time.Time `gorm:"autoCreateTime"`
 
 	// Relationships
