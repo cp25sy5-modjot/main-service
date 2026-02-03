@@ -38,6 +38,7 @@ func (s *service) Create(userId string, input *CategoryCreateInput) (*e.Category
 		UserID:       userId,
 		Budget:       input.Budget,
 		ColorCode:    input.ColorCode,
+		Icon:         input.Icon,
 		CreatedAt:    time.Now().UTC(),
 	}
 	return saveNewCategory(s, cate)

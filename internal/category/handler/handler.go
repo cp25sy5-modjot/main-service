@@ -36,6 +36,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 		CategoryName: req.CategoryName,
 		Budget:       req.Budget,
 		ColorCode:    req.ColorCode,
+		Icon:         req.Icon,
 	}
 
 	createdCate, err := h.service.Create(userID, cate)
@@ -135,6 +136,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		CategoryName: req.CategoryName,
 		Budget:       req.Budget,
 		ColorCode:    req.ColorCode,
+		Icon:         req.Icon,
 	}
 
 	category, err := h.service.Update(params, update)
