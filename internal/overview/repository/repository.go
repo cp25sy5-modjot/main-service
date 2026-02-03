@@ -62,21 +62,25 @@ func (r *Repository) GetTopCategoriesBySpending(
 			c.budget,
 			COALESCE(SUM(ti.price), 0) AS budget_usage
 		FROM categories c
-		LEFT JOIN transaction_items ti
+		LEFT JOIN (
+			SELECT ti.*
+			FROM transaction_items ti
+			JOIN transactions tr
+				ON tr.transaction_id = ti.transaction_id
+			WHERE tr.user_id = ?
+			  AND tr.date >= ?
+			  AND tr.date < ?
+		) ti
 			ON ti.category_id = c.category_id
-		LEFT JOIN transactions tr
-			ON tr.transaction_id = ti.transaction_id
-			AND tr.user_id = c.user_id
-			AND tr.date >= ?
-			AND tr.date < ?
 		WHERE c.user_id = ?
 		GROUP BY c.category_id, c.category_name, c.color_code, c.budget
 		ORDER BY budget_usage DESC
 		LIMIT ?
-	`, start, end, userID, limit).Scan(&list).Error
+	`, userID, start, end, userID, limit).Scan(&list).Error
 
 	return list, err
 }
+
 
 func (r *Repository) GetMonthTotal(userID string, start, end time.Time) (float64, error) {
 	var total float64
