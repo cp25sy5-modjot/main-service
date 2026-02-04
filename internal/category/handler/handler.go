@@ -182,6 +182,7 @@ func buildCategoryResponse(cat *e.Category) *m.CategoryRes {
 			CategoryID:   &cat.CategoryID,
 			CategoryName: cat.CategoryName,
 			Budget:       cat.Budget,
+			Icon:         cat.Icon,
 			ColorCode:    cat.ColorCode,
 			CreatedAt:    cat.CreatedAt,
 		}
@@ -195,6 +196,7 @@ func buildCategoryResponse(cat *e.Category) *m.CategoryRes {
 			CategoryID:   &cat.CategoryID,
 			CategoryName: cat.CategoryName,
 			Budget:       cat.Budget,
+			Icon:         cat.Icon,
 			ColorCode:    cat.ColorCode,
 			CreatedAt:    cat.CreatedAt,
 			BudgetUsage:  budgetUsage,
@@ -210,4 +212,3 @@ func buildCategoryResponses(categories []e.Category) []m.CategoryRes {
 	}
 	return categoryResponses
 }
-
