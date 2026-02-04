@@ -136,14 +136,17 @@ type MonthlyResult struct {
 func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(userID string, filter *m.TransactionFilter) (*MonthlyResult, error) {
 	// --- Current Month ---
 	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
-	current, err := s.repo.FindAllByUserIDWithRelationsAndFiltered(userID, start, end)
+	if filter.Category != "" {
+
+	}
+	current, err := s.repo.FindAllByUserIDWithRelationsAndFiltered(userID, start, end, filter.Category)
 	if err != nil {
 		return nil, err
 	}
 
 	// --- Previous Month ---
 	previousStart, previousEnd := utils.GetStartAndEndOfPreviousMonth(*filter.Date)
-	previous, err := s.repo.FindAllByUserIDWithRelationsAndFiltered(userID, previousStart, previousEnd)
+	previous, err := s.repo.FindAllByUserIDWithRelationsAndFiltered(userID, previousStart, previousEnd, filter.Category)
 	if err != nil {
 		return nil, err
 	}

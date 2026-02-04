@@ -55,14 +55,35 @@ func (r *Repository) FindAllByUserIDAndFiltered(userID string, start, end time.T
 	return transactions, err
 }
 
-func (r *Repository) FindAllByUserIDWithRelationsAndFiltered(userID string, start, end time.Time) ([]e.Transaction, error) {
+func (r *Repository) FindAllByUserIDWithRelationsAndFiltered(
+	userID string,
+	start, end time.Time,
+	categoryID string,
+) ([]e.Transaction, error) {
+
 	var transactions []e.Transaction
 
-	err := r.db.
+	query := r.db.
+		Model(&e.Transaction{}).
 		Preload("Items").
 		Preload("Items.Category").
-		Where("user_id = ? AND date >= ? AND date < ?", userID, start, end).
-		Order("date DESC").
+		Where(
+			"transactions.user_id = ? AND transactions.date >= ? AND transactions.date < ?",
+			userID,
+			start,
+			end,
+		)
+
+	// 👉 filter ด้วย category จาก item
+	if categoryID != "" {
+		query = query.
+			Joins("JOIN transaction_items ON transaction_items.transaction_id = transactions.transaction_id").
+			Where("transaction_items.category_id = ?", categoryID).
+			Distinct()
+	}
+
+	err := query.
+		Order("transactions.date DESC").
 		Find(&transactions).Error
 
 	return transactions, err

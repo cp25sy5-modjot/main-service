@@ -5,28 +5,28 @@ import (
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
+	draft "github.com/cp25sy5-modjot/main-service/internal/draft"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	sresp "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	"github.com/cp25sy5-modjot/main-service/internal/storage"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
-	draft "github.com/cp25sy5-modjot/main-service/internal/draft"
 	"github.com/gofiber/fiber/v2"
 	"github.com/hibiken/asynq"
 )
 
 type Handler struct {
-	service     txsvc.Service // <- use interface, not *Service
-	asynqClient *asynq.Client
-	storage     storage.Storage
-	draftService   draft.Service
+	service      txsvc.Service // <- use interface, not *Service
+	asynqClient  *asynq.Client
+	storage      storage.Storage
+	draftService draft.Service
 }
 
 func NewHandler(svc txsvc.Service, client *asynq.Client, st storage.Storage, draftSvc draft.Service) *Handler {
 	return &Handler{
-		service:     svc,
-		asynqClient: client,
-		storage:     st,
+		service:      svc,
+		asynqClient:  client,
+		storage:      st,
 		draftService: draftSvc,
 	}
 }
@@ -60,8 +60,11 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 	}
 
 	date := c.Query("date")
+	category := c.Query("category")
+
 	filter := &m.TransactionFilter{
-		Date: utils.ConvertStringToTime(date),
+		Date:     utils.ConvertStringToTime(date),
+		Category: category,
 	}
 
 	months, err := h.service.GetAllComparePreviousMonthAndByUserIDWithFilter(userID, filter)
@@ -165,8 +168,8 @@ func buildTransactionResponse(tx *e.Transaction) *m.TransactionRes {
 		TransactionID: tx.TransactionID,
 		Date:          tx.Date,
 		Type:          string(tx.Type),
-		Total:        total,
-		Items:        items,
+		Total:         total,
+		Items:         items,
 	}
 }
 
