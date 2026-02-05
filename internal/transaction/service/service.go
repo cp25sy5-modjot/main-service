@@ -10,8 +10,8 @@ import (
 	catrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
-	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	draft "github.com/cp25sy5-modjot/main-service/internal/draft"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
 	txirepo "github.com/cp25sy5-modjot/main-service/internal/transaction_item/repository"
 	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
@@ -34,10 +34,10 @@ type Service interface {
 
 // concrete implementation
 type service struct {
-	db       *gorm.DB
-	repo     *txrepo.Repository
-	txirepo  *txirepo.Repository
-	catrepo  *catrepo.Repository
+	db      *gorm.DB
+	repo    *txrepo.Repository
+	txirepo *txirepo.Repository
+	catrepo *catrepo.Repository
 
 	draftRepo *draft.DraftRepository
 
@@ -169,7 +169,6 @@ func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(
 		PreviousMonth: previous,
 	}, nil
 }
-
 
 func (s *service) GetByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
 	tx, err := s.repo.FindByIDWithRelations(params)
@@ -433,6 +432,7 @@ func mapToDraft(
 		UserID: userID,
 		Status: draft.DraftStatusWaitingConfirm,
 
+		Title: resp.Title,
 		Date:  date,
 		Items: items,
 

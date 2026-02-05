@@ -8,9 +8,9 @@ import (
 
 	"github.com/hibiken/asynq"
 
+	d "github.com/cp25sy5-modjot/main-service/internal/draft"
 	"github.com/cp25sy5-modjot/main-service/internal/jobs/tasks"
 	"github.com/cp25sy5-modjot/main-service/internal/storage"
-	d "github.com/cp25sy5-modjot/main-service/internal/draft"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
 )
 
@@ -61,6 +61,7 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 		UserID:    payload.UserID,
 		Status:    d.DraftStatusProcessing,
 		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	})
 
 	// ===== STEP 2: call AI =====
