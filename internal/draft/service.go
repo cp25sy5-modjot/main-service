@@ -125,6 +125,8 @@ func (s *service) SaveDraft(
 		Status:  DraftStatusProcessing,
 		Date:    req.Date,
 		Items:   req.Items,
+		CreatedAt: req.CreatedAt,
+		UpdatedAt: req.CreatedAt,
 	}
 
 	if err := s.draftRepo.Save(ctx, *d); err != nil {

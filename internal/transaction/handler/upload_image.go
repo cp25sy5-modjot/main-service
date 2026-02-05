@@ -19,6 +19,7 @@ import (
 
 func (h *Handler) UploadImage(c *fiber.Ctx) error {
 
+	createAt := time.Now()
 	imageData, err := getImageData(c)
 	if err != nil {
 		return err
@@ -53,6 +54,7 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 		Title: "Slip Image Upload",
 		Date:  time.Now(),
 		Items: []draft.DraftItem{},
+		CreatedAt: createAt,
 	})
 
 	if err != nil {

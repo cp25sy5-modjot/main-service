@@ -36,6 +36,7 @@ type NewDraftRequest struct {
 	Title string      `json:"title"`
 	Date  time.Time   `json:"date"`
 	Items []DraftItem `json:"items" validate:"required,min=1,dive"`
+	CreatedAt time.Time   `json:"created_at,omitempty"`
 }
 
 type ConfirmRequest struct {

@@ -60,7 +60,6 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 		TraceID:   payload.TraceID,
 		UserID:    payload.UserID,
 		Status:    d.DraftStatusProcessing,
-		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	})
 
@@ -69,10 +68,11 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 	if err != nil {
 
 		_ = p.draftRepo.Save(ctx, d.DraftTxn{
-			TraceID: payload.TraceID,
-			UserID:  payload.UserID,
-			Status:  d.DraftStatusFailed,
-			Error:   err.Error(),
+			TraceID:   payload.TraceID,
+			UserID:    payload.UserID,
+			Status:    d.DraftStatusFailed,
+			Error:     err.Error(),
+			UpdatedAt: time.Now(),
 		})
 
 		return err
@@ -85,9 +85,9 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 
 		Status: d.DraftStatusWaitingConfirm,
 
-		Date:  draft.Date,
-		Items: draft.Items,
-
+		Title:     draft.Title,
+		Date:      draft.Date,
+		Items:     draft.Items,
 		UpdatedAt: time.Now(),
 	})
 

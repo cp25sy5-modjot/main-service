@@ -404,14 +404,6 @@ func mapToDraft(
 		return nil, errors.New("no transaction items")
 	}
 
-	// parse date
-	date := time.Now().UTC()
-	if resp.Date != "" {
-		if parsed, err := time.Parse(time.RFC3339, resp.Date); err == nil {
-			date = parsed.UTC()
-		}
-	}
-
 	var items []draft.DraftItem
 
 	for _, res := range resp.Items {
@@ -433,9 +425,37 @@ func mapToDraft(
 		Status: draft.DraftStatusWaitingConfirm,
 
 		Title: resp.Title,
-		Date:  date,
+		Date:  ParseAIDate(resp.Date),
 		Items: items,
 
 		CreatedAt: time.Now(),
 	}, nil
+}
+
+func ParseAIDate(s string) (time.Time) {
+	layouts := []string{
+		time.RFC3339,
+		"2006-01-02T15:04:05",
+		"2006-01-02",
+	}
+
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, s); err == nil {
+
+			// ถ้าเป็น YYYY-MM-DD → เติมเวลา 12:00
+			if layout == "2006-01-02" {
+				t = time.Date(
+					t.Year(),
+					t.Month(),
+					t.Day(),
+					12, 0, 0, 0,
+					time.UTC,
+				)
+			}
+
+			return t.UTC()
+		}
+	}
+
+	return time.Now().UTC()
 }
