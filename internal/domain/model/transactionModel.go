@@ -35,12 +35,13 @@ type TransactionRes struct {
 }
 
 type TransactionFilter struct {
-	Date     *time.Time `json:"date"`
-	Categories []string     `json:"categories"`
+	Date       *time.Time `json:"date"`
+	Categories []string   `json:"categories"`
 }
 
 type TransactionCompareMonthResponse struct {
-	Transactions       []TransactionRes `json:"transactions"`
-	CurrentMonthTotal  float64          `json:"current_month_total"`
-	PreviousMonthTotal float64          `json:"previous_month_total"`
+	Transactions          []TransactionRes `json:"transactions"`
+	CurrentMonthTotal     float64          `json:"current_month_total"`
+	PreviousMonthTotal    float64          `json:"previous_month_total"`
+	CurrentMonthItemCount int              `json:"current_month_item_count"`
 }

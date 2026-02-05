@@ -129,8 +129,9 @@ func (s *service) GetAllByUserIDWithFilter(userID string, filter *m.TransactionF
 }
 
 type MonthlyResult struct {
-	CurrentMonth  []e.Transaction `json:"current_month"`
-	PreviousMonth []e.Transaction `json:"previous_month"`
+	CurrentMonth        []e.Transaction `json:"current_month"`
+	PreviousMonth       []e.Transaction `json:"previous_month"`
+	CurrentMonthItemCount int             `json:"current_month_item_count"`
 }
 
 func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(
@@ -140,6 +141,15 @@ func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(
 
 	// --- Current Month ---
 	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
+
+	itemCount, err := s.repo.CountItemsByUserAndDateRange(
+		userID,
+		start,
+		end,
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	current, err := s.repo.FindAllByUserIDWithRelationsAndFiltered(
 		userID,
@@ -167,6 +177,7 @@ func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(
 	return &MonthlyResult{
 		CurrentMonth:  current,
 		PreviousMonth: previous,
+		CurrentMonthItemCount: itemCount,
 	}, nil
 }
 
@@ -432,7 +443,7 @@ func mapToDraft(
 	}, nil
 }
 
-func ParseAIDate(s string) (time.Time) {
+func ParseAIDate(s string) time.Time {
 	layouts := []string{
 		time.RFC3339,
 		"2006-01-02T15:04:05",

@@ -89,6 +89,26 @@ func (r *Repository) FindAllByUserIDWithRelationsAndFiltered(
 	return transactions, err
 }
 
+func (r *Repository) CountItemsByUserAndDateRange(
+	userID string,
+	start, end time.Time,
+) (int, error) {
+
+	var count int64
+
+	err := r.db.
+		Table("transaction_items").
+		Joins("JOIN transactions ON transactions.transaction_id = transaction_items.transaction_id").
+		Where(
+			"transactions.user_id = ? AND transactions.date >= ? AND transactions.date < ?",
+			userID,
+			start,
+			end,
+		).
+		Count(&count).Error
+
+	return int(count), err
+}
 
 func (r *Repository) FindByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
 	var transaction e.Transaction

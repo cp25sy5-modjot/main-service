@@ -86,6 +86,7 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 		Transactions:       currMonth,
 		CurrentMonthTotal:  calculateMonthTotal(currMonth),
 		PreviousMonthTotal: calculateMonthTotal(previousMonth),
+		CurrentMonthItemCount: months.CurrentMonthItemCount,
 	}
 
 	return sresp.OK(c, resp, "Transactions retrieved successfully")
