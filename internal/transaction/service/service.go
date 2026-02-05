@@ -133,20 +133,33 @@ type MonthlyResult struct {
 	PreviousMonth []e.Transaction `json:"previous_month"`
 }
 
-func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(userID string, filter *m.TransactionFilter) (*MonthlyResult, error) {
+func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(
+	userID string,
+	filter *m.TransactionFilter,
+) (*MonthlyResult, error) {
+
 	// --- Current Month ---
 	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
-	if filter.Category != "" {
 
-	}
-	current, err := s.repo.FindAllByUserIDWithRelationsAndFiltered(userID, start, end, filter.Category)
+	current, err := s.repo.FindAllByUserIDWithRelationsAndFiltered(
+		userID,
+		start,
+		end,
+		filter.Categories,
+	)
 	if err != nil {
 		return nil, err
 	}
 
 	// --- Previous Month ---
 	previousStart, previousEnd := utils.GetStartAndEndOfPreviousMonth(*filter.Date)
-	previous, err := s.repo.FindAllByUserIDWithRelationsAndFiltered(userID, previousStart, previousEnd, filter.Category)
+
+	previous, err := s.repo.FindAllByUserIDWithRelationsAndFiltered(
+		userID,
+		previousStart,
+		previousEnd,
+		filter.Categories,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -156,6 +169,7 @@ func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(userID string,
 		PreviousMonth: previous,
 	}, nil
 }
+
 
 func (s *service) GetByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
 	tx, err := s.repo.FindByIDWithRelations(params)

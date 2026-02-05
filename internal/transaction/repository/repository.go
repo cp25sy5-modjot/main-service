@@ -58,7 +58,7 @@ func (r *Repository) FindAllByUserIDAndFiltered(userID string, start, end time.T
 func (r *Repository) FindAllByUserIDWithRelationsAndFiltered(
 	userID string,
 	start, end time.Time,
-	categoryID string,
+	categoryIDs []string,
 ) ([]e.Transaction, error) {
 
 	var transactions []e.Transaction
@@ -74,11 +74,11 @@ func (r *Repository) FindAllByUserIDWithRelationsAndFiltered(
 			end,
 		)
 
-	// 👉 filter ด้วย category จาก item
-	if categoryID != "" {
+	// 👉 filter ด้วย multiple category จาก item
+	if len(categoryIDs) > 0 {
 		query = query.
 			Joins("JOIN transaction_items ON transaction_items.transaction_id = transactions.transaction_id").
-			Where("transaction_items.category_id = ?", categoryID).
+			Where("transaction_items.category_id IN ?", categoryIDs).
 			Distinct()
 	}
 
@@ -88,6 +88,7 @@ func (r *Repository) FindAllByUserIDWithRelationsAndFiltered(
 
 	return transactions, err
 }
+
 
 func (r *Repository) FindByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
 	var transaction e.Transaction

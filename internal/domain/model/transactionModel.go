@@ -36,7 +36,7 @@ type TransactionRes struct {
 
 type TransactionFilter struct {
 	Date     *time.Time `json:"date"`
-	Category string     `json:"category"`
+	Categories []string     `json:"categories"`
 }
 
 type TransactionCompareMonthResponse struct {

@@ -1,6 +1,7 @@
 package transactionhandler
 
 import (
+	"strings"
 	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
@@ -53,6 +54,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 }
 
 // GET /transactions
+// GET /transactions
 func (h *Handler) GetAll(c *fiber.Ctx) error {
 	userID, err := jwt.GetUserIDFromClaims(c)
 	if err != nil {
@@ -60,19 +62,26 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 	}
 
 	date := c.Query("date")
-	category := c.Query("category")
+
+	categoryStr := c.Query("category")
+	var categories []string
+	if categoryStr != "" {
+		categories = strings.Split(categoryStr, ",")
+	}
 
 	filter := &m.TransactionFilter{
-		Date:     utils.ConvertStringToTime(date),
-		Category: category,
+		Date:       utils.ConvertStringToTime(date),
+		Categories: categories,
 	}
 
 	months, err := h.service.GetAllComparePreviousMonthAndByUserIDWithFilter(userID, filter)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve transactions")
 	}
+
 	currMonth := buildTransactionResponses(months.CurrentMonth)
 	previousMonth := buildTransactionResponses(months.PreviousMonth)
+
 	resp := m.TransactionCompareMonthResponse{
 		Transactions:       currMonth,
 		CurrentMonthTotal:  calculateMonthTotal(currMonth),
