@@ -201,6 +201,7 @@ func mapDraftToCreateInput(d *DraftTxn) *m.TransactionCreateInput {
 	}
 
 	return &m.TransactionCreateInput{
+		Title:  d.Title,
 		Date:  d.Date,
 		Items: items,
 	}

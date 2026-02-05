@@ -5,9 +5,9 @@ import "time"
 type DraftStatus string
 
 const (
-	DraftStatusProcessing      DraftStatus = "processing"
-	DraftStatusWaitingConfirm  DraftStatus = "waiting_confirm"
-	DraftStatusFailed          DraftStatus = "failed"
+	DraftStatusProcessing     DraftStatus = "processing"
+	DraftStatusWaitingConfirm DraftStatus = "waiting_confirm"
+	DraftStatusFailed         DraftStatus = "failed"
 )
 
 type DraftTxn struct {
@@ -16,6 +16,7 @@ type DraftTxn struct {
 
 	Status DraftStatus `json:"status"` // processing | waiting_confirm | failed
 
+	Title string      `json:"title,omitempty"`
 	Date  time.Time   `json:"date,omitempty"`
 	Items []DraftItem `json:"items,omitempty"`
 
@@ -32,11 +33,13 @@ type DraftItem struct {
 }
 
 type NewDraftRequest struct {
+	Title string      `json:"title"`
 	Date  time.Time   `json:"date"`
-	Items []DraftItem  `json:"items" validate:"required,min=1,dive"`
+	Items []DraftItem `json:"items" validate:"required,min=1,dive"`
 }
 
 type ConfirmRequest struct {
-	Date  *time.Time   `json:"date"`
-	Items []DraftItem  `json:"items" validate:"required,min=1,dive"`
+	Title string      `json:"title"`
+	Date  *time.Time  `json:"date"`
+	Items []DraftItem `json:"items" validate:"required,min=1,dive"`
 }

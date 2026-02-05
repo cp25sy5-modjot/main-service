@@ -5,7 +5,7 @@ import (
 )
 
 type TransactionCreateInput struct {
-	title string
+	Title string
 	Date  time.Time
 	Items []TransactionItemInput
 }

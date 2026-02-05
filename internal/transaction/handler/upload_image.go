@@ -50,6 +50,7 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 	traceID := xid.New().String()
 
 	_, err = h.draftService.SaveDraft(ctx, traceID, userID, draft.NewDraftRequest{
+		Title: "Slip Image Upload",
 		Date:  time.Now(),
 		Items: []draft.DraftItem{},
 	})
