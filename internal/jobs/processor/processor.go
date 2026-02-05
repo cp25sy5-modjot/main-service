@@ -56,40 +56,31 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 	}
 
 	// ===== STEP 1: mark processing =====
-	_ = p.draftRepo.Save(ctx, d.DraftTxn{
-		TraceID:   payload.TraceID,
-		UserID:    payload.UserID,
-		Status:    d.DraftStatusProcessing,
-		UpdatedAt: time.Now(),
-	})
+	_ = p.draftRepo.UpdateStatus(ctx, payload.TraceID, d.DraftStatusProcessing, "")
 
 	// ===== STEP 2: call AI =====
 	draft, err := p.txService.ProcessUploadedFile(data, payload.UserID)
 	if err != nil {
 
-		_ = p.draftRepo.Save(ctx, d.DraftTxn{
-			TraceID:   payload.TraceID,
-			UserID:    payload.UserID,
-			Status:    d.DraftStatusFailed,
-			Error:     err.Error(),
-			UpdatedAt: time.Now(),
-		})
+		_ = p.draftRepo.UpdateStatus(ctx, payload.TraceID, d.DraftStatusFailed, err.Error())
 
 		return err
 	}
+	exDraft, err := p.draftRepo.Get(ctx, payload.TraceID)
+	if err != nil {
+		log.Printf("[JOB %s] get draft error: %v", payload.TraceID, err)
+		return err
+	}
+
+	exDraft.Title = draft.Title
+	exDraft.Date = draft.Date
+	exDraft.Items = draft.Items
+
+	exDraft.Status = d.DraftStatusWaitingConfirm
+	exDraft.UpdatedAt = time.Now()
 
 	// ===== STEP 3: save result to redis =====
-	_ = p.draftRepo.Save(ctx, d.DraftTxn{
-		TraceID: payload.TraceID,
-		UserID:  payload.UserID,
-
-		Status: d.DraftStatusWaitingConfirm,
-
-		Title:     draft.Title,
-		Date:      draft.Date,
-		Items:     draft.Items,
-		UpdatedAt: time.Now(),
-	})
+	_ = p.draftRepo.Save(ctx, *exDraft)
 
 	// 4. delete file
 	if err := p.storage.Delete(ctx, payload.Path); err != nil {

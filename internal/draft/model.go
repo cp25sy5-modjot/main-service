@@ -44,3 +44,8 @@ type ConfirmRequest struct {
 	Date  *time.Time  `json:"date"`
 	Items []DraftItem `json:"items" validate:"required,min=1,dive"`
 }
+
+type UpdateDraftStatusRequest struct {
+	Status DraftStatus `json:"status"`
+	Error  string      `json:"error,omitempty"`
+}

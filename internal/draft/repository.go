@@ -106,3 +106,15 @@ func (r *DraftRepository) Delete(ctx context.Context, traceID string) error {
 	return err
 }
 
+func (r *DraftRepository) UpdateStatus(ctx context.Context, traceID string, status DraftStatus, errMsg string) error {
+	d, err := r.Get(ctx, traceID)
+	if err != nil {
+		return err
+	}
+
+	d.Status = status
+	d.Error = errMsg
+	d.UpdatedAt = time.Now()
+
+	return r.Save(ctx, *d)
+}
