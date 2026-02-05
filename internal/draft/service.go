@@ -120,11 +120,12 @@ func (s *service) SaveDraft(
 	}
 
 	d := &DraftTxn{
-		TraceID: traceID,
-		UserID:  userID,
-		Status:  DraftStatusProcessing,
-		Date:    req.Date,
-		Items:   req.Items,
+		Title:     req.Title,
+		TraceID:   traceID,
+		UserID:    userID,
+		Status:    DraftStatusProcessing,
+		Date:      req.Date,
+		Items:     req.Items,
 		CreatedAt: req.CreatedAt,
 		UpdatedAt: req.CreatedAt,
 	}
@@ -155,7 +156,7 @@ func (s *service) ConfirmDraft(
 	if d.Status != DraftStatusWaitingConfirm {
 		return nil, errors.New("draft not ready")
 	}
-	
+
 	if len(d.Items) == 0 {
 		return nil, errors.New("cannot confirm empty draft")
 	}
@@ -203,7 +204,7 @@ func mapDraftToCreateInput(d *DraftTxn) *m.TransactionCreateInput {
 	}
 
 	return &m.TransactionCreateInput{
-		Title:  d.Title,
+		Title: d.Title,
 		Date:  d.Date,
 		Items: items,
 	}
