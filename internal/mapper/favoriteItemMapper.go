@@ -25,6 +25,7 @@ func BuildFavoriteItemResponse(fav *e.FavoriteItem) *m.FavoriteItemRes {
 		Title:      fav.Title,
 		CategoryID: fav.CategoryID,
 		Price:      fav.Price,
+		Position:   fav.Position,
 		CreatedAt:  fav.CreatedAt,
 		UpdatedAt:  fav.UpdatedAt,
 	}
