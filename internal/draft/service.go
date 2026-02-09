@@ -157,25 +157,17 @@ func (s *service) ConfirmDraft(
 		return nil, errors.New("draft not ready")
 	}
 
-	if len(d.Items) == 0 {
+	if len(req.Items) == 0 {
 		return nil, errors.New("cannot confirm empty draft")
 	}
 
-	if len(req.Items) > 0 {
-		d.Items = req.Items
-	}
-
-	if req.Date != nil {
-		d.Date = *req.Date
-	}
-
-	for _, it := range d.Items {
+	for _, it := range req.Items {
 		if it.Price < 0 {
 			return nil, errors.New("price must be > 0")
 		}
 	}
 
-	input := mapDraftToCreateInput(d)
+	input := mapConfirmDraftToCreateInput(&req)
 
 	tx, err := s.createInternal(userID, e.TransactionUpload, input)
 	if err != nil {
@@ -191,7 +183,7 @@ func (s *service) DeleteDraft(ctx context.Context, traceID string) error {
 	return s.draftRepo.Delete(ctx, traceID)
 }
 
-func mapDraftToCreateInput(d *DraftTxn) *m.TransactionCreateInput {
+func mapConfirmDraftToCreateInput(d *ConfirmRequest) *m.TransactionCreateInput {
 
 	var items []m.TransactionItemInput
 
@@ -205,7 +197,8 @@ func mapDraftToCreateInput(d *DraftTxn) *m.TransactionCreateInput {
 
 	return &m.TransactionCreateInput{
 		Title: d.Title,
-		Date:  d.Date,
+		Date:  *d.Date,
 		Items: items,
 	}
 }
+

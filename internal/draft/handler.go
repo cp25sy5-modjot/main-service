@@ -3,6 +3,8 @@ package draft
 import (
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	"github.com/gofiber/fiber/v2"
+		mapper "github.com/cp25sy5-modjot/main-service/internal/mapper"
+
 )
 
 type Handler struct {
@@ -95,7 +97,7 @@ func (h *Handler) Confirm(c *fiber.Ctx) error {
 		c.Context(),
 		traceID,
 		userID,
-		req, 
+		req,
 	)
 
 	if err != nil {
@@ -104,6 +106,6 @@ func (h *Handler) Confirm(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"status":      "success",
-		"transaction": tx,
+		"transaction": mapper.BuildTransactionResponse(tx),
 	})
 }

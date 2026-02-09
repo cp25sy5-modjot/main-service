@@ -4,16 +4,17 @@ import (
 	"strings"
 	"time"
 
-	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	draft "github.com/cp25sy5-modjot/main-service/internal/draft"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
+	mapper "github.com/cp25sy5-modjot/main-service/internal/mapper"
 	sresp "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	"github.com/cp25sy5-modjot/main-service/internal/storage"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/hibiken/asynq"
+	fav "github.com/cp25sy5-modjot/main-service/internal/favorite_item/service"
 )
 
 type Handler struct {
@@ -21,14 +22,21 @@ type Handler struct {
 	asynqClient  *asynq.Client
 	storage      storage.Storage
 	draftService draft.Service
+	favService   fav.Service
 }
 
-func NewHandler(svc txsvc.Service, client *asynq.Client, st storage.Storage, draftSvc draft.Service) *Handler {
+func NewHandler(
+	svc txsvc.Service, 
+	client *asynq.Client, 
+	st storage.Storage, 
+	draftSvc draft.Service,
+	favSvc fav.Service) *Handler {
 	return &Handler{
 		service:      svc,
 		asynqClient:  client,
 		storage:      st,
 		draftService: draftSvc,
+		favService:   favSvc,
 	}
 }
 
@@ -44,16 +52,20 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 		return err
 	}
 
-	var input = parseTransactionInsertReqToServiceInput(&req)
+	var input = mapper.ParseTransactionInsertReqToServiceInput(&req)
 
 	resp, err := h.service.Create(userID, input)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-	return sresp.Created(c, buildTransactionResponse(resp), "Transaction created successfully")
+
+	isNewFavorite := req.IsCreateNewFavorite
+	if isNewFavorite {
+		h.favService.Create(mapper.ParseTransactionInsertReqToFavoriteItemCreateInput(userID, &req))
+	}
+	return sresp.Created(c, mapper.BuildTransactionResponse(resp), "Transaction created successfully")
 }
 
-// GET /transactions
 // GET /transactions
 func (h *Handler) GetAll(c *fiber.Ctx) error {
 	userID, err := jwt.GetUserIDFromClaims(c)
@@ -79,13 +91,13 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve transactions")
 	}
 
-	currMonth := buildTransactionResponses(months.CurrentMonth)
-	previousMonth := buildTransactionResponses(months.PreviousMonth)
+	currMonth := mapper.BuildTransactionResponses(months.CurrentMonth)
+	previousMonth := mapper.BuildTransactionResponses(months.PreviousMonth)
 
 	resp := m.TransactionCompareMonthResponse{
-		Transactions:       currMonth,
-		CurrentMonthTotal:  calculateMonthTotal(currMonth),
-		PreviousMonthTotal: calculateMonthTotal(previousMonth),
+		Transactions:          currMonth,
+		CurrentMonthTotal:     mapper.CalculateMonthTotal(currMonth),
+		PreviousMonthTotal:    mapper.CalculateMonthTotal(previousMonth),
 		CurrentMonthItemCount: months.CurrentMonthItemCount,
 	}
 
@@ -104,7 +116,7 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Transaction not found")
 	}
 
-	return sresp.OK(c, buildTransactionResponse(resp), "Transaction retrieved successfully")
+	return sresp.OK(c, mapper.BuildTransactionResponse(resp), "Transaction retrieved successfully")
 }
 
 // PUT /transactions/:transaction_id
@@ -124,13 +136,13 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		req.Date = &date
 	}
 
-	input := parseTransactionUpdateReqToServiceInput(&req)
+	input := mapper.ParseTransactionUpdateReqToServiceInput(&req)
 
 	resp, err := h.service.Update(TransactionSearchParams, input)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to update transaction")
 	}
-	return sresp.OK(c, buildTransactionResponse(resp), "Transaction updated successfully")
+	return sresp.OK(c, mapper.BuildTransactionResponse(resp), "Transaction updated successfully")
 }
 
 // DELETE /transactions/:transaction_id
@@ -169,109 +181,4 @@ func createTransactionSearchParams(c *fiber.Ctx) (*m.TransactionSearchParams, er
 		TransactionID: tx_id,
 		UserID:        userID,
 	}, nil
-}
-
-func buildTransactionResponse(tx *e.Transaction) *m.TransactionRes {
-	items := buildTransactionItemResponses(tx.Items)
-	total := calculateTotal(items)
-	return &m.TransactionRes{
-		TransactionID: tx.TransactionID,
-		Date:          tx.Date,
-		Type:          string(tx.Type),
-		Total:         total,
-		Items:         items,
-	}
-}
-
-func buildTransactionResponses(transactions []e.Transaction) []m.TransactionRes {
-	if len(transactions) == 0 {
-		return []m.TransactionRes{}
-	}
-	transactionResponses := make([]m.TransactionRes, 0, len(transactions))
-	for i := range transactions {
-		res := buildTransactionResponse(&transactions[i])
-		transactionResponses = append(transactionResponses, *res)
-	}
-	return transactionResponses
-}
-
-func buildTransactionItemResponse(item *e.TransactionItem) *m.TransactionItemRes {
-	return &m.TransactionItemRes{
-		TransactionID:     item.TransactionID,
-		ItemID:            item.ItemID,
-		Title:             item.Title,
-		Price:             item.Price,
-		CategoryID:        item.CategoryID,
-		CategoryName:      item.Category.CategoryName,
-		CategoryColorCode: item.Category.ColorCode,
-	}
-}
-
-func buildTransactionItemResponses(items []e.TransactionItem) []m.TransactionItemRes {
-	if len(items) == 0 {
-		return []m.TransactionItemRes{}
-	}
-	itemResponses := make([]m.TransactionItemRes, 0, len(items))
-	for i := range items {
-		res := buildTransactionItemResponse(&items[i])
-		itemResponses = append(itemResponses, *res)
-	}
-	return itemResponses
-}
-
-func parseTransactionInsertReqToServiceInput(
-	req *m.TransactionInsertReq,
-) *m.TransactionCreateInput {
-	return &m.TransactionCreateInput{
-		Date:  req.Date,
-		Items: mapTransactionItemReqToServiceInput(req.Items),
-	}
-}
-
-func parseTransactionUpdateReqToServiceInput(
-	req *m.TransactionUpdateReq,
-) *m.TransactionUpdateInput {
-	return &m.TransactionUpdateInput{
-		Date:  req.Date,
-		Items: mapTransactionItemReqToServiceInput(req.Items),
-	}
-}
-
-func mapTransactionItemReqToServiceInput(items []m.TransactionItemReq) []m.TransactionItemInput {
-	if len(items) == 0 {
-		return []m.TransactionItemInput{}
-	}
-	mappedItems := make([]m.TransactionItemInput, len(items))
-	for i, item := range items {
-		mappedItems[i] = m.TransactionItemInput{
-			Title:      item.Title,
-			Price:      item.Price,
-			CategoryID: item.CategoryID,
-		}
-	}
-	return mappedItems
-}
-
-func calculateMonthTotal(transactions []m.TransactionRes) float64 {
-	if len(transactions) == 0 {
-		return 0
-	}
-	total := 0.0
-	for _, tx := range transactions {
-		for _, item := range tx.Items {
-			total += item.Price
-		}
-	}
-	return total
-}
-
-func calculateTotal(items []m.TransactionItemRes) float64 {
-	if len(items) == 0 {
-		return 0
-	}
-	total := 0.0
-	for _, item := range items {
-		total += item.Price
-	}
-	return total
 }

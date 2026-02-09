@@ -129,8 +129,8 @@ func (s *service) GetAllByUserIDWithFilter(userID string, filter *m.TransactionF
 }
 
 type MonthlyResult struct {
-	CurrentMonth        []e.Transaction `json:"current_month"`
-	PreviousMonth       []e.Transaction `json:"previous_month"`
+	CurrentMonth          []e.Transaction `json:"current_month"`
+	PreviousMonth         []e.Transaction `json:"previous_month"`
 	CurrentMonthItemCount int             `json:"current_month_item_count"`
 }
 
@@ -175,8 +175,8 @@ func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(
 	}
 
 	return &MonthlyResult{
-		CurrentMonth:  current,
-		PreviousMonth: previous,
+		CurrentMonth:          current,
+		PreviousMonth:         previous,
 		CurrentMonthItemCount: itemCount,
 	}, nil
 }
@@ -275,6 +275,7 @@ func buildTransactionToCreate(
 		TransactionID: txID,
 		UserID:        userID,
 		Type:          txType,
+		Title:         input.Title,
 		Date:          input.Date.UTC(),
 	}
 

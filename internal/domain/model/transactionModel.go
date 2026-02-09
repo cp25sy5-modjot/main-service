@@ -15,9 +15,10 @@ type TransactionItemReq struct {
 }
 
 type TransactionInsertReq struct {
-	Title string               `json:"title" validate:"required,min=2,max=20"`
-	Date  time.Time            `json:"date"`
-	Items []TransactionItemReq `json:"items" validate:"required,min=1,dive"`
+	Title               string               `json:"title" validate:"required,min=2,max=20"`
+	Date                time.Time            `json:"date"`
+	Items               []TransactionItemReq `json:"items" validate:"required,min=1,dive"`
+	IsCreateNewFavorite bool                 `json:"is_create_new_favorite"`
 }
 
 type TransactionUpdateReq struct {
@@ -31,6 +32,7 @@ type TransactionRes struct {
 	Date          time.Time            `json:"date"`
 	Type          string               `json:"type"`
 	Total         float64              `json:"total"`
+	Title         string               `json:"title"`
 	Items         []TransactionItemRes `json:"items"`
 }
 

@@ -10,6 +10,9 @@ import (
 	catsvc "github.com/cp25sy5-modjot/main-service/internal/category/service"
 
 	draft "github.com/cp25sy5-modjot/main-service/internal/draft"
+	favhandler "github.com/cp25sy5-modjot/main-service/internal/favorite_item/handler"
+	favrepo "github.com/cp25sy5-modjot/main-service/internal/favorite_item/repository"
+	favsvc "github.com/cp25sy5-modjot/main-service/internal/favorite_item/service"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	overviewhandler "github.com/cp25sy5-modjot/main-service/internal/overview/handler"
 	overviewrepo "github.com/cp25sy5-modjot/main-service/internal/overview/repository"
@@ -25,7 +28,6 @@ import (
 	userepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
 	usersvc "github.com/cp25sy5-modjot/main-service/internal/user/service"
 	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -37,6 +39,7 @@ type Services struct {
 
 	OverviewService overviewsvc.Service
 	DraftService    draft.Service
+	FavoriteService favsvc.Service
 }
 
 func RegisterRoutes(
@@ -52,6 +55,7 @@ func RegisterRoutes(
 	initializeAuthRoutes(s, services)
 	initializeCategoryRoutes(s, services)
 	initializeOverviewRoutes(s, services)
+	initializeFavoriteRoutes(s, services)
 
 }
 
@@ -64,6 +68,7 @@ func initializeServices(s *fiberServer) *Services {
 	overviewRepo := overviewrepo.NewRepository(s.db.GetDb())
 
 	draftRepo := draft.NewDraftRepository(s.rdb)
+	favRepo := favrepo.NewRepository(s.db.GetDb())
 
 	transactionSvc := txsvc.NewService(
 		s.db.GetDb(),
@@ -79,6 +84,8 @@ func initializeServices(s *fiberServer) *Services {
 		transactionSvc.CreateInternal,
 	)
 
+	favSvc := favsvc.NewService(favRepo)
+
 	// ======================
 
 	categorySvc := catsvc.NewService(categoryRepo, transactionRepo)
@@ -93,7 +100,8 @@ func initializeServices(s *fiberServer) *Services {
 		CategoryService:        categorySvc,
 		OverviewService:        overviewSvc,
 
-		DraftService: draftSvc,
+		DraftService:    draftSvc,
+		FavoriteService: favSvc,
 	}
 }
 
@@ -143,6 +151,7 @@ func initializeTransactionRoutes(s *fiberServer, services *Services) {
 		s.asynqClient,
 		s.storage,
 		services.DraftService,
+		services.FavoriteService,
 	)
 
 	txApi := s.app.Group("/v1/transaction")
@@ -203,4 +212,19 @@ func initializeDraftRoutes(s *fiberServer, services *Services) {
 	api.Get("", handler.ListDraft)
 	api.Get("/:traceID", handler.GetDraft)
 	api.Post("/:traceID/confirm", handler.Confirm)
+}
+
+func initializeFavoriteRoutes(s *fiberServer, services *Services) {
+	favHandler := favhandler.NewHandler(services.FavoriteService)
+
+	// Register routes
+	api := s.app.Group("/v1/favorites")
+	api.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
+
+	api.Post("", favHandler.Create)
+	api.Get("", favHandler.GetAll)
+	api.Get("/:id", favHandler.GetByID)
+	api.Put("/:id", favHandler.Update)
+	api.Delete("/:id", favHandler.Delete)
+	api.Post("/reorder", favHandler.ReOrder)
 }

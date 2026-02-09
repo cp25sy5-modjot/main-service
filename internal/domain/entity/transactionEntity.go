@@ -13,7 +13,7 @@ const (
 
 type Transaction struct {
 	TransactionID string `gorm:"primaryKey;autoIncrement:false" `
-	UserID        string
+	UserID        string 
 	Title         string
 	Date          time.Time
 	Type          TransactionType

@@ -11,6 +11,7 @@ type UserStatus string
 const (
 	StatusPreActive UserStatus = "pre-active"
 	StatusActive    UserStatus = "active"
+	StatusInactive  UserStatus = "inactive"
 )
 
 type UserInsertReq struct {
@@ -21,11 +22,6 @@ type UserInsertReq struct {
 type UserUpdateReq struct {
 	Name string    `json:"name" validate:"min=1,max=15"`
 }
-
-// added for onboarding flow in release 2
-// type UserUpdateOnboardingReq struct {
-// 	Onboarding bool `json:"onboarding" validate:"required"`
-// }
 
 type UserRes struct {
 	UserBinding UserBinding `json:"user_binding"`
