@@ -95,26 +95,37 @@ func (s *service) Delete(uid, favID string) error {
 		return s.repo.ShiftLeftAfterTx(tx, uid, fav.Position)
 	})
 }
-
 func (s *service) ReOrder(req *m.FavoriteItemReOrderInput) error {
 	if len(req.ReOrderList) == 0 {
 		return nil
 	}
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
+
+		// 1) validate duplicate position ใน request
 		seen := map[int]bool{}
 		for _, item := range req.ReOrderList {
 			if seen[item.Position] {
-				return errors.New("duplicate position")
+				return errors.New("duplicate position in request")
 			}
 			seen[item.Position] = true
 		}
 
+		// 2) move all affected rows to temp positions (negative)
 		for _, item := range req.ReOrderList {
-			if item.FavoriteID == "" || item.Position <= 0 {
-				continue
+			tmpPos := -item.Position
+			if err := s.repo.UpdatePositionTx(
+				tx,
+				req.UserID,
+				item.FavoriteID,
+				tmpPos,
+			); err != nil {
+				return err
 			}
+		}
 
+		// 3) set real positions
+		for _, item := range req.ReOrderList {
 			if err := s.repo.UpdatePositionTx(
 				tx,
 				req.UserID,
@@ -124,7 +135,7 @@ func (s *service) ReOrder(req *m.FavoriteItemReOrderInput) error {
 				return err
 			}
 		}
+
 		return nil
 	})
 }
-
