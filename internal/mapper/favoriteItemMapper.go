@@ -45,11 +45,12 @@ func BuildFavObjectToCreate(fav_id string, input *m.FavoriteItemCreateInput) *e.
 
 func ParseFavoriteItemUpdateReqToServiceInput(
 	userID string,
+	favID string,
 	req *m.FavoriteItemUpdateReq,
 ) *m.FavoriteItemUpdateInput {
 	return &m.FavoriteItemUpdateInput{
 		UserID:     userID,
-		FavoriteID: req.FavoriteID,
+		FavoriteID: favID,
 		Title:      req.Title,
 		CategoryID: req.CategoryID,
 		Price:      req.Price,

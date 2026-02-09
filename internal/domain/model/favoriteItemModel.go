@@ -9,7 +9,6 @@ type FavoriteItemInsertReq struct {
 }
 
 type FavoriteItemUpdateReq struct {
-	FavoriteID string  `json:"favorite_id" validate:"required,uuid4"`
 	Title      *string  `json:"title" validate:"required,min=1,max=50"`
 	Price      *float64 `json:"price" validate:"required,gt=0"`
 	CategoryID *string  `json:"category_id" validate:"required,uuid4"`

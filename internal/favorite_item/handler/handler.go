@@ -46,12 +46,17 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		return err
 	}
 
+	favID := c.Params("id")
+	if favID == "" {
+		return fiber.ErrBadRequest
+	}
+
 	var req m.FavoriteItemUpdateReq
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
 
-	input := mapper.ParseFavoriteItemUpdateReqToServiceInput(userID, &req)
+	input := mapper.ParseFavoriteItemUpdateReqToServiceInput(userID, favID, &req)
 
 	updatedFav, err := h.service.Update(input)
 	if err != nil {
@@ -74,7 +79,7 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 
 	favID := c.Params("id")
 	if favID == "" {
-		return fiber.ErrBadRequest
+		return fiber.NewError(fiber.StatusBadRequest, "favorite_id parameter is required")
 	}
 
 	if err := h.service.Delete(userID, favID); err != nil {
@@ -113,7 +118,7 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 
 	favID := c.Params("id")
 	if favID == "" {
-		return fiber.ErrBadRequest
+		return fiber.NewError(fiber.StatusBadRequest, "favorite_id parameter is required")
 	}
 
 	fav, err := h.service.GetByID(userID, favID)

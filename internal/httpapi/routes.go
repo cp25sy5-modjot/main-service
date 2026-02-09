@@ -84,7 +84,10 @@ func initializeServices(s *fiberServer) *Services {
 		transactionSvc.CreateInternal,
 	)
 
-	favSvc := favsvc.NewService(favRepo)
+	favSvc := favsvc.NewService(
+		s.db.GetDb(),
+		favRepo,
+	)
 
 	// ======================
 

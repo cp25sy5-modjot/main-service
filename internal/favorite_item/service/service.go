@@ -8,6 +8,7 @@ import (
 	favrepo "github.com/cp25sy5-modjot/main-service/internal/favorite_item/repository"
 	mapper "github.com/cp25sy5-modjot/main-service/internal/mapper"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Service interface {
@@ -21,28 +22,32 @@ type Service interface {
 }
 
 type service struct {
+	db *gorm.DB
 	repo *favrepo.Repository
 }
 
-func NewService(repo *favrepo.Repository) *service {
-	return &service{repo: repo}
+func NewService(db *gorm.DB, repo *favrepo.Repository) Service {
+	return &service{db: db, repo: repo}
 }
 
 func (s *service) Create(input *m.FavoriteItemCreateInput) (*e.FavoriteItem, error) {
-	maxPos, err := s.repo.GetMaxPosition(input.UserID)
-	if err != nil {
-		return nil, err
-	}
+	var favCreated *e.FavoriteItem
 
-	FavID := uuid.New().String()
-	u := mapper.BuildFavObjectToCreate(FavID, input)
-	u.Position = maxPos + 1
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		maxPos, err := s.repo.GetMaxPositionTx(tx, input.UserID)
+		if err != nil {
+			return err
+		}
 
-	favCreated, err := s.repo.Create(u)
-	if err != nil {
-		return nil, err
-	}
-	return favCreated, nil
+		FavID := uuid.New().String()
+		u := mapper.BuildFavObjectToCreate(FavID, input)
+		u.Position = maxPos + 1
+
+		favCreated, err = s.repo.CreateTx(tx, u)
+		return err
+	})
+
+	return favCreated, err
 }
 
 func (s *service) GetAll(uid string) ([]*e.FavoriteItem, error) {
@@ -77,16 +82,18 @@ func (s *service) Update(input *m.FavoriteItemUpdateInput) (*e.FavoriteItem, err
 }
 
 func (s *service) Delete(uid, favID string) error {
-	fav, err := s.repo.FindByID(uid, favID)
-	if err != nil {
-		return err
-	}
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		fav, err := s.repo.FindByIDTx(tx, uid, favID)
+		if err != nil {
+			return err
+		}
 
-	if err := s.repo.Delete(uid, favID); err != nil {
-		return err
-	}
+		if err := s.repo.DeleteTx(tx, uid, favID); err != nil {
+			return err
+		}
 
-	return s.repo.ShiftLeftAfter(uid, fav.Position)
+		return s.repo.ShiftLeftAfterTx(tx, uid, fav.Position)
+	})
 }
 
 func (s *service) ReOrder(req *m.FavoriteItemReOrderInput) error {
@@ -94,30 +101,30 @@ func (s *service) ReOrder(req *m.FavoriteItemReOrderInput) error {
 		return nil
 	}
 
-	seen := map[int]bool{}
-	for _, item := range req.ReOrderList {
-		if seen[item.Position] {
-			return errors.New("duplicate position")
-		}
-		seen[item.Position] = true
-	}
-
-	for _, item := range req.ReOrderList {
-		if item.FavoriteID == "" {
-			continue
-		}
-		if item.Position <= 0 {
-			continue
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		seen := map[int]bool{}
+		for _, item := range req.ReOrderList {
+			if seen[item.Position] {
+				return errors.New("duplicate position")
+			}
+			seen[item.Position] = true
 		}
 
-		if err := s.repo.UpdatePosition(
-			req.UserID,
-			item.FavoriteID,
-			item.Position,
-		); err != nil {
-			return err
-		}
-	}
+		for _, item := range req.ReOrderList {
+			if item.FavoriteID == "" || item.Position <= 0 {
+				continue
+			}
 
-	return nil
+			if err := s.repo.UpdatePositionTx(
+				tx,
+				req.UserID,
+				item.FavoriteID,
+				item.Position,
+			); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
+
