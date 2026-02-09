@@ -119,7 +119,7 @@ func ParseTransactionInsertReqToFavoriteItemCreateInput(
 ) *m.FavoriteItemCreateInput {
 	return &m.FavoriteItemCreateInput{
 		UserID:     userID,
-		Title:      req.Title,
+		Title:      req.Items[0].Title,
 		CategoryID: req.Items[0].CategoryID,
 		Price:      req.Items[0].Price,
 	}
