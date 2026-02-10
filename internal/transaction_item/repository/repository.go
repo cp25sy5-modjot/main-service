@@ -28,21 +28,6 @@ func (r *Repository) Create(items *e.TransactionItem) error {
 	return nil
 }
 
-func (r *Repository) CreateMany(items []e.TransactionItem) error {
-	if len(items) == 0 {
-		return nil
-	}
-
-	err := r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(&items).Error; err != nil {
-			return err
-		}
-		return nil
-	})
-
-	return err
-}
-
 func (r *Repository) FindAllByUserID(params *m.TransactionItemSearchParams) ([]e.TransactionItem, error) {
 	var items []e.TransactionItem
 	err := r.db.
@@ -98,6 +83,22 @@ func (r *Repository) Delete(params *m.TransactionItemSearchParams) error {
 	return r.db.Delete(&e.TransactionItem{}, "transaction_id = ? AND item_id = ?", params.TransactionID, params.ItemID).Error
 }
 
-func (r *Repository) DeleteByTransactionID(transactionID string) error {
-	return r.db.Delete(&e.TransactionItem{}, "transaction_id = ?", transactionID).Error
+func (r *Repository) CreateManyTx(
+	tx *gorm.DB,
+	items []e.TransactionItem,
+) error {
+	if len(items) == 0 {
+		return nil
+	}
+	return tx.Create(&items).Error
+}
+
+func (r *Repository) DeleteByTransactionIDTx(
+	tx *gorm.DB,
+	transactionID string,
+) error {
+	return tx.
+		Where("transaction_id = ?", transactionID).
+		Delete(&e.TransactionItem{}).
+		Error
 }

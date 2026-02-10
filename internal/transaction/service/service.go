@@ -207,11 +207,8 @@ func (s *service) Update(
 
 	// --- Items (PATCH replace semantics) ---
 	if input.Items != nil {
-		err := s.txirepo.DeleteByTransactionID(exists.TransactionID)
-		if err != nil {
-			return nil, err
-		}
 
+		// build items ใหม่ทั้งหมดก่อน
 		newItems, err := ReplaceTransactionItems(
 			exists.TransactionID,
 			input.Items,
@@ -220,7 +217,27 @@ func (s *service) Update(
 			return nil, err
 		}
 
-		if err := s.txirepo.CreateMany(newItems); err != nil {
+		// ครอบ delete + create ใน tx เดียว
+		err = s.db.Transaction(func(tx *gorm.DB) error {
+
+			if err := s.txirepo.DeleteByTransactionIDTx(
+				tx,
+				exists.TransactionID,
+			); err != nil {
+				return err
+			}
+
+			if err := s.txirepo.CreateManyTx(
+				tx,
+				newItems,
+			); err != nil {
+				return err
+			}
+
+			return nil
+		})
+
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -325,16 +342,18 @@ func (s *service) saveNewTransaction(
 	}
 
 	err := s.db.Transaction(func(db *gorm.DB) error {
+
 		if err := s.repo.WithTx(db).Create(tx); err != nil {
 			return err
 		}
 
-		if err := s.txirepo.WithTx(db).CreateMany(items); err != nil {
+		if err := s.txirepo.CreateManyTx(db, items); err != nil {
 			return err
 		}
 
 		return nil
 	})
+
 	if err != nil {
 		return nil, err
 	}
