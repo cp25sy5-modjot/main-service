@@ -1,10 +1,12 @@
 package userrepo
 
 import (
+	"errors"
 	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Repository struct {
@@ -98,4 +100,35 @@ func (r *Repository) Restore(id string) error {
 			"status":          e.StatusActive,
 			"unsubscribed_at": nil,
 		}).Error
+}
+
+func (r *Repository) RestoreAndReturn(userID string) (*e.User, error) {
+	var user e.User
+
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		// lock row
+		if err := tx.
+			Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("user_id = ?", userID).
+			First(&user).Error; err != nil {
+			return err
+		}
+
+		if user.Status != e.StatusInactive {
+			return errors.New("not restorable")
+		}
+
+		if err := tx.Model(&e.User{}).
+			Where("user_id = ?", userID).
+			Updates(map[string]interface{}{
+				"status":          e.StatusActive,
+				"unsubscribed_at": nil,
+			}).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return &user, err
 }

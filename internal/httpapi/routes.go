@@ -145,6 +145,9 @@ func initializeAuthRoutes(s *fiberServer, services *Services) {
 	authApi.Post("/google", func(c *fiber.Ctx) error {
 		return auth.HandleGoogleTokenExchange(c, services.UserService, services.CategoryService, s.conf)
 	})
+	authApi.Post("/google/restore", func(c *fiber.Ctx) error {
+		return auth.HandleRestore(c, services.UserService, s.conf)
+	})
 
 }
 

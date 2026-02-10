@@ -1,6 +1,7 @@
 package usersvc
 
 import (
+	"errors"
 	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
@@ -16,15 +17,17 @@ type Service interface {
 	CreateMockUser(input *UserCreateInput, uid string) (*e.User, error)
 
 	GetAll() ([]*e.User, error)
-	GetByID(user_id string) (*e.User, error)
+	GetByID(userID string) (*e.User, error)
 	GetByGoogleID(google_id string) (*e.User, error)
 	// GetByFacebookID(facebook_id string) (*e.User, error)
 	// GetByAppleID(apple_id string) (*e.User, error)
 
 	Update(userID string, input *UserUpdateInput) (*e.User, error)
-	Delete(user_id string) error
-	SoftDelete(user_id string) error
-	TestSoftDelete(user_id string) error
+	Delete(userID string) error
+	SoftDelete(userID string) error
+	TestSoftDelete(userID string) error
+	RestoreByGoogleID(googleID string) (*e.User, error)
+	RestoreByUserID(userID string) (*e.User, error)
 }
 
 type service struct {
@@ -63,8 +66,8 @@ func (s *service) GetAll() ([]*e.User, error) {
 	return users, nil
 }
 
-func (s *service) GetByID(user_id string) (*e.User, error) {
-	user, err := s.repo.FindByID(user_id)
+func (s *service) GetByID(userID string) (*e.User, error) {
+	user, err := s.repo.FindByID(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -139,6 +142,7 @@ func (s *service) SoftDelete(userID string) error {
 	return err
 }
 
+// remove in prod
 func (s *service) TestSoftDelete(userID string) error {
 	// 1. unsubscribe
 	if err := s.repo.Unsubscribe(userID); err != nil {
@@ -156,6 +160,48 @@ func (s *service) TestSoftDelete(userID string) error {
 
 	_, err = s.asynqClient.Enqueue(task)
 	return err
+}
+
+func (s *service) RestoreByGoogleID(googleID string) (*e.User, error) {
+	// 1. หา user แบบ unscoped (รวม soft deleted)
+	user, err := s.repo.FindByGoogleID(googleID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. ต้องเป็น inactive เท่านั้น
+	if user.Status != e.StatusInactive {
+		return nil, errors.New("user is not restorable")
+	}
+
+	// 3. restore
+	if err := s.repo.Restore(user.UserID); err != nil {
+		return nil, err
+	}
+
+	// 4. return user (ล่าสุด)
+	return s.repo.FindByID(user.UserID)
+}
+
+func (s *service) RestoreByUserID(userID string) (*e.User, error) {
+	// 1. หา user แบบ unscoped (รวม soft deleted)
+	user, err := s.repo.FindByID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. ต้องเป็น inactive เท่านั้น
+	if user.Status != e.StatusInactive {
+		return nil, errors.New("user is not restorable")
+	}
+
+	// 3. restore
+	if err := s.repo.Restore(user.UserID); err != nil {
+		return nil, err
+	}
+
+	// 4. return user (ล่าสุด)
+	return s.repo.FindByID(user.UserID)
 }
 
 // utils functions for service
