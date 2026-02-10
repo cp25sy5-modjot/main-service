@@ -58,7 +58,7 @@ func MockLoginHandler(c *fiber.Ctx, usvc u.Service, csvc c.Service, config *conf
 	}, "Login successful")
 }
 
-func MockRestoreHandler(c *fiber.Ctx, usvc u.Service, csvc c.Service, config *config.Auth) error {
+func MockRestoreHandler(c *fiber.Ctx, usvc u.Service, config *config.Auth) error {
 	userName := c.FormValue("userName")
 
 	if userName == "" {

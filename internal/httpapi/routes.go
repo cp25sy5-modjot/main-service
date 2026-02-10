@@ -139,6 +139,9 @@ func initializeAuthRoutes(s *fiberServer, services *Services) {
 	authApi.Post("/mock-login", func(c *fiber.Ctx) error {
 		return auth.MockLoginHandler(c, services.UserService, services.CategoryService, s.conf.Auth)
 	})
+	authApi.Post("/mock-restore", func(c *fiber.Ctx) error {
+		return auth.MockRestoreHandler(c, services.UserService, s.conf.Auth)
+	})
 	authApi.Post("/refresh-token", func(c *fiber.Ctx) error {
 		return auth.RefreshHandler(c, s.conf.Auth)
 	})
