@@ -24,13 +24,15 @@ type FavoritePositionUpdateReq struct {
 }
 
 type FavoriteItemRes struct {
-	FavoriteID string    `json:"favorite_id"`
-	Title      string    `json:"title"`
-	Price      float64   `json:"price"`
-	CategoryID string    `json:"category_id"`
-	Position   int       `json:"position"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	FavoriteID    string    `json:"favorite_id"`
+	Title         string    `json:"title"`
+	Price         float64   `json:"price"`
+	CategoryID    string    `json:"category_id"`
+	Position      int       `json:"position"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+	CategoryIcon  string    `json:"category_icon"`
+	CategoryColor string    `json:"category_color"`
 }
 
 type FavoriteItemCreateInput struct {

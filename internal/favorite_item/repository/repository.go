@@ -34,6 +34,9 @@ func (r *Repository) FindAll(uid string) ([]*e.FavoriteItem, error) {
 	var favorites []*e.FavoriteItem
 	err := r.db.
 		Where("user_id = ?", uid).
+		Preload("Category", func(db *gorm.DB) *gorm.DB {
+			return db.Select("category_id", "icon", "color_code")
+		}).
 		Order("position ASC").
 		Find(&favorites).Error
 	return favorites, err
@@ -43,6 +46,9 @@ func (r *Repository) FindByID(uid, favoriteID string) (*e.FavoriteItem, error) {
 	var favorite e.FavoriteItem
 	err := r.db.
 		Where("favorite_id = ? AND user_id = ?", favoriteID, uid).
+		Preload("Category", func(db *gorm.DB) *gorm.DB {
+			return db.Select("category_id", "icon", "color_code")
+		}).
 		First(&favorite).Error
 	return &favorite, err
 }
@@ -55,6 +61,9 @@ func (r *Repository) FindByIDTx(
 	var favorite e.FavoriteItem
 	err := tx.
 		Where("favorite_id = ? AND user_id = ?", favoriteID, uid).
+		Preload("Category", func(db *gorm.DB) *gorm.DB {
+			return db.Select("category_id", "icon", "color_code")
+		}).
 		First(&favorite).Error
 	return &favorite, err
 }

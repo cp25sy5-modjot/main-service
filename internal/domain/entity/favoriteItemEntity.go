@@ -11,4 +11,7 @@ type FavoriteItem struct {
 	Position   int
 	CreatedAt  time.Time `gorm:"autoCreateTime"`
 	UpdatedAt  time.Time `gorm:"autoUpdateTime"`
+
+	// Relationships
+	Category Category `gorm:"foreignKey:CategoryID;references:CategoryID"`
 }

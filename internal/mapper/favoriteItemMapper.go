@@ -28,6 +28,9 @@ func BuildFavoriteItemResponse(fav *e.FavoriteItem) *m.FavoriteItemRes {
 		Position:   fav.Position,
 		CreatedAt:  fav.CreatedAt,
 		UpdatedAt:  fav.UpdatedAt,
+
+		CategoryIcon:  fav.Category.Icon,
+		CategoryColor: fav.Category.ColorCode,
 	}
 }
 
