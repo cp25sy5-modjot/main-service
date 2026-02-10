@@ -40,7 +40,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	}
 	input := &svc.UserCreateInput{
 		UserBinding: e.UserBinding{
-			GoogleID:   req.UserBinding.GoogleID,
+			GoogleID: req.UserBinding.GoogleID,
 			// FacebookID: req.UserBinding.FacebookID,
 			// AppleID:    req.UserBinding.AppleID,
 		},
@@ -86,7 +86,19 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 		return err
 	}
 
-	if err := h.service.Delete(userID); err != nil {
+	mode := c.Query("mode", "soft")
+	switch mode {
+	case "soft":
+		err = h.service.SoftDelete(userID)
+	case "hard":
+		err = h.service.Delete(userID)
+	case "test": // remove in prod
+		err = h.service.TestSoftDelete(userID)
+	default:
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid delete mode")
+	}
+
+	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 	return sresp.OK(c, nil, "User deleted successfully")
@@ -98,7 +110,7 @@ func buildUserResponse(user *e.User) *m.UserRes {
 		Status:    string(user.Status),
 		CreatedAt: user.CreatedAt,
 		UserBinding: m.UserBinding{
-			GoogleID:   user.UserBinding.GoogleID,
+			GoogleID: user.UserBinding.GoogleID,
 			// FacebookID: user.UserBinding.FacebookID,
 			// AppleID:    user.UserBinding.AppleID,
 		},

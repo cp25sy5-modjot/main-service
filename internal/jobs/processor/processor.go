@@ -8,10 +8,12 @@ import (
 
 	"github.com/hibiken/asynq"
 
+	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	d "github.com/cp25sy5-modjot/main-service/internal/draft"
 	"github.com/cp25sy5-modjot/main-service/internal/jobs/tasks"
 	"github.com/cp25sy5-modjot/main-service/internal/storage"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
+	userrepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
 )
 
 type Processor struct {
@@ -19,22 +21,27 @@ type Processor struct {
 	storage   storage.Storage
 
 	draftRepo *d.DraftRepository
+	userRepo  *userrepo.Repository
 }
 
 func NewProcessor(
 	txService txsvc.Service,
 	st storage.Storage,
 	dr *d.DraftRepository,
+	userRepo *userrepo.Repository,
 ) *Processor {
 	return &Processor{
 		txService: txService,
 		storage:   st,
 		draftRepo: dr,
+		userRepo:  userRepo,
 	}
 }
 
 func (p *Processor) Register(mux *asynq.ServeMux) {
 	mux.HandleFunc(tasks.TaskBuildTransaction, p.handleBuildTransactionTask)
+	mux.HandleFunc(tasks.TaskPurgeUser, p.HandlePurgeUser)
+
 }
 
 func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Task) error {
@@ -89,5 +96,38 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 
 	log.Printf("[JOB %s] Done → waiting user confirm", payload.TraceID)
 
+	return nil
+}
+
+func (p *Processor) HandlePurgeUser(ctx context.Context, t *asynq.Task) error {
+	var payload struct {
+		UserID string `json:"user_id"`
+	}
+
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		log.Printf("[JOB purge_user] payload error: %v", err)
+		return err
+	}
+
+	log.Printf("[JOB purge_user] start user=%s", payload.UserID)
+
+	user, err := p.userRepo.FindByID(payload.UserID)
+	if err != nil {
+		log.Printf("[JOB purge_user] user not found, skip")
+		return nil
+	}
+
+	if user.Status != e.StatusInactive || user.UnsubscribedAt == nil {
+		log.Printf("[JOB purge_user] user restored, skip")
+		return nil
+	}
+
+	err = p.userRepo.HardDelete(payload.UserID)
+	if err != nil {
+		log.Printf("[JOB purge_user] delete error: %v", err)
+		return err
+	}
+
+	log.Printf("[JOB purge_user] purged user=%s", payload.UserID)
 	return nil
 }

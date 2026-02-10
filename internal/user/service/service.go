@@ -4,9 +4,11 @@ import (
 	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
+	"github.com/cp25sy5-modjot/main-service/internal/jobs/tasks"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	userrepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
 	"github.com/google/uuid"
+	"github.com/hibiken/asynq"
 )
 
 type Service interface {
@@ -21,14 +23,17 @@ type Service interface {
 
 	Update(userID string, input *UserUpdateInput) (*e.User, error)
 	Delete(user_id string) error
+	SoftDelete(user_id string) error
+	TestSoftDelete(user_id string) error
 }
 
 type service struct {
-	repo *userrepo.Repository
+	repo        *userrepo.Repository
+	asynqClient *asynq.Client
 }
 
-func NewService(repo *userrepo.Repository) *service {
-	return &service{repo: repo}
+func NewService(repo *userrepo.Repository, asynqClient *asynq.Client) *service {
+	return &service{repo: repo, asynqClient: asynqClient}
 }
 
 func (s *service) Create(input *UserCreateInput) (*e.User, error) {
@@ -111,8 +116,46 @@ func (s *service) Update(userID string, input *UserUpdateInput) (*e.User, error)
 	return updatedUser, nil
 }
 
-func (s *service) Delete(user_id string) error {
-	return s.repo.Delete(user_id)
+func (s *service) Delete(userID string) error {
+	return s.repo.HardDelete(userID)
+}
+
+func (s *service) SoftDelete(userID string) error {
+	// 1. unsubscribe
+	if err := s.repo.Unsubscribe(userID); err != nil {
+		return err
+	}
+
+	// 2. enqueue purge after 30 days
+	task, err := tasks.NewPurgeUserTask(
+		userID,
+		30*24*60*60, // 30 days
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.asynqClient.Enqueue(task)
+	return err
+}
+
+func (s *service) TestSoftDelete(userID string) error {
+	// 1. unsubscribe
+	if err := s.repo.Unsubscribe(userID); err != nil {
+		return err
+	}
+
+	// 2. enqueue purge after 1 mins
+	task, err := tasks.NewPurgeUserTask(
+		userID,
+		1*60, // 1 mins
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.asynqClient.Enqueue(task)
+	return err
 }
 
 // utils functions for service

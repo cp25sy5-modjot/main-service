@@ -1,6 +1,8 @@
 package userrepo
 
 import (
+	"time"
+
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	"gorm.io/gorm"
 )
@@ -26,15 +28,15 @@ func (r *Repository) FindAll() ([]*e.User, error) {
 	return users, err
 }
 
-func (r *Repository) FindByID(user_id string) (*e.User, error) {
+func (r *Repository) FindByID(userID string) (*e.User, error) {
 	var user e.User
-	err := r.db.Where("user_id = ?", user_id).First(&user).Error
+	err := r.db.Where("user_id = ?", userID).First(&user).Error
 	return &user, err
 }
 
-func (r *Repository) FindByGoogleID(google_id string) (*e.User, error) {
+func (r *Repository) FindByGoogleID(googleID string) (*e.User, error) {
 	var user e.User
-	err := r.db.Where("google_id = ?", google_id).First(&user).Error
+	err := r.db.Where("google_id = ?", googleID).First(&user).Error
 	return &user, err
 }
 
@@ -57,6 +59,43 @@ func (r *Repository) Update(user *e.User) (*e.User, error) {
 	return user, nil
 }
 
-func (r *Repository) Delete(user_id string) error {
-	return r.db.Delete(&e.User{}, "user_id = ?", user_id).Error
+func (r *Repository) HardDelete(userID string) error {
+	return r.db.Unscoped().
+		Delete(&e.User{}, "user_id = ?", userID).
+		Error
+}
+
+func (r *Repository) Unsubscribe(id string) error {
+	now := time.Now()
+
+	tx := r.db.Model(&e.User{}).
+		Where("user_id = ?", id).
+		Where("status != ?", e.StatusInactive).
+		Updates(map[string]interface{}{
+			"status":          e.StatusInactive,
+			"unsubscribed_at": &now,
+		})
+
+	if tx.RowsAffected == 0 {
+		return nil
+	}
+	return tx.Error
+}
+
+func (r *Repository) PurgeExpiredUnsubscribed(days int) error {
+	return r.db.
+		Where("status = ?", e.StatusInactive).
+		Where("unsubscribed_at < ?", time.Now().AddDate(0, 0, -days)).
+		Unscoped().
+		Delete(&e.User{}).
+		Error
+}
+
+func (r *Repository) Restore(id string) error {
+	return r.db.Model(&e.User{}).
+		Where("user_id = ?", id).
+		Updates(map[string]interface{}{
+			"status":          e.StatusActive,
+			"unsubscribed_at": nil,
+		}).Error
 }

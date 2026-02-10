@@ -7,14 +7,15 @@ import (
 
 	catrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
 	"github.com/cp25sy5-modjot/main-service/internal/database"
+	d "github.com/cp25sy5-modjot/main-service/internal/draft"
 	"github.com/cp25sy5-modjot/main-service/internal/jobs/processor"
 	jobsserver "github.com/cp25sy5-modjot/main-service/internal/jobs/server"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
 	"github.com/cp25sy5-modjot/main-service/internal/storage/localfs"
-	d "github.com/cp25sy5-modjot/main-service/internal/draft"
 	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
 	txirepo "github.com/cp25sy5-modjot/main-service/internal/transaction_item/repository"
+	userrepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
 	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
@@ -48,6 +49,8 @@ func main() {
 	txRepo := txrepo.NewRepository(db.GetDb())
 	txiRepo := txirepo.NewRepository(db.GetDb())
 	catRepo := catrepo.NewRepository(db.GetDb())
+	userRepo := userrepo.NewRepository(db.GetDb())
+
 	txService := txsvc.NewService(db.GetDb(), txRepo, txiRepo, catRepo, aiClient)
 
 	// Storage
@@ -81,7 +84,7 @@ func main() {
 	mux := asynq.NewServeMux()
 
 	// Job processor
-	p := processor.NewProcessor(txService, st, draftRepo)
+	p := processor.NewProcessor(txService, st, draftRepo, userRepo)
 	p.Register(mux)
 
 	log.Printf("Starting worker with Redis at %s", redisAddr)
