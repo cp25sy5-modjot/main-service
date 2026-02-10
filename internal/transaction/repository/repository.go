@@ -148,6 +148,18 @@ func (r *Repository) Update(transaction *e.Transaction) (*e.Transaction, error) 
 	})
 }
 
+func (r *Repository) UpdateFieldsTx(
+	tx *gorm.DB,
+	txID string,
+	updates map[string]interface{},
+) error {
+	return tx.
+		Model(&e.Transaction{}).
+		Where("transaction_id = ?", txID).
+		Updates(updates).
+		Error
+}
+
 func (r *Repository) Delete(params *m.TransactionSearchParams) error {
 	return r.db.Delete(&e.Transaction{}, "transaction_id = ? AND user_id = ?", params.TransactionID, params.UserID).Error
 }

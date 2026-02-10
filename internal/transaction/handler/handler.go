@@ -2,10 +2,10 @@ package transactionhandler
 
 import (
 	"strings"
-	"time"
 
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	draft "github.com/cp25sy5-modjot/main-service/internal/draft"
+	fav "github.com/cp25sy5-modjot/main-service/internal/favorite_item/service"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	mapper "github.com/cp25sy5-modjot/main-service/internal/mapper"
 	sresp "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
@@ -14,7 +14,6 @@ import (
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/hibiken/asynq"
-	fav "github.com/cp25sy5-modjot/main-service/internal/favorite_item/service"
 )
 
 type Handler struct {
@@ -26,9 +25,9 @@ type Handler struct {
 }
 
 func NewHandler(
-	svc txsvc.Service, 
-	client *asynq.Client, 
-	st storage.Storage, 
+	svc txsvc.Service,
+	client *asynq.Client,
+	st storage.Storage,
 	draftSvc draft.Service,
 	favSvc fav.Service) *Handler {
 	return &Handler{
@@ -129,11 +128,6 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	TransactionSearchParams, err := createTransactionSearchParams(c)
 	if err != nil {
 		return err
-	}
-
-	if req.Date == nil {
-		date := time.Now().UTC()
-		req.Date = &date
 	}
 
 	input := mapper.ParseTransactionUpdateReqToServiceInput(&req)

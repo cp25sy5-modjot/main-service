@@ -17,7 +17,7 @@ type TransactionItemInput struct {
 }
 
 type TransactionUpdateInput struct {
-	Title string
+	Title *string
 	Date  *time.Time
 	Items []TransactionItemInput
 }

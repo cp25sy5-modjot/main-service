@@ -22,7 +22,7 @@ type TransactionInsertReq struct {
 }
 
 type TransactionUpdateReq struct {
-	Title string               `json:"title" validate:"required,min=2,max=20"`
+	Title *string               `json:"title" validate:"required,min=2,max=20"`
 	Date  *time.Time           `json:"date" validate:"required"`
 	Items []TransactionItemReq `json:"items" validate:"required,min=1,dive"`
 }

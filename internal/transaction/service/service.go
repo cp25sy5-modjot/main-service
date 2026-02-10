@@ -199,26 +199,45 @@ func (s *service) Update(
 		return nil, err
 	}
 
-	// --- Date ---
-	if input.Date != nil {
-		utc := input.Date.UTC()
-		exists.Date = utc
-	}
+	err = s.db.Transaction(func(tx *gorm.DB) error {
 
-	// --- Items (PATCH replace semantics) ---
-	if input.Items != nil {
+		// --- update transaction fields ---
+		updates := map[string]interface{}{}
 
-		// build items ใหม่ทั้งหมดก่อน
-		newItems, err := ReplaceTransactionItems(
-			exists.TransactionID,
-			input.Items,
-		)
-		if err != nil {
-			return nil, err
+		if input.Title != nil {
+			updates["title"] = *input.Title
 		}
 
-		// ครอบ delete + create ใน tx เดียว
-		err = s.db.Transaction(func(tx *gorm.DB) error {
+		if input.Date != nil {
+			updates["date"] = input.Date.UTC()
+		}
+
+		if len(updates) > 0 {
+			if err := s.repo.UpdateFieldsTx(
+				tx,
+				exists.TransactionID,
+				updates,
+			); err != nil {
+				return err
+			}
+		}
+
+		// --- Items (replace semantics) ---
+		if input.Items != nil {
+
+			if err := s.validateUpdateItems(
+				params.UserID,
+				input.Items,
+			); err != nil {
+				return err
+			}
+			newItems, err := ReplaceTransactionItems(
+				exists.TransactionID,
+				input.Items,
+			)
+			if err != nil {
+				return err
+			}
 
 			if err := s.txirepo.DeleteByTransactionIDTx(
 				tx,
@@ -233,13 +252,13 @@ func (s *service) Update(
 			); err != nil {
 				return err
 			}
-
-			return nil
-		})
-
-		if err != nil {
-			return nil, err
 		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	return s.repo.FindByIDWithRelations(params)
@@ -489,4 +508,43 @@ func ParseAIDate(s string) time.Time {
 	}
 
 	return time.Now().UTC()
+}
+
+func (s *service) validateUpdateItems(
+	userID string,
+	items []m.TransactionItemInput,
+) error {
+
+	if len(items) == 0 {
+		return errors.New("at least one item is required")
+	}
+
+	// ดึง category ของ user
+	categories, err := s.catrepo.FindAllByUserID(userID)
+	if err != nil {
+		return err
+	}
+
+	// map categoryID -> true
+	categoryMap := map[string]bool{}
+	for _, c := range categories {
+		categoryMap[c.CategoryID] = true
+	}
+
+	for _, it := range items {
+
+		if it.Title == "" {
+			return errors.New("item title is required")
+		}
+
+		if it.Price < 0 {
+			return errors.New("item price must be positive")
+		}
+
+		if !categoryMap[it.CategoryID] {
+			return errors.New("invalid category")
+		}
+	}
+
+	return nil
 }
