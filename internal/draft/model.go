@@ -16,7 +16,7 @@ type DraftTxn struct {
 
 	Status DraftStatus `json:"status"` // processing | waiting_confirm | failed
 	Title  string      `json:"title,omitempty"`
-	Date   time.Time   `json:"date,omitempty"`
+	Date   *time.Time  `json:"date,omitempty"`
 	Items  []DraftItem `json:"items,omitempty"`
 
 	Error string `json:"error,omitempty"`
@@ -33,7 +33,7 @@ type DraftItem struct {
 
 type NewDraftRequest struct {
 	Title     string      `json:"title"`
-	Date      time.Time   `json:"date"`
+	Date      *time.Time  `json:"date"`
 	Items     []DraftItem `json:"items" validate:"required,min=1,dive"`
 	CreatedAt time.Time   `json:"created_at,omitempty"`
 }
@@ -61,7 +61,7 @@ type DraftRes struct {
 
 	Status DraftStatus    `json:"status"` // processing | waiting_confirm | failed
 	Title  string         `json:"title,omitempty"`
-	Date   time.Time      `json:"date,omitempty"`
+	Date   *time.Time      `json:"date,omitempty"`
 	Items  []DraftItemRes `json:"items,omitempty"`
 
 	Error string `json:"error,omitempty"`

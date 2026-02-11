@@ -100,65 +100,6 @@ func validateIDToken(idToken string, config *config.Google) (*idtoken.Payload, e
 	return payload, nil
 }
 
-func restoreUser(payload *idtoken.Payload, usvc u.Service, csvc c.Service) (*jwt.UserInfo, error) {
-	if payload == nil {
-		return nil, fiber.NewError(fiber.StatusBadRequest, "invalid token payload")
-	}
-
-	googleID := payload.Subject
-	if googleID == "" {
-		return nil, fiber.NewError(fiber.StatusBadRequest, "google id not found in token")
-	}
-
-	user, err := usvc.GetByGoogleID(googleID)
-	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fiber.NewError(fiber.StatusInternalServerError, "failed to get user")
-		}
-	}
-
-	if user != nil {
-		if user.Status == e.StatusInactive {
-			return nil, fiber.NewError(
-				fiber.StatusForbidden,
-				"account has been deactivated",
-			)
-		}
-	}
-
-	if user == nil {
-		var name string
-		if v, ok := payload.Claims["given_name"].(string); ok && v != "" {
-			name = v
-		} else if v, ok := payload.Claims["name"].(string); ok && v != "" {
-			name = v
-		} else {
-			name = "New User"
-		}
-
-		user, err = usvc.Create(&u.UserCreateInput{
-			Name: name,
-			UserBinding: e.UserBinding{
-				GoogleID: googleID,
-			},
-		})
-		if err != nil || user == nil {
-			return nil, fiber.NewError(fiber.StatusInternalServerError, "failed to create user")
-		}
-		log.Printf("created new user with googleID %s", googleID)
-
-		// Create default categories for the new user
-		if err := csvc.CreateDefaultCategories(user.UserID); err != nil {
-			log.Printf("failed to create default categories for user %s: %v", user.UserID, err)
-		}
-	}
-
-	return &jwt.UserInfo{
-		UserID: user.UserID,
-		Name:   user.Name,
-	}, nil
-}
-
 func HandleRestore(c *fiber.Ctx, usvc u.Service, config *config.Config) error {
 	payload, err := parseGoogleToken(c, config)
 	if err != nil {

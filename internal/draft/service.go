@@ -90,7 +90,7 @@ func (s *service) UpdateDraft(
 	}
 
 	if req.Date != nil {
-		d.Date = *req.Date
+		d.Date = req.Date
 	}
 
 	// validate

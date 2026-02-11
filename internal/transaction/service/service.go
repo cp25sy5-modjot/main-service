@@ -470,14 +470,14 @@ func mapToDraft(
 		})
 	}
 
+	date := ParseAIDate(resp.Date)
+
 	return &draft.DraftTxn{
-		UserID: userID,
-		Status: draft.DraftStatusWaitingConfirm,
-
-		Title: resp.Title,
-		Date:  ParseAIDate(resp.Date),
-		Items: items,
-
+		UserID:    userID,
+		Status:    draft.DraftStatusWaitingConfirm,
+		Title:     resp.Title,
+		Date:      &date,
+		Items:     items,
 		CreatedAt: time.Now(),
 	}, nil
 }
