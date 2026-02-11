@@ -33,7 +33,7 @@ func (r *Repository) GetLastTransactions(userID string, limit int) ([]m.LastTran
 			tr.type,
 			ti.category_id,
 			COALESCE(c.category_name, '') AS category_name,
-			COALESCE(c.color_code, '')   AS category_color_code
+			COALESCE(c.color_code, '')   AS category_color
 		`).
 		Joins("JOIN transactions tr ON tr.transaction_id = ti.transaction_id").
 		Joins("LEFT JOIN categories c ON c.category_id = ti.category_id AND c.user_id = tr.user_id").

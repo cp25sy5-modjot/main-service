@@ -11,7 +11,7 @@ type LastTransaction struct {
 	Type              string    `json:"type"`
 	CategoryID        *string   `json:"category_id"`
 	CategoryName      string    `json:"category_name"`
-	CategoryColorCode string    `json:"category_color_code"`
+	CategoryColor string    `json:"category_color"`
 	Icon              string    `json:"icon"`
 }
 
