@@ -53,8 +53,8 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 	_, err = h.draftService.SaveDraft(ctx, draftID, userID, draft.NewDraftRequest{
 		// Title: "Slip Image Upload",
 		// Date:  time.Now(),
-		Path:     path,
-		Items: []draft.DraftItem{},
+		Path:      path,
+		Items:     []draft.DraftItem{},
 		CreatedAt: createAt,
 	})
 
@@ -69,7 +69,7 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// 4. Enqueue
-	info, err := h.asynqClient.Enqueue(task,
+	_, err = h.asynqClient.Enqueue(task,
 		asynq.MaxRetry(3),
 		asynq.Timeout(10*time.Minute),
 	)
@@ -82,9 +82,8 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	return r.OK(c, fiber.Map{
-		"job_id":   info.ID,
-		"status":   "queued",
 		"draft_id": draftID,
+		"status":   "queued",
 	}, "Image uploaded. Transaction will be processed asynchronously.")
 }
 
