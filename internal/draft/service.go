@@ -135,6 +135,7 @@ func (s *service) SaveDraft(
 		Status:    DraftStatusProcessing,
 		Date:      req.Date,
 		Items:     req.Items,
+		Path:      req.Path,
 		CreatedAt: req.CreatedAt,
 		UpdatedAt: req.CreatedAt,
 	}
