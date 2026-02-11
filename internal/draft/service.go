@@ -7,6 +7,7 @@ import (
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
+	catrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
 )
 
 type Service interface {
@@ -18,11 +19,13 @@ type Service interface {
 	ConfirmDraft(ctx context.Context, traceID string, userID string, req ConfirmRequest) (*e.Transaction, error)
 	DeleteDraft(ctx context.Context, traceID string) error
 	GetDraftStats(ctx context.Context, userID string) (*DraftStats, error)
-
+	GetDraftWithCategory(ctx context.Context, traceID, userID string) (*DraftRes, error)
+	ListDraftWithCategory(ctx context.Context, userID string) ([]DraftRes, error)
 }
 
 type service struct {
 	draftRepo *DraftRepository
+	categoryRepo *catrepo.Repository
 
 	createInternal func(
 		userID string,
@@ -33,10 +36,12 @@ type service struct {
 
 func NewService(
 	repo *DraftRepository,
+	categoryRepo *catrepo.Repository,
 	createFn func(string, e.TransactionType, *m.TransactionCreateInput) (*e.Transaction, error),
 ) Service {
 	return &service{
 		draftRepo:      repo,
+		categoryRepo:   categoryRepo,
 		createInternal: createFn,
 	}
 }
@@ -185,22 +190,54 @@ func (s *service) GetDraftStats(ctx context.Context, userID string) (*DraftStats
 	return s.draftRepo.StatsByUser(ctx, userID)
 }
 
-func mapConfirmDraftToCreateInput(d *ConfirmRequest) *m.TransactionCreateInput {
+func (s *service) GetDraftWithCategory(
+	ctx context.Context,
+	traceID, userID string,
+) (*DraftRes, error) {
 
-	var items []m.TransactionItemInput
-
-	for _, it := range d.Items {
-		items = append(items, m.TransactionItemInput{
-			Title:      it.Title,
-			Price:      it.Price,
-			CategoryID: it.CategoryID,
-		})
+	d, err := s.GetDraft(ctx, traceID, userID)
+	if err != nil {
+		return nil, err
 	}
 
-	return &m.TransactionCreateInput{
-		Title: d.Title,
-		Date:  *d.Date,
-		Items: items,
+	ids := uniqueCategoryIDsFromDrafts([]DraftTxn{*d})
+
+	categoryMap, err := s.categoryRepo.FindByIDs(ctx, userID, ids)
+	if err != nil {
+		return nil, err
 	}
+
+	res := buildDraftRes(*d, categoryMap)
+
+	return &res, nil
 }
 
+func (s *service) ListDraftWithCategory(
+	ctx context.Context,
+	userID string,
+) ([]DraftRes, error) {
+
+	drafts, err := s.draftRepo.ListByUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(drafts) == 0 {
+		return []DraftRes{}, nil
+	}
+
+	ids := uniqueCategoryIDsFromDrafts(drafts)
+
+	categoryMap, err := s.categoryRepo.FindByIDs(ctx, userID, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]DraftRes, 0, len(drafts))
+
+	for _, d := range drafts {
+		result = append(result, buildDraftRes(d, categoryMap))
+	}
+
+	return result, nil
+}

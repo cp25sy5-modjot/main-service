@@ -23,13 +23,9 @@ func (h *Handler) GetDraft(c *fiber.Ctx) error {
 		return err
 	}
 
-	d, err := h.service.GetDraft(c.Context(), traceID, userID)
+	d, err := h.service.GetDraftWithCategory(c.Context(), traceID, userID)
 	if err != nil {
 		return fiber.NewError(404, "draft not found")
-	}
-
-	if d.UserID != userID {
-		return fiber.NewError(403, "not owner")
 	}
 
 	return sresp.OK(c, d, "draft retrieved successfully")
@@ -42,7 +38,7 @@ func (h *Handler) ListDraft(c *fiber.Ctx) error {
 		return err
 	}
 
-	list, err := h.service.ListDraft(c.Context(), userID)
+	list, err := h.service.ListDraftWithCategory(c.Context(), userID)
 	if err != nil {
 		return fiber.NewError(500, err.Error())
 	}

@@ -15,10 +15,9 @@ type DraftTxn struct {
 	UserID  string `json:"user_id"`
 
 	Status DraftStatus `json:"status"` // processing | waiting_confirm | failed
-
-	Title string      `json:"title,omitempty"`
-	Date  time.Time   `json:"date,omitempty"`
-	Items []DraftItem `json:"items,omitempty"`
+	Title  string      `json:"title,omitempty"`
+	Date   time.Time   `json:"date,omitempty"`
+	Items  []DraftItem `json:"items,omitempty"`
 
 	Error string `json:"error,omitempty"`
 
@@ -33,9 +32,9 @@ type DraftItem struct {
 }
 
 type NewDraftRequest struct {
-	Title string      `json:"title"`
-	Date  time.Time   `json:"date"`
-	Items []DraftItem `json:"items" validate:"required,min=1,dive"`
+	Title     string      `json:"title"`
+	Date      time.Time   `json:"date"`
+	Items     []DraftItem `json:"items" validate:"required,min=1,dive"`
 	CreatedAt time.Time   `json:"created_at,omitempty"`
 }
 
@@ -55,4 +54,26 @@ type DraftStats struct {
 	Processing     int `json:"processing"`
 	WaitingConfirm int `json:"waiting_confirm"`
 	Failed         int `json:"failed"`
+}
+
+type DraftRes struct {
+	TraceID string `json:"trace_id"`
+
+	Status DraftStatus    `json:"status"` // processing | waiting_confirm | failed
+	Title  string         `json:"title,omitempty"`
+	Date   time.Time      `json:"date,omitempty"`
+	Items  []DraftItemRes `json:"items,omitempty"`
+
+	Error string `json:"error,omitempty"`
+
+	CreatedAt time.Time `json:"created_at,omitempty"`
+}
+
+type DraftItemRes struct {
+	Title         string  `json:"title"`
+	Price         float64 `json:"price"`
+	CategoryID    string  `json:"category_id"`
+	CategoryName  string  `json:"category_name,omitempty"`
+	CategoryIcon  string  `json:"category_icon,omitempty"`
+	CategoryColor string  `json:"category_color,omitempty"`
 }

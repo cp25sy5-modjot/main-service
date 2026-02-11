@@ -1,6 +1,7 @@
 package categoryrepo
 
 import (
+	"context"
 	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
@@ -99,4 +100,32 @@ func (r *Repository) Update(category *e.Category) (*e.Category, error) {
 
 func (r *Repository) Delete(params *m.CategorySearchParams) error {
 	return r.db.Delete(&e.Category{}, "category_id = ? AND user_id = ?", params.CategoryID, params.UserID).Error
+}
+
+func (r *Repository) FindByIDs(
+	ctx context.Context,
+	userID string,
+	ids []string,
+) (map[string]e.Category, error) {
+
+	result := make(map[string]e.Category)
+
+	if len(ids) == 0 {
+		return result, nil
+	}
+
+	var categories []e.Category
+
+	if err := r.db.
+		WithContext(ctx).
+		Where("user_id = ? AND category_id IN ?", userID, ids).
+		Find(&categories).Error; err != nil {
+		return nil, err
+	}
+
+	for _, c := range categories {
+		result[c.CategoryID] = c
+	}
+
+	return result, nil
 }

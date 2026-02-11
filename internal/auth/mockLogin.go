@@ -68,7 +68,7 @@ func MockRestoreHandler(c *fiber.Ctx, usvc u.Service, config *config.Auth) error
 	user, err := usvc.RestoreByUserID(userName)
 
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to create user")
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to restore user")
 	}
 
 	userInfo := &jwt.UserInfo{

@@ -81,6 +81,7 @@ func initializeServices(s *fiberServer) *Services {
 	// 👇 สำคัญ: inject createInternal
 	draftSvc := draft.NewService(
 		draftRepo,
+		categoryRepo,
 		transactionSvc.CreateInternal,
 	)
 
