@@ -33,6 +33,10 @@ func RefreshHandler(c *fiber.Ctx, usvc u.Service, config *config.Auth) error {
 		return fiber.NewError(fiber.StatusUnauthorized, "Invalid token claims")
 	}
 
+	if claims.Type != "refresh" {
+		return fiber.NewError(fiber.StatusUnauthorized, "Invalid token type")
+	}
+
 	user, err := usvc.GetByID(claims.Subject)
 	if err != nil {
 		return fiber.NewError(fiber.StatusUnauthorized, "User not found")
@@ -41,10 +45,9 @@ func RefreshHandler(c *fiber.Ctx, usvc u.Service, config *config.Auth) error {
 	if user.Status != e.UserStatusActive {
 		return fiber.NewError(fiber.StatusUnauthorized, "User disabled")
 	}
-	
+
 	userInfo := &internaljwt.UserInfo{
 		UserID: user.UserID,
-		Name:   user.Name,
 	}
 	// Generate a new access token only.
 	newAccessToken, _, err := internaljwt.GenerateTokens(userInfo, config)

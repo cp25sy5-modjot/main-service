@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"errors"
 	"time"
 
 	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
@@ -20,12 +21,9 @@ func Protected(AccessTokenSecret string) fiber.Handler {
 }
 
 func jwtErrorHandler(c *fiber.Ctx, err error) error {
-	// Check for a specific error type, like an expired token.
-	if err.Error() == "token is expired" {
+	if errors.Is(err, jwt.ErrTokenExpired) {
 		return fiber.NewError(fiber.StatusUnauthorized, "Token has expired")
 	}
-
-	// For all other errors (missing, malformed, invalid signature)
 	return fiber.NewError(fiber.StatusUnauthorized, "Invalid or malformed token")
 }
 
@@ -33,7 +31,7 @@ func jwtErrorHandler(c *fiber.Ctx, err error) error {
 func GenerateTokens(user *UserInfo, conf *config.Auth) (accessToken string, refreshToken string, err error) {
 	// --- Create Access Token ---
 	accessClaims := &Claims{
-		Name: user.Name,
+		Type: "access",
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   user.UserID,
 			Issuer:    conf.Issuer,
@@ -48,7 +46,7 @@ func GenerateTokens(user *UserInfo, conf *config.Auth) (accessToken string, refr
 
 	// --- Create Refresh Token ---
 	refreshClaims := &Claims{
-		Name: user.Name,
+		Type: "refresh",
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   user.UserID,
 			Issuer:    conf.Issuer,
@@ -73,16 +71,27 @@ func createToken(claims *Claims, secret string) (string, error) {
 func parseTime(timeStr string) time.Duration {
 	duration, err := time.ParseDuration(timeStr)
 	if err != nil {
-		return 0
+		panic("Invalid JWT TTL config: " + timeStr)
 	}
 	return duration
 }
 
 func GetUserIDFromClaims(c *fiber.Ctx) (string, error) {
-	user := c.Locals("user").(*jwt.Token)
-	claims := user.Claims.(*Claims)
-	if claims == nil || claims.Subject == "" {
-		return "", fiber.NewError(fiber.StatusUnauthorized, "Failed to get user ID from claims")
+
+	userVal := c.Locals("user")
+	if userVal == nil {
+		return "", fiber.NewError(fiber.StatusUnauthorized, "Missing token")
 	}
+
+	token, ok := userVal.(*jwt.Token)
+	if !ok {
+		return "", fiber.NewError(fiber.StatusUnauthorized, "Invalid token")
+	}
+
+	claims, ok := token.Claims.(*Claims)
+	if !ok || claims.Subject == "" {
+		return "", fiber.NewError(fiber.StatusUnauthorized, "Invalid token claims")
+	}
+
 	return claims.Subject, nil
 }

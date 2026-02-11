@@ -6,11 +6,11 @@ import (
 
 // Claims is a custom struct that embeds jwt.RegisteredClaims and adds custom fields.
 type Claims struct {
-	Name string `json:"name"`
+	Type string `json:"type"` // access | refresh
 	jwt.RegisteredClaims
 }
 
 type UserInfo struct {
 	UserID string `json:"user_id"`
-	Name   string `json:"name"`
 }
+

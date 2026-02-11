@@ -75,7 +75,6 @@ func HandleGoogleTokenExchange(c *fiber.Ctx, usvc u.Service, csvc c.Service, con
 
 	return issueToken(&jwt.UserInfo{
 		UserID: user.UserID,
-		Name:   user.Name,
 	}, c, config)
 }
 
@@ -120,7 +119,6 @@ func HandleRestore(c *fiber.Ctx, usvc u.Service, config *config.Config) error {
 
 	return issueToken(&jwt.UserInfo{
 		UserID: user.UserID,
-		Name:   user.Name,
 	}, c, config)
 }
 

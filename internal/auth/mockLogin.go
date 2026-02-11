@@ -45,7 +45,6 @@ func MockLoginHandler(c *fiber.Ctx, usvc u.Service, csvc c.Service, config *conf
 
 	userInfo := &jwt.UserInfo{
 		UserID: user.UserID,
-		Name:   user.Name,
 	}
 
 	accessToken, refreshToken, err := jwt.GenerateTokens(userInfo, config)
@@ -73,7 +72,6 @@ func MockRestoreHandler(c *fiber.Ctx, usvc u.Service, config *config.Auth) error
 
 	userInfo := &jwt.UserInfo{
 		UserID: user.UserID,
-		Name:   user.Name,
 	}
 
 	accessToken, refreshToken, err := jwt.GenerateTokens(userInfo, config)
