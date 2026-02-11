@@ -9,9 +9,9 @@ import (
 type UserStatus string
 
 const (
-	StatusPreActive UserStatus = "pre-active"
-	StatusActive    UserStatus = "active"
-	StatusInactive  UserStatus = "inactive"
+	UserStatusPreActive UserStatus = "pre-active"
+	UserStatusActive    UserStatus = "active"
+	UserStatusInactive  UserStatus = "inactive"
 )
 
 type User struct {

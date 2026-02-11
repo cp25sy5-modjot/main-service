@@ -117,7 +117,7 @@ func (p *Processor) HandlePurgeUser(ctx context.Context, t *asynq.Task) error {
 		return nil
 	}
 
-	if user.Status != e.StatusInactive || user.UnsubscribedAt == nil {
+	if user.Status != e.UserStatusInactive || user.UnsubscribedAt == nil {
 		log.Printf("[JOB purge_user] user restored, skip")
 		return nil
 	}

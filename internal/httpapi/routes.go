@@ -152,7 +152,7 @@ func initializeAuthRoutes(s *fiberServer, services *Services) {
 		return auth.MockRestoreHandler(c, services.UserService, s.conf.Auth)
 	})
 	authApi.Post("/refresh-token", func(c *fiber.Ctx) error {
-		return auth.RefreshHandler(c, s.conf.Auth)
+		return auth.RefreshHandler(c, services.UserService, s.conf.Auth)
 	})
 	authApi.Post("/google", func(c *fiber.Ctx) error {
 		return auth.HandleGoogleTokenExchange(c, services.UserService, services.CategoryService, s.conf)

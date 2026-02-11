@@ -22,7 +22,7 @@ func MockLoginHandler(c *fiber.Ctx, usvc u.Service, csvc c.Service, config *conf
 	user, err := usvc.GetByID(userName)
 
 	if user != nil {
-		if user.Status == e.StatusInactive {
+		if user.Status == e.UserStatusInactive {
 			return fiber.NewError(
 				fiber.StatusForbidden,
 				"account has been deactivated",

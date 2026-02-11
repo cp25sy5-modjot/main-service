@@ -9,9 +9,9 @@ import (
 type UserStatus string
 
 const (
-	StatusPreActive UserStatus = "pre-active"
-	StatusActive    UserStatus = "active"
-	StatusInactive  UserStatus = "inactive"
+	UserStatusPreActive UserStatus = "pre-active"
+	UserStatusActive    UserStatus = "active"
+	UserStatusInactive  UserStatus = "inactive"
 )
 
 type UserInsertReq struct {
@@ -20,7 +20,7 @@ type UserInsertReq struct {
 }
 
 type UserUpdateReq struct {
-	Name string    `json:"name" validate:"min=1,max=15"`
+	Name string `json:"name" validate:"min=1,max=15"`
 }
 
 type UserRes struct {
@@ -32,7 +32,7 @@ type UserRes struct {
 }
 
 type UserBinding struct {
-	GoogleID   string `json:"google_id"`
+	GoogleID string `json:"google_id"`
 	// FacebookID string `json:"facebook_id"`
 	// AppleID    string `json:"apple_id"`
 }

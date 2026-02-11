@@ -38,7 +38,7 @@ func HandleGoogleTokenExchange(c *fiber.Ctx, usvc u.Service, csvc c.Service, con
 	}
 
 	if user != nil {
-		if user.Status == e.StatusInactive {
+		if user.Status == e.UserStatusInactive {
 			return fiber.NewError(
 				fiber.StatusForbidden,
 				"account has been deactivated",

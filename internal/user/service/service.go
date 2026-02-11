@@ -108,8 +108,8 @@ func (s *service) Update(userID string, input *UserUpdateInput) (*e.User, error)
 		return nil, err
 	}
 
-	if exists.Status == e.StatusPreActive {
-		exists.Status = e.StatusActive
+	if exists.Status == e.UserStatusPreActive {
+		exists.Status = e.UserStatusActive
 	}
 
 	updatedUser, err := s.repo.Update(exists)
@@ -170,7 +170,7 @@ func (s *service) RestoreByGoogleID(googleID string) (*e.User, error) {
 	}
 
 	// 2. ต้องเป็น inactive เท่านั้น
-	if user.Status != e.StatusInactive {
+	if user.Status != e.UserStatusInactive {
 		return nil, errors.New("user is not restorable")
 	}
 
@@ -191,7 +191,7 @@ func (s *service) RestoreByUserID(userID string) (*e.User, error) {
 	}
 
 	// 2. ต้องเป็น inactive เท่านั้น
-	if user.Status != e.StatusInactive {
+	if user.Status != e.UserStatusInactive {
 		return nil, errors.New("user is not restorable")
 	}
 

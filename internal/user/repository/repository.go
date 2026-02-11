@@ -72,9 +72,9 @@ func (r *Repository) Unsubscribe(id string) error {
 
 	tx := r.db.Model(&e.User{}).
 		Where("user_id = ?", id).
-		Where("status != ?", e.StatusInactive).
+		Where("status != ?", e.UserStatusInactive).
 		Updates(map[string]interface{}{
-			"status":          e.StatusInactive,
+			"status":          e.UserStatusInactive,
 			"unsubscribed_at": &now,
 		})
 
@@ -86,7 +86,7 @@ func (r *Repository) Unsubscribe(id string) error {
 
 func (r *Repository) PurgeExpiredUnsubscribed(days int) error {
 	return r.db.
-		Where("status = ?", e.StatusInactive).
+		Where("status = ?", e.UserStatusInactive).
 		Where("unsubscribed_at < ?", time.Now().AddDate(0, 0, -days)).
 		Unscoped().
 		Delete(&e.User{}).
@@ -97,7 +97,7 @@ func (r *Repository) Restore(id string) error {
 	return r.db.Model(&e.User{}).
 		Where("user_id = ?", id).
 		Updates(map[string]interface{}{
-			"status":          e.StatusActive,
+			"status":          e.UserStatusActive,
 			"unsubscribed_at": nil,
 		}).Error
 }
@@ -114,14 +114,14 @@ func (r *Repository) RestoreAndReturn(userID string) (*e.User, error) {
 			return err
 		}
 
-		if user.Status != e.StatusInactive {
+		if user.Status != e.UserStatusInactive {
 			return errors.New("not restorable")
 		}
 
 		if err := tx.Model(&e.User{}).
 			Where("user_id = ?", userID).
 			Updates(map[string]interface{}{
-				"status":          e.StatusActive,
+				"status":          e.UserStatusActive,
 				"unsubscribed_at": nil,
 			}).Error; err != nil {
 			return err
