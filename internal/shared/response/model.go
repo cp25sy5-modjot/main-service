@@ -15,7 +15,7 @@ type Response struct {
 	Data      any            `json:"data,omitempty"`
 	Error     *ErrorBody     `json:"error,omitempty"`
 	Meta      map[string]any `json:"meta,omitempty"`
-	DraftID   string         `json:"draft_id,omitempty"`
+	TraceID   string         `json:"trace_id,omitempty"`
 	Timestamp time.Time      `json:"timestamp"`
 }
 

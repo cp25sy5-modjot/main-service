@@ -20,7 +20,7 @@ func WriteSuccess(c *fiber.Ctx, status int, data any, msg string) error {
 		Code:      status,
 		Message:   msg,
 		Data:      data,
-		DraftID:   getDraftID(c),
+		TraceID:   getTraceID(c),
 		Timestamp: time.Now().UTC(),
 	}
 	LogSuccess(resp)
@@ -39,14 +39,14 @@ func WriteError(c *fiber.Ctx, status int, msg, typ, detail string, fields []v.Fi
 			Detail: detail,
 			Fields: fields,
 		},
-		DraftID:   getDraftID(c),
+		TraceID:   getTraceID(c),
 		Timestamp: time.Now().UTC(),
 	}
 	LogError(resp)
 	return c.Status(status).JSON(resp)
 }
 
-func getDraftID(c *fiber.Ctx) string {
+func getTraceID(c *fiber.Ctx) string {
 	if v := c.Locals("request_id"); v != nil {
 		if s, ok := v.(string); ok {
 			return s
@@ -61,7 +61,7 @@ func LogSuccess(resp Response) {
 		Str("path", resp.Path).
 		Int("status_code", resp.Code).
 		Str("detail", resp.Message).
-		Str("draft_id", resp.DraftID).
+		Str("trace_id", resp.TraceID).
 		Msg("Success")
 }
 
@@ -74,6 +74,6 @@ func LogError(resp Response) {
 		Str("error_type", resp.Error.Type).
 		Str("error_detail", resp.Error.Detail).
 		Str("error_fields", fmt.Sprintf("%v", resp.Error.Fields)).
-		Str("draft_id", resp.DraftID).
+		Str("trace_id", resp.TraceID).
 		Msg("Error")
 }
