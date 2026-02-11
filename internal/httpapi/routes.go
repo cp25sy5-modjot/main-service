@@ -228,10 +228,10 @@ func initializeDraftRoutes(s *fiberServer, services *Services) {
 	api.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
 
 	api.Get("", handler.ListDraft)
-	api.Get("/:traceID", handler.GetDraft)
-	api.Post("/:traceID/confirm", handler.Confirm)
-	api.Get("/:traceID/stats", handler.GetDraftStats)
-	api.Get("/:traceID/image-url", handler.GetDraftImageURL)
+	api.Get("/:draftID", handler.GetDraft)
+	api.Post("/:draftID/confirm", handler.Confirm)
+	api.Get("/:draftID/stats", handler.GetDraftStats)
+	api.Get("/:draftID/image-url", handler.GetDraftImageURL)
 }
 
 func initializeFavoriteRoutes(s *fiberServer, services *Services) {

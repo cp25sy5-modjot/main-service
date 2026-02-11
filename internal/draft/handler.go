@@ -17,13 +17,13 @@ func NewHandler(s Service) *Handler {
 
 func (h *Handler) GetDraft(c *fiber.Ctx) error {
 
-	traceID := c.Params("traceID")
+	draftID := c.Params("draftID")
 	userID, err := jwt.GetUserIDFromClaims(c)
 	if err != nil {
 		return err
 	}
 
-	d, err := h.service.GetDraftWithCategory(c.Context(), traceID, userID)
+	d, err := h.service.GetDraftWithCategory(c.Context(), draftID, userID)
 	if err != nil {
 		return fiber.NewError(404, "draft not found")
 	}
@@ -48,7 +48,7 @@ func (h *Handler) ListDraft(c *fiber.Ctx) error {
 
 func (h *Handler) Update(c *fiber.Ctx) error {
 
-	traceID := c.Params("traceID")
+	draftID := c.Params("draftID")
 	userID, err := jwt.GetUserIDFromClaims(c)
 	if err != nil {
 		return err
@@ -59,7 +59,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		return fiber.NewError(400, "invalid body")
 	}
 
-	d, err := h.service.UpdateDraft(c.Context(), traceID, userID, req)
+	d, err := h.service.UpdateDraft(c.Context(), draftID, userID, req)
 	if err != nil {
 		return fiber.NewError(400, err.Error())
 	}
@@ -68,7 +68,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 }
 
 func (h *Handler) Confirm(c *fiber.Ctx) error {
-	traceID := c.Params("traceID")
+	draftID := c.Params("draftID")
 	userID, err := jwt.GetUserIDFromClaims(c)
 	if err != nil {
 		return err
@@ -81,7 +81,7 @@ func (h *Handler) Confirm(c *fiber.Ctx) error {
 
 	tx, err := h.service.ConfirmDraft(
 		c.Context(),
-		traceID,
+		draftID,
 		userID,
 		req,
 	)
@@ -110,7 +110,7 @@ func (h *Handler) GetDraftStats(c *fiber.Ctx) error {
 
 func (h *Handler) GetDraftImageURL(c *fiber.Ctx) error {
 
-	traceID := c.Params("traceID")
+	draftID := c.Params("draftID")
 	userID, err := jwt.GetUserIDFromClaims(c)
 	if err != nil {
 		return err
@@ -118,7 +118,7 @@ func (h *Handler) GetDraftImageURL(c *fiber.Ctx) error {
 
 	url, err := h.service.GetDraftImageURL(
 		c.Context(),
-		traceID,
+		draftID,
 		userID,
 	)
 	if err != nil {

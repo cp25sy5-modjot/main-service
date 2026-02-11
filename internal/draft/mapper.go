@@ -50,7 +50,7 @@ func buildDraftRes(
 	}
 
 	return DraftRes{
-		TraceID:   d.TraceID,
+		DraftID:   d.DraftID,
 		Status:    d.Status,
 		Title:     d.Title,
 		Date:      d.Date,

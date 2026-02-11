@@ -11,7 +11,7 @@ const (
 )
 
 type DraftTxn struct {
-	TraceID string `json:"trace_id"`
+	DraftID string `json:"draft_id"`
 	UserID  string `json:"user_id"`
 
 	Path   string      `json:"path"`
@@ -60,7 +60,7 @@ type DraftStats struct {
 }
 
 type DraftRes struct {
-	TraceID string `json:"trace_id"`
+	DraftID string `json:"draft_id"`
 
 	Status DraftStatus    `json:"status"` // processing | waiting_confirm | failed
 	Title  string         `json:"title,omitempty"`

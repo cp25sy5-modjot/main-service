@@ -28,18 +28,3 @@ func Accepted(c *fiber.Ctx, data any, msg ...string) error {
 func NoContent(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
-
-// OKWithMeta → 200 + meta (เช่น pagination)
-// func OKWithMeta(c *fiber.Ctx, data any, meta map[string]any, msg ...string) error {
-// 	m := firstOrEmpty(msg, "OK")
-// 	env := response.Response{
-// 		Status:    "success",
-// 		Code:      fiber.StatusOK,
-// 		Message:   m,
-// 		Data:      data,
-// 		Meta:      meta,
-// 		TraceID:   response.getTraceID(c),
-// 		Timestamp: time.Now().UTC(),
-// 	}
-// 	return c.Status(fiber.StatusOK).JSON(env)
-// }

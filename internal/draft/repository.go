@@ -21,10 +21,10 @@ func key(id string) string {
 	return fmt.Sprintf("txn:draft:%s", id)
 }
 
-// ตอน save ให้ผูก user → traceID
+// ตอน save ให้ผูก user → draftID
 func (r *DraftRepository) Save(ctx context.Context, d DraftTxn) error {
 
-	k := key(d.TraceID)
+	k := key(d.DraftID)
 
 	b, err := json.Marshal(d)
 	if err != nil {
@@ -35,9 +35,9 @@ func (r *DraftRepository) Save(ctx context.Context, d DraftTxn) error {
 
 	pipe.Set(ctx, k, b, 24*time.Hour)
 
-	// 👇 index user → traceID
+	// 👇 index user → draftID
 	userKey := fmt.Sprintf("txn:user:%s:drafts", d.UserID)
-	pipe.SAdd(ctx, userKey, d.TraceID)
+	pipe.SAdd(ctx, userKey, d.DraftID)
 	pipe.Expire(ctx, userKey, 24*time.Hour)
 
 	_, err = pipe.Exec(ctx)
@@ -69,9 +69,9 @@ func (r *DraftRepository) ListByUser(ctx context.Context, userID string) ([]Draf
 	return result, nil
 }
 
-func (r *DraftRepository) Get(ctx context.Context, traceID string) (*DraftTxn, error) {
+func (r *DraftRepository) Get(ctx context.Context, draftID string) (*DraftTxn, error) {
 
-	val, err := r.rdb.Get(ctx, key(traceID)).Result()
+	val, err := r.rdb.Get(ctx, key(draftID)).Result()
 
 	if err == redis.Nil {
 		return nil, fmt.Errorf("draft not found")
@@ -89,25 +89,25 @@ func (r *DraftRepository) Get(ctx context.Context, traceID string) (*DraftTxn, e
 	return &d, nil
 }
 
-func (r *DraftRepository) Delete(ctx context.Context, traceID string) error {
+func (r *DraftRepository) Delete(ctx context.Context, draftID string) error {
 
-	d, err := r.Get(ctx, traceID)
+	d, err := r.Get(ctx, draftID)
 
 	pipe := r.rdb.TxPipeline()
 
 	if err == nil {
 		userKey := fmt.Sprintf("txn:user:%s:drafts", d.UserID)
-		pipe.SRem(ctx, userKey, traceID)
+		pipe.SRem(ctx, userKey, draftID)
 	}
 
-	pipe.Del(ctx, key(traceID))
+	pipe.Del(ctx, key(draftID))
 
 	_, err = pipe.Exec(ctx)
 	return err
 }
 
-func (r *DraftRepository) UpdateStatus(ctx context.Context, traceID string, status DraftStatus, errMsg string) error {
-	d, err := r.Get(ctx, traceID)
+func (r *DraftRepository) UpdateStatus(ctx context.Context, draftID string, status DraftStatus, errMsg string) error {
+	d, err := r.Get(ctx, draftID)
 	if err != nil {
 		return err
 	}

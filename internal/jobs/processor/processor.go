@@ -53,29 +53,29 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 	}
 
 	log.Printf("[JOB %s] Start transaction build. user=%s path=%s",
-		payload.TraceID, payload.UserID, payload.Path)
+		payload.DraftID, payload.UserID, payload.Path)
 
 	// 1. Load file
 	data, err := p.storage.Load(ctx, payload.Path)
 	if err != nil {
-		log.Printf("[JOB %s] load error: %v", payload.TraceID, err)
+		log.Printf("[JOB %s] load error: %v", payload.DraftID, err)
 		return err
 	}
 
 	// ===== STEP 1: mark processing =====
-	_ = p.draftRepo.UpdateStatus(ctx, payload.TraceID, d.DraftStatusProcessing, "")
+	_ = p.draftRepo.UpdateStatus(ctx, payload.DraftID, d.DraftStatusProcessing, "")
 
 	// ===== STEP 2: call AI =====
 	draft, err := p.txService.ProcessUploadedFile(data, payload.UserID)
 	if err != nil {
 
-		_ = p.draftRepo.UpdateStatus(ctx, payload.TraceID, d.DraftStatusFailed, err.Error())
+		_ = p.draftRepo.UpdateStatus(ctx, payload.DraftID, d.DraftStatusFailed, err.Error())
 
 		return err
 	}
-	exDraft, err := p.draftRepo.Get(ctx, payload.TraceID)
+	exDraft, err := p.draftRepo.Get(ctx, payload.DraftID)
 	if err != nil {
-		log.Printf("[JOB %s] get draft error: %v", payload.TraceID, err)
+		log.Printf("[JOB %s] get draft error: %v", payload.DraftID, err)
 		return err
 	}
 
@@ -91,10 +91,10 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 
 	// 4. delete file
 	// if err := p.storage.Delete(ctx, payload.Path); err != nil {
-	// 	log.Printf("[JOB %s] delete file error: %v", payload.TraceID, err)
+	// 	log.Printf("[JOB %s] delete file error: %v", payload.DraftID, err)
 	// }
 
-	log.Printf("[JOB %s] Done → waiting user confirm", payload.TraceID)
+	log.Printf("[JOB %s] Done → waiting user confirm", payload.DraftID)
 
 	return nil
 }

@@ -48,9 +48,9 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 		)
 	}
 
-	traceID := xid.New().String()
+	draftID := xid.New().String()
 
-	_, err = h.draftService.SaveDraft(ctx, traceID, userID, draft.NewDraftRequest{
+	_, err = h.draftService.SaveDraft(ctx, draftID, userID, draft.NewDraftRequest{
 		// Title: "Slip Image Upload",
 		// Date:  time.Now(),
 		Path:     path,
@@ -63,7 +63,7 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// 3. Build async job
-	task, err := tasks.NewBuildTransactionTask(userID, path, traceID)
+	task, err := tasks.NewBuildTransactionTask(userID, path, draftID)
 	if err != nil {
 		return fiber.NewError(500, "Failed to create job")
 	}
@@ -76,7 +76,7 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 
 	if err != nil {
 		// rollback draft ถ้า enqueue ไม่ผ่าน
-		h.draftService.DeleteDraft(ctx, traceID)
+		h.draftService.DeleteDraft(ctx, draftID)
 
 		return fiber.NewError(500, "Failed to enqueue job")
 	}
@@ -84,7 +84,7 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 	return r.OK(c, fiber.Map{
 		"job_id":   info.ID,
 		"status":   "queued",
-		"trace_id": traceID,
+		"draft_id": draftID,
 	}, "Image uploaded. Transaction will be processed asynchronously.")
 }
 

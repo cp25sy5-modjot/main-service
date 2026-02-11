@@ -13,14 +13,14 @@ import (
 )
 
 type Service interface {
-	SaveDraft(ctx context.Context, traceID, userID string, req NewDraftRequest) (*DraftTxn, error)
-	UpdateDraft(ctx context.Context, traceID, userID string, req ConfirmRequest) (*DraftTxn, error)
-	ConfirmDraft(ctx context.Context, traceID string, userID string, req ConfirmRequest) (*e.Transaction, error)
-	DeleteDraft(ctx context.Context, traceID string) error
+	SaveDraft(ctx context.Context, draftID, userID string, req NewDraftRequest) (*DraftTxn, error)
+	UpdateDraft(ctx context.Context, draftID, userID string, req ConfirmRequest) (*DraftTxn, error)
+	ConfirmDraft(ctx context.Context, draftID string, userID string, req ConfirmRequest) (*e.Transaction, error)
+	DeleteDraft(ctx context.Context, draftID string) error
 	GetDraftStats(ctx context.Context, userID string) (*DraftStats, error)
-	GetDraftWithCategory(ctx context.Context, traceID, userID string) (*DraftRes, error)
+	GetDraftWithCategory(ctx context.Context, draftID, userID string) (*DraftRes, error)
 	ListDraftWithCategory(ctx context.Context, userID string) ([]DraftRes, error)
-	GetDraftImageURL(ctx context.Context, traceID, userID string) (string, error)
+	GetDraftImageURL(ctx context.Context, draftID, userID string) (string, error)
 }
 
 type service struct {
@@ -52,9 +52,9 @@ func NewService(
 	}
 }
 
-func (s *service) GetDraft(ctx context.Context, traceID, userID string) (*DraftTxn, error) {
+func (s *service) GetDraft(ctx context.Context, draftID, userID string) (*DraftTxn, error) {
 
-	d, err := s.draftRepo.Get(ctx, traceID)
+	d, err := s.draftRepo.Get(ctx, draftID)
 	if err != nil {
 		return nil, err
 	}
@@ -72,12 +72,12 @@ func (s *service) ListDraft(ctx context.Context, userID string) ([]DraftTxn, err
 
 func (s *service) UpdateDraft(
 	ctx context.Context,
-	traceID string,
+	draftID string,
 	userID string,
 	req ConfirmRequest,
 ) (*DraftTxn, error) {
 
-	d, err := s.draftRepo.Get(ctx, traceID)
+	d, err := s.draftRepo.Get(ctx, draftID)
 	if err != nil {
 		return nil, errors.New("draft not found")
 	}
@@ -117,7 +117,7 @@ func (s *service) UpdateDraft(
 
 func (s *service) SaveDraft(
 	ctx context.Context,
-	traceID string,
+	draftID string,
 	userID string,
 	req NewDraftRequest,
 ) (*DraftTxn, error) {
@@ -130,7 +130,7 @@ func (s *service) SaveDraft(
 
 	d := &DraftTxn{
 		Title:     req.Title,
-		TraceID:   traceID,
+		DraftID:   draftID,
 		UserID:    userID,
 		Status:    DraftStatusProcessing,
 		Date:      req.Date,
@@ -149,12 +149,12 @@ func (s *service) SaveDraft(
 
 func (s *service) ConfirmDraft(
 	ctx context.Context,
-	traceID string,
+	draftID string,
 	userID string,
 	req ConfirmRequest,
 ) (*e.Transaction, error) {
 
-	d, err := s.draftRepo.Get(ctx, traceID)
+	d, err := s.draftRepo.Get(ctx, draftID)
 	if err != nil {
 		return nil, errors.New("draft not found")
 	}
@@ -187,28 +187,28 @@ func (s *service) ConfirmDraft(
 	// ลบไฟล์ก่อน
 	if d.Path != "" {
 		if err := s.storage.Delete(ctx, d.Path); err != nil {
-			log.Printf("[CONFIRM %s] delete file error: %v", traceID, err)
+			log.Printf("[CONFIRM %s] delete file error: %v", draftID, err)
 		}
 	}
 
 	// ค่อยลบ draft
-	_ = s.draftRepo.Delete(ctx, traceID)
+	_ = s.draftRepo.Delete(ctx, draftID)
 
 	return tx, nil
 
 }
 
-func (s *service) DeleteDraft(ctx context.Context, traceID string) error {
-	d, err := s.draftRepo.Get(ctx, traceID)
+func (s *service) DeleteDraft(ctx context.Context, draftID string) error {
+	d, err := s.draftRepo.Get(ctx, draftID)
 	if err != nil {
 		return errors.New("draft not found")
 	}
 	if d.Path != "" {
 		if err := s.storage.Delete(ctx, d.Path); err != nil {
-			log.Printf("[DELETE %s] delete file error: %v", traceID, err)
+			log.Printf("[DELETE %s] delete file error: %v", draftID, err)
 		}
 	}
-	return s.draftRepo.Delete(ctx, traceID)
+	return s.draftRepo.Delete(ctx, draftID)
 
 }
 
@@ -218,10 +218,10 @@ func (s *service) GetDraftStats(ctx context.Context, userID string) (*DraftStats
 
 func (s *service) GetDraftWithCategory(
 	ctx context.Context,
-	traceID, userID string,
+	draftID, userID string,
 ) (*DraftRes, error) {
 
-	d, err := s.GetDraft(ctx, traceID, userID)
+	d, err := s.GetDraft(ctx, draftID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -269,11 +269,11 @@ func (s *service) ListDraftWithCategory(
 
 func (s *service) GetDraftImageURL(
 	ctx context.Context,
-	traceID,
+	draftID,
 	userID string,
 ) (string, error) {
 
-	d, err := s.draftRepo.Get(ctx, traceID)
+	d, err := s.draftRepo.Get(ctx, draftID)
 	if err != nil {
 		return "", err
 	}
