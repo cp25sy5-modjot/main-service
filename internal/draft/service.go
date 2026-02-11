@@ -11,16 +11,14 @@ import (
 
 type Service interface {
 
-	// อ่าน
 	GetDraft(ctx context.Context, traceID, userID string) (*DraftTxn, error)
 	ListDraft(ctx context.Context, userID string) ([]DraftTxn, error)
 	SaveDraft(ctx context.Context, traceID, userID string, req NewDraftRequest) (*DraftTxn, error)
-	// แก้ก่อนยืนยัน
 	UpdateDraft(ctx context.Context, traceID, userID string, req ConfirmRequest) (*DraftTxn, error)
-
-	// ยืนยันสร้างจริง
 	ConfirmDraft(ctx context.Context, traceID string, userID string, req ConfirmRequest) (*e.Transaction, error)
 	DeleteDraft(ctx context.Context, traceID string) error
+	GetDraftStats(ctx context.Context, userID string) (*DraftStats, error)
+
 }
 
 type service struct {
@@ -181,6 +179,10 @@ func (s *service) ConfirmDraft(
 
 func (s *service) DeleteDraft(ctx context.Context, traceID string) error {
 	return s.draftRepo.Delete(ctx, traceID)
+}
+
+func (s *service) GetDraftStats(ctx context.Context, userID string) (*DraftStats, error) {
+	return s.draftRepo.StatsByUser(ctx, userID)
 }
 
 func mapConfirmDraftToCreateInput(d *ConfirmRequest) *m.TransactionCreateInput {

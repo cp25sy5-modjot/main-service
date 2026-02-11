@@ -118,3 +118,38 @@ func (r *DraftRepository) UpdateStatus(ctx context.Context, traceID string, stat
 
 	return r.Save(ctx, *d)
 }
+
+func (r *DraftRepository) StatsByUser(ctx context.Context, userID string) (*DraftStats, error) {
+
+	userKey := fmt.Sprintf("txn:user:%s:drafts", userID)
+
+	ids, err := r.rdb.SMembers(ctx, userKey).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	stats := &DraftStats{}
+
+	for _, id := range ids {
+
+		d, err := r.Get(ctx, id)
+		if err != nil {
+			// cleanup orphan index
+			r.rdb.SRem(ctx, userKey, id)
+			continue
+		}
+
+		stats.Total++
+
+		switch d.Status {
+		case DraftStatusProcessing:
+			stats.Processing++
+		case DraftStatusWaitingConfirm:
+			stats.WaitingConfirm++
+		case DraftStatusFailed:
+			stats.Failed++
+		}
+	}
+
+	return stats, nil
+}

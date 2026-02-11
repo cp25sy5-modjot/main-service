@@ -221,6 +221,7 @@ func initializeDraftRoutes(s *fiberServer, services *Services) {
 	api.Get("", handler.ListDraft)
 	api.Get("/:traceID", handler.GetDraft)
 	api.Post("/:traceID/confirm", handler.Confirm)
+	api.Get("/:traceID/stats", handler.GetDraftStats)
 }
 
 func initializeFavoriteRoutes(s *fiberServer, services *Services) {

@@ -49,3 +49,10 @@ type UpdateDraftStatusRequest struct {
 	Status DraftStatus `json:"status"`
 	Error  string      `json:"error,omitempty"`
 }
+
+type DraftStats struct {
+	Total          int `json:"total"`
+	Processing     int `json:"processing"`
+	WaitingConfirm int `json:"waiting_confirm"`
+	Failed         int `json:"failed"`
+}

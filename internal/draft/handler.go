@@ -2,9 +2,9 @@ package draft
 
 import (
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
+	mapper "github.com/cp25sy5-modjot/main-service/internal/mapper"
+	sresp "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
 	"github.com/gofiber/fiber/v2"
-		mapper "github.com/cp25sy5-modjot/main-service/internal/mapper"
-
 )
 
 type Handler struct {
@@ -32,10 +32,7 @@ func (h *Handler) GetDraft(c *fiber.Ctx) error {
 		return fiber.NewError(403, "not owner")
 	}
 
-	return c.JSON(fiber.Map{
-		"status": "success",
-		"data":   d,
-	})
+	return sresp.OK(c, d, "draft retrieved successfully")
 }
 
 func (h *Handler) ListDraft(c *fiber.Ctx) error {
@@ -50,10 +47,7 @@ func (h *Handler) ListDraft(c *fiber.Ctx) error {
 		return fiber.NewError(500, err.Error())
 	}
 
-	return c.JSON(fiber.Map{
-		"status": "success",
-		"data":   list,
-	})
+	return sresp.OK(c, list, "drafts retrieved successfully")
 }
 
 func (h *Handler) Update(c *fiber.Ctx) error {
@@ -74,10 +68,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		return fiber.NewError(400, err.Error())
 	}
 
-	return c.JSON(fiber.Map{
-		"status": "success",
-		"data":   d,
-	})
+	return sresp.OK(c, d, "draft updated successfully")
 }
 
 func (h *Handler) Confirm(c *fiber.Ctx) error {
@@ -104,8 +95,20 @@ func (h *Handler) Confirm(c *fiber.Ctx) error {
 		return fiber.NewError(400, err.Error())
 	}
 
-	return c.JSON(fiber.Map{
-		"status":      "success",
-		"transaction": mapper.BuildTransactionResponse(tx),
-	})
+	return sresp.OK(c, mapper.BuildTransactionResponse(tx), "draft confirmed successfully")
+}
+
+func (h *Handler) GetDraftStats(c *fiber.Ctx) error {
+
+	userID, err := jwt.GetUserIDFromClaims(c)
+	if err != nil {
+		return err
+	}
+
+	stats, err := h.service.GetDraftStats(c.Context(), userID)
+	if err != nil {
+		return fiber.NewError(500, err.Error())
+	}
+
+	return sresp.OK(c, stats, "draft stats retrieved successfully")
 }
