@@ -93,7 +93,7 @@ func initializeServices(s *fiberServer) *Services {
 
 	categorySvc := catsvc.NewService(categoryRepo, transactionRepo)
 	userSvc := usersvc.NewService(userRepo, s.asynqClient)
-	transactionItemSvc := txisvc.NewService(transactionItemRepo)
+	transactionItemSvc := txisvc.NewService(transactionItemRepo, transactionRepo)
 	overviewSvc := overviewsvc.NewService(overviewRepo)
 
 	return &Services{

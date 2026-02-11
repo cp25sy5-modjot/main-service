@@ -14,8 +14,10 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db}
 }
 
-func (r *Repository) WithTx(tx *gorm.DB) *Repository {
-	return &Repository{db: tx}
+func (r *Repository) WithTx(fn func(tx *gorm.DB) error) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		return fn(tx)
+	})
 }
 
 func (r *Repository) Create(items *e.TransactionItem) error {
@@ -79,8 +81,15 @@ func (r *Repository) Update(items *e.TransactionItem) (*e.TransactionItem, error
 	return items, nil
 }
 
-func (r *Repository) Delete(params *m.TransactionItemSearchParams) error {
-	return r.db.Delete(&e.TransactionItem{}, "transaction_id = ? AND item_id = ?", params.TransactionID, params.ItemID).Error
+func (r *Repository) DeleteItem(params *m.TransactionItemSearchParams) error {
+	return r.db.
+		Delete(
+			&e.TransactionItem{},
+			"transaction_id = ? AND item_id = ?",
+			params.TransactionID,
+			params.ItemID,
+		).
+		Error
 }
 
 func (r *Repository) CreateManyTx(
@@ -101,4 +110,16 @@ func (r *Repository) DeleteByTransactionIDTx(
 		Where("transaction_id = ?", transactionID).
 		Delete(&e.TransactionItem{}).
 		Error
+}
+
+func (r *Repository) CountItemsByTransactionID(transactionID string) (int64, error) {
+	var count int64
+
+	err := r.db.
+		Model(&e.TransactionItem{}).
+		Where("transaction_id = ?", transactionID).
+		Count(&count).
+		Error
+
+	return count, err
 }

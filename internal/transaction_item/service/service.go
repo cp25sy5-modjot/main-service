@@ -4,7 +4,9 @@ import (
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
+	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
 	txirepo "github.com/cp25sy5-modjot/main-service/internal/transaction_item/repository"
+	"gorm.io/gorm"
 )
 
 type Service interface {
@@ -16,11 +18,12 @@ type Service interface {
 
 // concrete implementation
 type service struct {
-	repo *txirepo.Repository
+	repo   *txirepo.Repository
+	txRepo *txrepo.Repository
 }
 
-func NewService(repo *txirepo.Repository) *service {
-	return &service{repo: repo}
+func NewService(repo *txirepo.Repository, txRepo *txrepo.Repository) *service {
+	return &service{repo: repo, txRepo: txRepo}
 }
 
 func (s *service) GetAllByUserID(userID string) ([]e.TransactionItem, error) {
@@ -61,9 +64,39 @@ func (s *service) Update(params *m.TransactionItemSearchParams, input *Transacti
 }
 
 func (s *service) Delete(params *m.TransactionItemSearchParams) error {
-	_, err := s.repo.FindByID(params)
-	if err != nil {
-		return err
-	}
-	return s.repo.Delete(params)
+	return s.repo.WithTx(func(tx *gorm.DB) error {
+
+		itemRepo := txirepo.NewRepository(tx)
+		transactionRepo := txrepo.NewRepository(tx)
+
+		// check exists
+		_, err := itemRepo.FindByID(params)
+		if err != nil {
+			return err
+		}
+
+		// delete item
+		if err := itemRepo.DeleteItem(params); err != nil {
+			return err
+		}
+
+		// count remaining items
+		count, err := itemRepo.CountItemsByTransactionID(params.TransactionID)
+		if err != nil {
+			return err
+		}
+
+		// delete transaction if empty
+		if count == 0 {
+			if err := transactionRepo.Delete(
+				&m.TransactionSearchParams{
+					TransactionID: params.TransactionID,
+					UserID:        params.UserID,
+				}); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
