@@ -104,7 +104,7 @@ func buildTransactionItemResponse(item *e.TransactionItem) *m.TransactionItemRes
 		Price:             item.Price,
 		CategoryID:        item.CategoryID,
 		CategoryName:      item.Category.CategoryName,
-		CategoryColorCode: item.Category.ColorCode,
+		CategoryColor: item.Category.ColorCode,
 	}
 }
 

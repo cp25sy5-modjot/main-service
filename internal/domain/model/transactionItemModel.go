@@ -19,8 +19,8 @@ type TransactionItemRes struct {
 	Price             float64 `json:"price"`
 	CategoryID        string  `json:"category_id"`
 	CategoryName      string  `json:"category_name"`
-	CategoryColorCode string  `json:"category_color_code"`
-	Icon              string  `json:"icon"`
+	CategoryColor     string  `json:"category_color"`
+	CategoryIcon      string  `json:"category_icon"`
 }
 
 type TransactionItemSearchParams struct {

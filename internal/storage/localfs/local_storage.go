@@ -2,6 +2,9 @@ package localfs
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -52,4 +55,28 @@ func (s *LocalStorage) Delete(ctx context.Context, path string) error {
 		return err
 	}
 	return nil
+}
+
+func (s *LocalStorage) GenerateSignedURL(
+	path string,
+	expiry time.Duration,
+	secret string,
+) string {
+
+	expires := time.Now().Add(expiry).Unix()
+
+	signature := generateHMAC(fmt.Sprintf("%s:%d", path, expires), secret)
+
+	return fmt.Sprintf(
+		"/files/%s?expires=%d&sig=%s",
+		path,
+		expires,
+		signature,
+	)
+}
+
+func generateHMAC(data, secret string) string {
+	h := hmac.New(sha256.New, []byte(secret))
+	h.Write([]byte(data))
+	return hex.EncodeToString(h.Sum(nil))
 }

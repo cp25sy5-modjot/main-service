@@ -46,7 +46,7 @@ func NewFiberServer(conf *config.Config, db database.Database, aiClient pb.AiWra
 		Addr: conf.Redis.Addr,
 	})
 
-	uploadDir := conf.UploadDir
+	uploadDir := conf.Storage.UploadDir
 	if uploadDir == "" {
 		uploadDir = "./uploads"
 	}

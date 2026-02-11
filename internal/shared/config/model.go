@@ -7,7 +7,7 @@ type Config struct {
 	Google     *Google
 	AIService  *AIService
 	Redis      *Redis
-	UploadDir  string
+	Storage   *Storage
 }
 
 type Fiber struct {
@@ -44,4 +44,9 @@ type AIService struct {
 
 type Redis struct {
 	Addr string
+}
+
+type Storage struct {
+	UploadDir       string
+	SignedURLSecret string
 }

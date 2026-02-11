@@ -32,7 +32,7 @@ func LoadConfig() *Config {
 			Issuer:             os.Getenv("JWT_ISSUER"),
 		},
 		Google: &Google{
-			ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+			ClientID: os.Getenv("GOOGLE_CLIENT_ID"),
 		},
 		AIService: &AIService{
 			Url: os.Getenv("AI_WRAPPER_ADDR"),
@@ -40,7 +40,9 @@ func LoadConfig() *Config {
 		Redis: &Redis{
 			Addr: os.Getenv("REDIS_ADDR"),
 		},
-		UploadDir: os.Getenv("UPLOAD_DIR"),
+		Storage: &Storage{
+			UploadDir:       os.Getenv("UPLOAD_DIR"),
+			SignedURLSecret: os.Getenv("SIGNED_URL_SECRET"),
+		},
 	}
 }
-

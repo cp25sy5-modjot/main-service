@@ -68,7 +68,6 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 }
 
 func (h *Handler) Confirm(c *fiber.Ctx) error {
-
 	traceID := c.Params("traceID")
 	userID, err := jwt.GetUserIDFromClaims(c)
 	if err != nil {
@@ -107,4 +106,26 @@ func (h *Handler) GetDraftStats(c *fiber.Ctx) error {
 	}
 
 	return sresp.OK(c, stats, "draft stats retrieved successfully")
+}
+
+func (h *Handler) GetDraftImageURL(c *fiber.Ctx) error {
+
+	traceID := c.Params("traceID")
+	userID, err := jwt.GetUserIDFromClaims(c)
+	if err != nil {
+		return err
+	}
+
+	url, err := h.service.GetDraftImageURL(
+		c.Context(),
+		traceID,
+		userID,
+	)
+	if err != nil {
+		return fiber.NewError(400, err.Error())
+	}
+
+	return c.JSON(fiber.Map{
+		"url": url,
+	})
 }

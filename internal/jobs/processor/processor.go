@@ -90,9 +90,9 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 	_ = p.draftRepo.Save(ctx, *exDraft)
 
 	// 4. delete file
-	if err := p.storage.Delete(ctx, payload.Path); err != nil {
-		log.Printf("[JOB %s] delete file error: %v", payload.TraceID, err)
-	}
+	// if err := p.storage.Delete(ctx, payload.Path); err != nil {
+	// 	log.Printf("[JOB %s] delete file error: %v", payload.TraceID, err)
+	// }
 
 	log.Printf("[JOB %s] Done → waiting user confirm", payload.TraceID)
 

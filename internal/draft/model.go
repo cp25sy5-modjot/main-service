@@ -14,6 +14,7 @@ type DraftTxn struct {
 	TraceID string `json:"trace_id"`
 	UserID  string `json:"user_id"`
 
+	Path   string      `json:"path"`
 	Status DraftStatus `json:"status"` // processing | waiting_confirm | failed
 	Title  string      `json:"title,omitempty"`
 	Date   *time.Time  `json:"date,omitempty"`
@@ -26,12 +27,14 @@ type DraftTxn struct {
 }
 
 type DraftItem struct {
+	Path       string  `json:"path"`
 	Title      string  `json:"title"`
 	Price      float64 `json:"price"`
 	CategoryID string  `json:"category_id"`
 }
 
 type NewDraftRequest struct {
+	Path      string      `json:"path"`
 	Title     string      `json:"title"`
 	Date      *time.Time  `json:"date"`
 	Items     []DraftItem `json:"items" validate:"required,min=1,dive"`
@@ -61,7 +64,7 @@ type DraftRes struct {
 
 	Status DraftStatus    `json:"status"` // processing | waiting_confirm | failed
 	Title  string         `json:"title,omitempty"`
-	Date   *time.Time      `json:"date,omitempty"`
+	Date   *time.Time     `json:"date,omitempty"`
 	Items  []DraftItemRes `json:"items,omitempty"`
 
 	Error string `json:"error,omitempty"`

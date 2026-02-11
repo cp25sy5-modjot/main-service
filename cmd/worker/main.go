@@ -54,7 +54,7 @@ func main() {
 	txService := txsvc.NewService(db.GetDb(), txRepo, txiRepo, catRepo, aiClient)
 
 	// Storage
-	uploadDir := conf.UploadDir
+	uploadDir := conf.Storage.UploadDir
 	if uploadDir == "" {
 		uploadDir = "./uploads"
 	}

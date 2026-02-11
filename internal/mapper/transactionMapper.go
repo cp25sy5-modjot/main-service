@@ -32,13 +32,13 @@ func BuildTransactionResponses(transactions []e.Transaction) []m.TransactionRes 
 
 func BuildTransactionItemResponse(item *e.TransactionItem) *m.TransactionItemRes {
 	return &m.TransactionItemRes{
-		TransactionID:     item.TransactionID,
-		ItemID:            item.ItemID,
-		Title:             item.Title,
-		Price:             item.Price,
-		CategoryID:        item.CategoryID,
-		CategoryName:      item.Category.CategoryName,
-		CategoryColorCode: item.Category.ColorCode,
+		TransactionID: item.TransactionID,
+		ItemID:        item.ItemID,
+		Title:         item.Title,
+		Price:         item.Price,
+		CategoryID:    item.CategoryID,
+		CategoryName:  item.Category.CategoryName,
+		CategoryColor: item.Category.ColorCode,
 	}
 }
 

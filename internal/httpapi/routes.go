@@ -2,6 +2,12 @@ package httpapi
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/cp25sy5-modjot/main-service/internal/auth"
@@ -48,15 +54,15 @@ func RegisterRoutes(
 	services := initializeServices(s)
 
 	initializeHealthCheckRoutes(s)
-	initializeDraftRoutes(s, services)
+	initializeFileRoutes(s)
 
+	initializeDraftRoutes(s, services)
 	initializeTransactionRoutes(s, services)
 	initializeTransactionItemRoutes(s, services)
 	initializeAuthRoutes(s, services)
 	initializeCategoryRoutes(s, services)
 	initializeOverviewRoutes(s, services)
 	initializeFavoriteRoutes(s, services)
-
 }
 
 func initializeServices(s *fiberServer) *Services {
@@ -82,6 +88,8 @@ func initializeServices(s *fiberServer) *Services {
 	draftSvc := draft.NewService(
 		draftRepo,
 		categoryRepo,
+		s.storage,
+		s.conf.Storage.SignedURLSecret,
 		transactionSvc.CreateInternal,
 	)
 
@@ -223,6 +231,7 @@ func initializeDraftRoutes(s *fiberServer, services *Services) {
 	api.Get("/:traceID", handler.GetDraft)
 	api.Post("/:traceID/confirm", handler.Confirm)
 	api.Get("/:traceID/stats", handler.GetDraftStats)
+	api.Get("/:traceID/image-url", handler.GetDraftImageURL)
 }
 
 func initializeFavoriteRoutes(s *fiberServer, services *Services) {
@@ -238,4 +247,51 @@ func initializeFavoriteRoutes(s *fiberServer, services *Services) {
 	api.Put("/:id", favHandler.Update)
 	api.Delete("/:id", favHandler.Delete)
 	api.Post("/reorder", favHandler.ReOrder)
+}
+
+func initializeFileRoutes(s *fiberServer) {
+
+	secret := s.conf.Storage.SignedURLSecret
+	baseDir := s.conf.Storage.UploadDir // ต้องมีใน config
+
+	s.app.Get("/files/*", func(c *fiber.Ctx) error {
+
+		path := c.Params("*")
+		expires := c.Query("expires")
+		sig := c.Query("sig")
+
+		if path == "" || expires == "" || sig == "" {
+			return fiber.NewError(400, "invalid request")
+		}
+
+		// parse expiry
+		expInt, err := strconv.ParseInt(expires, 10, 64)
+		if err != nil {
+			return fiber.NewError(400, "invalid expiry")
+		}
+
+		if time.Now().Unix() > expInt {
+			return fiber.NewError(403, "url expired")
+		}
+
+		// validate signature
+		expected := generateHMAC(
+			fmt.Sprintf("%s:%d", path, expInt),
+			secret,
+		)
+
+		if !hmac.Equal([]byte(sig), []byte(expected)) {
+			return fiber.NewError(403, "invalid signature")
+		}
+
+		fullPath := filepath.Join(baseDir, path)
+
+		return c.SendFile(fullPath)
+	})
+}
+
+func generateHMAC(data, secret string) string {
+	h := hmac.New(sha256.New, []byte(secret))
+	h.Write([]byte(data))
+	return hex.EncodeToString(h.Sum(nil))
 }
