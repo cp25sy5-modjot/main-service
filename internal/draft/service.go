@@ -16,7 +16,7 @@ type Service interface {
 	SaveDraft(ctx context.Context, draftID, userID string, req NewDraftRequest) (*DraftTxn, error)
 	UpdateDraft(ctx context.Context, draftID, userID string, req ConfirmRequest) (*DraftTxn, error)
 	ConfirmDraft(ctx context.Context, draftID string, userID string, req ConfirmRequest) (*e.Transaction, error)
-	DeleteDraft(ctx context.Context, draftID string) error
+	DeleteDraft(ctx context.Context, draftID string, userID string) error
 	GetDraftStats(ctx context.Context, userID string) (*DraftStats, error)
 	GetDraftWithCategory(ctx context.Context, draftID, userID string) (*DraftRes, error)
 	ListDraftWithCategory(ctx context.Context, userID string) ([]DraftRes, error)
@@ -198,11 +198,15 @@ func (s *service) ConfirmDraft(
 
 }
 
-func (s *service) DeleteDraft(ctx context.Context, draftID string) error {
+func (s *service) DeleteDraft(ctx context.Context, draftID, userID string) error {
 	d, err := s.draftRepo.Get(ctx, draftID)
 	if err != nil {
 		return errors.New("draft not found")
 	}
+	if d.UserID != userID {
+		return errors.New("not owner")
+	}
+	// ลบไฟล์ก่อน
 	if d.Path != "" {
 		if err := s.storage.Delete(ctx, d.Path); err != nil {
 			log.Printf("[DELETE %s] delete file error: %v", draftID, err)

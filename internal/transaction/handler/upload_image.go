@@ -76,7 +76,7 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 
 	if err != nil {
 		// rollback draft ถ้า enqueue ไม่ผ่าน
-		h.draftService.DeleteDraft(ctx, draftID)
+		h.draftService.DeleteDraft(ctx, draftID, userID)
 
 		return fiber.NewError(500, "Failed to enqueue job")
 	}

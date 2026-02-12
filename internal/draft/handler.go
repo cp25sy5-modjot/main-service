@@ -129,3 +129,18 @@ func (h *Handler) GetDraftImageURL(c *fiber.Ctx) error {
 		"url": url,
 	})
 }
+
+func (h *Handler) DeleteDraft(c *fiber.Ctx) error {
+	draftID := c.Params("draftID")
+	userID, err := jwt.GetUserIDFromClaims(c)
+	if err != nil {
+		return err
+	}
+
+	err = h.service.DeleteDraft(c.Context(), draftID, userID)
+	if err != nil {
+		return fiber.NewError(400, err.Error())
+	}
+
+	return sresp.OK(c, nil, "draft deleted successfully")
+}

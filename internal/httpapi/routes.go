@@ -232,6 +232,7 @@ func initializeDraftRoutes(s *fiberServer, services *Services) {
 	api.Post("/:draftID/confirm", handler.Confirm)
 	api.Get("/:draftID/stats", handler.GetDraftStats)
 	api.Get("/:draftID/image-url", handler.GetDraftImageURL)
+	api.Delete("/:draftID", handler.DeleteDraft)
 }
 
 func initializeFavoriteRoutes(s *fiberServer, services *Services) {
