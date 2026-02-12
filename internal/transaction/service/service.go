@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	catrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
@@ -470,7 +471,10 @@ func mapToDraft(
 		})
 	}
 
-	date := ParseAIDate(resp.Date)
+	date, err := ParseAIDate(resp.Date)
+	if err != nil {
+		return nil, err
+	}
 
 	return &draft.DraftTxn{
 		UserID:    userID,
@@ -482,17 +486,23 @@ func mapToDraft(
 	}, nil
 }
 
-func ParseAIDate(s string) time.Time {
+func ParseAIDate(s string) (time.Time, error) {
+	s = strings.TrimSpace(s)
+
 	layouts := []string{
-		time.RFC3339,
-		"2006-01-02T15:04:05",
-		"2006-01-02",
+		time.RFC3339,                   // 2006-01-02T15:04:05Z07:00
+		time.RFC3339Nano,               // รองรับ nano second
+		"2006-01-02T15:04:05-0700",     // +0000
+		"2006-01-02T15:04:05.000-0700", // +0000 + millisecond
+		"2006-01-02T15:04:05",          // ไม่มี timezone
+		"2006-01-02 15:04:05",          // space แทน T
+		"2006-01-02",                   // date only
 	}
 
 	for _, layout := range layouts {
 		if t, err := time.Parse(layout, s); err == nil {
 
-			// ถ้าเป็น YYYY-MM-DD → เติมเวลา 12:00
+			// ถ้าเป็น date อย่างเดียว → set เป็น 12:00 UTC
 			if layout == "2006-01-02" {
 				t = time.Date(
 					t.Year(),
@@ -503,11 +513,11 @@ func ParseAIDate(s string) time.Time {
 				)
 			}
 
-			return t.UTC()
+			return t.UTC(), nil
 		}
 	}
 
-	return time.Now().UTC()
+	return time.Time{}, fmt.Errorf("unsupported date format: %s", s)
 }
 
 func (s *service) validateUpdateItems(
