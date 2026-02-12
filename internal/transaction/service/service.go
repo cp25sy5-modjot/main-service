@@ -489,27 +489,34 @@ func mapToDraft(
 func ParseAIDate(s string) (time.Time, error) {
 	s = strings.TrimSpace(s)
 
+	bkk, err := time.LoadLocation("Asia/Bangkok")
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	// ตัด timezone ทิ้ง (ไม่เชื่อ AI)
+	s = strings.TrimSuffix(s, "Z")
+	s = strings.TrimSuffix(s, "+0000")
+	s = strings.TrimSuffix(s, "+00:00")
+	s = strings.TrimSuffix(s, "+0700")
+	s = strings.TrimSuffix(s, "+07:00")
+
 	layouts := []string{
-		time.RFC3339,                   // 2006-01-02T15:04:05Z07:00
-		time.RFC3339Nano,               // รองรับ nano second
-		"2006-01-02T15:04:05-0700",     // +0000
-		"2006-01-02T15:04:05.000-0700", // +0000 + millisecond
-		"2006-01-02T15:04:05",          // ไม่มี timezone
-		"2006-01-02 15:04:05",          // space แทน T
-		"2006-01-02",                   // date only
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05",
+		"2006-01-02",
 	}
 
 	for _, layout := range layouts {
-		if t, err := time.Parse(layout, s); err == nil {
+		if t, err := time.ParseInLocation(layout, s, bkk); err == nil {
 
-			// ถ้าเป็น date อย่างเดียว → set เป็น 12:00 UTC
 			if layout == "2006-01-02" {
 				t = time.Date(
 					t.Year(),
 					t.Month(),
 					t.Day(),
 					12, 0, 0, 0,
-					time.UTC,
+					bkk,
 				)
 			}
 
