@@ -255,7 +255,7 @@ func initializeFileRoutes(s *fiberServer) {
 	secret := s.conf.Storage.SignedURLSecret
 	baseDir := s.conf.Storage.UploadDir // ต้องมีใน config
 
-	s.app.Get("/files/*", func(c *fiber.Ctx) error {
+	s.app.Get("/v1/files/*", func(c *fiber.Ctx) error {
 
 		path := c.Params("*")
 		expires := c.Query("expires")
