@@ -19,10 +19,11 @@ type TransactionInsertReq struct {
 	Date                time.Time            `json:"date"`
 	Items               []TransactionItemReq `json:"items" validate:"required,min=1,dive"`
 	IsCreateNewFavorite bool                 `json:"is_create_new_favorite"`
+	IsFavIncludePrice   bool                 `json:"is_fav_include_price"`
 }
 
 type TransactionUpdateReq struct {
-	Title *string               `json:"title" validate:"required,min=2,max=20"`
+	Title *string              `json:"title" validate:"required,min=2,max=20"`
 	Date  *time.Time           `json:"date" validate:"required"`
 	Items []TransactionItemReq `json:"items" validate:"required,min=1,dive"`
 }

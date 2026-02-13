@@ -116,7 +116,15 @@ func CalculateTotal(items []m.TransactionItemRes) float64 {
 func ParseTransactionInsertReqToFavoriteItemCreateInput(
 	userID string,
 	req *m.TransactionInsertReq,
+	isIncludePrice bool,
 ) *m.FavoriteItemCreateInput {
+	if !isIncludePrice {
+		return &m.FavoriteItemCreateInput{
+			UserID:     userID,
+			Title:      req.Items[0].Title,
+			CategoryID: req.Items[0].CategoryID,
+		}
+	}
 	return &m.FavoriteItemCreateInput{
 		UserID:     userID,
 		Title:      req.Items[0].Title,

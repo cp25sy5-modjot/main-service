@@ -60,7 +60,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 
 	isNewFavorite := req.IsCreateNewFavorite
 	if isNewFavorite {
-		h.favService.Create(mapper.ParseTransactionInsertReqToFavoriteItemCreateInput(userID, &req))
+		h.favService.Create(mapper.ParseTransactionInsertReqToFavoriteItemCreateInput(userID, &req, req.IsFavIncludePrice))
 	}
 	return sresp.Created(c, mapper.BuildTransactionResponse(resp), "Transaction created successfully")
 }
