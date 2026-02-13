@@ -125,9 +125,7 @@ func (h *Handler) GetDraftImageURL(c *fiber.Ctx) error {
 		return fiber.NewError(400, err.Error())
 	}
 
-	return c.JSON(fiber.Map{
-		"url": url,
-	})
+	return sresp.OK(c, map[string]string{"image_url": url}, "draft image URL retrieved successfully")
 }
 
 func (h *Handler) DeleteDraft(c *fiber.Ctx) error {
