@@ -115,20 +115,22 @@ func (s *service) Delete(params *m.CategorySearchParams) error {
 }
 
 func (s *service) CreateDefaultCategories(userID string) error {
-	defaultCategories := []string{"อาหาร", "การเดินทาง", "ความบันเทิง", "ชอปปิ้ง", "อื่นๆ"}
-	for _, categoryName := range defaultCategories {
+
+	for categoryName, config := range defaultCategories {
 		_, err := s.categoryrepo.Create(&e.Category{
 			CategoryID:   uuid.New().String(),
 			CategoryName: categoryName,
 			UserID:       userID,
 			Budget:       1000.0,
-			ColorCode:    utils.GenerateRandomColor(),
+			Icon:         config.Icon,
+			ColorCode:    config.Color,
 			CreatedAt:    time.Now().UTC(),
 		})
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
