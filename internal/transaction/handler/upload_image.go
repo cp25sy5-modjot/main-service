@@ -1,9 +1,10 @@
 package transactionhandler
 
 import (
-	"context"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -18,8 +19,8 @@ import (
 )
 
 func (h *Handler) UploadImage(c *fiber.Ctx) error {
-
 	createAt := time.Now()
+
 	imageData, err := getImageData(c)
 	if err != nil {
 		return err
@@ -30,54 +31,49 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 		return err
 	}
 
-	// Determine extension
 	ext := "png"
 	ct := c.Get("Content-Type")
 	if strings.Contains(ct, "jpeg") || strings.Contains(ct, "jpg") {
 		ext = "jpg"
 	}
 
-	ctx := context.Background()
-
-	// 1. Save file to storage
-	path, err := h.storage.Save(ctx, userID, imageData, ext)
-	if err != nil {
-		return fiber.NewError(
-			fiber.StatusInternalServerError,
-			fmt.Sprintf("Failed to store image: %v", err),
-		)
-	}
+	ctx := c.Context()
 
 	draftID := xid.New().String()
 
+	path, err := h.storage.Save(ctx, userID, draftID, imageData, ext)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError,
+			fmt.Sprintf("Failed to store image: %v", err))
+	}
+
+	fullPath := filepath.Join("/uploads", path)
+
+	if _, err := os.Stat(fullPath); err != nil {
+		return fiber.NewError(500, "file not saved")
+	}
+
 	_, err = h.draftService.SaveDraft(ctx, draftID, userID, draft.NewDraftRequest{
-		// Title: "Slip Image Upload",
-		// Date:  time.Now(),
 		Path:      path,
 		Items:     []draft.DraftItem{},
 		CreatedAt: createAt,
 	})
-
 	if err != nil {
 		return fiber.NewError(500, "failed to create draft")
 	}
 
-	// 3. Build async job
 	task, err := tasks.NewBuildTransactionTask(userID, path, draftID)
 	if err != nil {
 		return fiber.NewError(500, "Failed to create job")
 	}
 
-	// 4. Enqueue
 	_, err = h.asynqClient.Enqueue(task,
-		asynq.MaxRetry(3),
+		asynq.MaxRetry(5),
 		asynq.Timeout(10*time.Minute),
+		asynq.ProcessIn(3*time.Second),
 	)
-
 	if err != nil {
-		// rollback draft ถ้า enqueue ไม่ผ่าน
 		h.draftService.DeleteDraft(ctx, draftID, userID)
-
 		return fiber.NewError(500, "Failed to enqueue job")
 	}
 

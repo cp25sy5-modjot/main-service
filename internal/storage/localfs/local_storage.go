@@ -28,19 +28,39 @@ func NewLocalStorage(baseDir string) (*LocalStorage, error) {
 	return &LocalStorage{baseDir: baseDir}, nil
 }
 
-// Save stores bytes and returns a relative path like "userID/2025/11/<uuid>.png".
-func (s *LocalStorage) Save(ctx context.Context, userID string, data []byte, ext string) (string, error) {
+func (s *LocalStorage) Save(
+    ctx context.Context,
+    userID string,
+    fileName string,
+    data []byte,
+    ext string,
+) (string, error) {
+
 	now := time.Now().UTC()
-	fileName := fmt.Sprintf("%s.%s", uuid.New().String(), ext)
-	relPath := filepath.Join(userID, fmt.Sprintf("%d", now.Year()), fmt.Sprintf("%02d", now.Month()), fileName)
+
+	if fileName == "" {
+		fileName = uuid.New().String()
+	}
+
+	fileName = fmt.Sprintf("%s.%s", fileName, ext)
+
+	relPath := filepath.Join(
+		userID,
+		fmt.Sprintf("%d", now.Year()),
+		fmt.Sprintf("%02d", now.Month()),
+		fileName,
+	)
+
 	fullPath := filepath.Join(s.baseDir, relPath)
 
 	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
 		return "", err
 	}
+
 	if err := os.WriteFile(fullPath, data, 0644); err != nil {
 		return "", err
 	}
+
 	return filepath.ToSlash(relPath), nil
 }
 

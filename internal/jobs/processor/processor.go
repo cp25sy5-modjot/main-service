@@ -3,7 +3,9 @@ package processor
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/hibiken/asynq"
@@ -55,44 +57,87 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 	log.Printf("[JOB %s] Start transaction build. user=%s path=%s",
 		payload.DraftID, payload.UserID, payload.Path)
 
-	// 1. Load file
 	data, err := p.storage.Load(ctx, payload.Path)
 	if err != nil {
-		log.Printf("[JOB %s] load error: %v", payload.DraftID, err)
+
+		if os.IsNotExist(err) {
+
+			retryCount, ok1 := asynq.GetRetryCount(ctx)
+			maxRetry, ok2 := asynq.GetMaxRetry(ctx)
+
+			if !ok1 || !ok2 {
+				log.Printf("[JOB %s] retry metadata missing", payload.DraftID)
+			}
+
+			log.Printf("[JOB %s] file not ready (retry %d/%d)",
+				payload.DraftID, retryCount+1, maxRetry)
+
+			if retryCount+1 >= maxRetry {
+
+				if err := p.draftRepo.UpdateStatus(
+					ctx,
+					payload.DraftID,
+					d.DraftStatusFailed,
+					"file missing",
+				); err != nil {
+					log.Printf("update failed status error: %v", err)
+				}
+
+				return asynq.SkipRetry
+			}
+
+			return fmt.Errorf("file not ready: %w", err)
+		}
+
 		return err
 	}
 
-	// ===== STEP 1: mark processing =====
-	_ = p.draftRepo.UpdateStatus(ctx, payload.DraftID, d.DraftStatusProcessing, "")
+	if err := p.draftRepo.UpdateStatus(
+		ctx,
+		payload.DraftID,
+		d.DraftStatusProcessing,
+		"",
+	); err != nil {
+		log.Printf("update status error: %v", err)
+	}
 
-	// ===== STEP 2: call AI =====
-	draft, err := p.txService.ProcessUploadedFile(data, payload.UserID)
+	draftResult, err := p.txService.ProcessUploadedFile(data, payload.UserID)
 	if err != nil {
 
-		_ = p.draftRepo.UpdateStatus(ctx, payload.DraftID, d.DraftStatusFailed, err.Error())
+		if err := p.draftRepo.UpdateStatus(
+			ctx,
+			payload.DraftID,
+			d.DraftStatusFailed,
+			err.Error(),
+		); err != nil {
+			log.Printf("update failed status error: %v", err)
+		}
 
 		return err
 	}
+
 	exDraft, err := p.draftRepo.Get(ctx, payload.DraftID)
 	if err != nil {
 		log.Printf("[JOB %s] get draft error: %v", payload.DraftID, err)
 		return err
 	}
 
-	exDraft.Title = draft.Title
-	exDraft.Date = draft.Date
-	exDraft.Items = draft.Items
-
+	exDraft.Title = draftResult.Title
+	exDraft.Date = draftResult.Date
+	exDraft.Items = draftResult.Items
 	exDraft.Status = d.DraftStatusWaitingConfirm
 	exDraft.UpdatedAt = time.Now()
 
-	// ===== STEP 3: save result to redis =====
-	_ = p.draftRepo.Save(ctx, *exDraft)
+	if err := p.draftRepo.Save(ctx, *exDraft); err != nil {
+		log.Printf("[JOB %s] save draft error: %v", payload.DraftID, err)
+		return err
+	}
 
-	// 4. delete file
-	// if err := p.storage.Delete(ctx, payload.Path); err != nil {
-	// 	log.Printf("[JOB %s] delete file error: %v", payload.DraftID, err)
-	// }
+	/*
+		if err := p.storage.Delete(ctx, payload.Path); err != nil {
+			log.Printf("[JOB %s] delete file error: %v", payload.DraftID, err)
+		}
+	*/
 
 	log.Printf("[JOB %s] Done → waiting user confirm", payload.DraftID)
 
