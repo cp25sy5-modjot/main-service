@@ -230,7 +230,7 @@ func initializeDraftRoutes(s *fiberServer, services *Services) {
 	api.Get("", handler.ListDraft)
 	api.Get("/:draftID", handler.GetDraft)
 	api.Post("/:draftID/confirm", handler.Confirm)
-	api.Get("/:draftID/stats", handler.GetDraftStats)
+	api.Get("/stats", handler.GetDraftStats)
 	api.Get("/:draftID/image-url", handler.GetDraftImageURL)
 	api.Delete("/:draftID", handler.DeleteDraft)
 }
