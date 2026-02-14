@@ -5,6 +5,7 @@ import "time"
 type DraftStatus string
 
 const (
+	DraftStatusQueued         DraftStatus = "queued"
 	DraftStatusProcessing     DraftStatus = "processing"
 	DraftStatusWaitingConfirm DraftStatus = "waiting_confirm"
 	DraftStatusFailed         DraftStatus = "failed"
