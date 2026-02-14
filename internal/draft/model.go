@@ -55,6 +55,7 @@ type UpdateDraftStatusRequest struct {
 
 type DraftStats struct {
 	Total          int `json:"total"`
+	Queued         int `json:"queued"`
 	Processing     int `json:"processing"`
 	WaitingConfirm int `json:"waiting_confirm"`
 	Failed         int `json:"failed"`
