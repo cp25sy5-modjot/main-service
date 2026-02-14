@@ -13,9 +13,10 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o api ./cmd/api && \
     CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o worker ./cmd/worker
 
-
 # ---- Runtime stage (Alpine, NOT distroless)
 FROM alpine:3.20
+
+RUN apk add --no-cache tzdata
 
 # Create non-root user and uploads dir
 RUN adduser -D -g '' appuser && \

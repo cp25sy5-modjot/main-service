@@ -132,7 +132,7 @@ func (s *service) SaveDraft(
 		Title:     req.Title,
 		DraftID:   draftID,
 		UserID:    userID,
-		Status:    DraftStatusProcessing,
+		Status:    DraftStatusQueued,
 		Date:      req.Date,
 		Items:     req.Items,
 		Path:      req.Path,
