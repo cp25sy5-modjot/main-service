@@ -33,6 +33,7 @@ type FavoriteItemRes struct {
 	UpdatedAt     time.Time `json:"updated_at"`
 	CategoryIcon  string    `json:"category_icon"`
 	CategoryColor string    `json:"category_color"`
+	CategoryName  string    `json:"category_name"`
 }
 
 type FavoriteItemCreateInput struct {

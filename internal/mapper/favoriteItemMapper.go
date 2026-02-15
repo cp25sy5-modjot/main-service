@@ -31,6 +31,7 @@ func BuildFavoriteItemResponse(fav *e.FavoriteItem) *m.FavoriteItemRes {
 
 		CategoryIcon:  fav.Category.Icon,
 		CategoryColor: fav.Category.ColorCode,
+		CategoryName:  fav.Category.CategoryName,
 	}
 }
 

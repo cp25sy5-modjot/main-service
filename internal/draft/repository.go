@@ -142,6 +142,8 @@ func (r *DraftRepository) StatsByUser(ctx context.Context, userID string) (*Draf
 		stats.Total++
 
 		switch d.Status {
+		case DraftStatusQueued:
+			stats.Queued++
 		case DraftStatusProcessing:
 			stats.Processing++
 		case DraftStatusWaitingConfirm:
