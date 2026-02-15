@@ -35,7 +35,7 @@ func (r *Repository) FindAll(uid string) ([]*e.FavoriteItem, error) {
 	err := r.db.
 		Where("user_id = ?", uid).
 		Preload("Category", func(db *gorm.DB) *gorm.DB {
-			return db.Select("category_id", "icon", "color_code")
+			return db.Select("category_id", "icon", "color_code", "category_name")
 		}).
 		Order("position ASC").
 		Find(&favorites).Error
