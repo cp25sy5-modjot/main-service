@@ -6,17 +6,38 @@ import (
 
 	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
 
+	userrepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 // Protected creates and returns the JWT middleware.
-func Protected(AccessTokenSecret string) fiber.Handler {
+func Protected(secret string, userRepo *userrepo.Repository) fiber.Handler {
 	return jwtware.New(jwtware.Config{
-		SigningKey:   jwtware.SigningKey{Key: []byte(AccessTokenSecret), JWTAlg: "HS256"},
+		SigningKey: jwtware.SigningKey{
+			Key:    []byte(secret),
+			JWTAlg: "HS256",
+		},
 		Claims:       &Claims{},
 		ErrorHandler: jwtErrorHandler,
+
+		SuccessHandler: func(c *fiber.Ctx) error {
+
+			userID, err := GetUserIDFromClaims(c)
+			if err != nil {
+				return err
+			}
+
+			user, err := userRepo.FindByID(userID)
+			if err != nil || user == nil {
+				return fiber.NewError(fiber.StatusUnauthorized, "User no longer exists")
+			}
+
+			c.Locals("authUser", user)
+
+			return c.Next()
+		},
 	})
 }
 

@@ -48,25 +48,41 @@ type Services struct {
 	FavoriteService favsvc.Service
 }
 
-func RegisterRoutes(
-	s *fiberServer,
-) {
-	services := initializeServices(s)
+type Repositories struct {
+	UserRepo            *userepo.Repository
+	TransactionRepo     *txrepo.Repository
+	TransactionItemRepo *txirepo.Repository
+	CategoryRepo        *catrepo.Repository
+
+	OverviewRepo *overviewrepo.Repository
+	DraftRepo    *draft.DraftRepository
+	FavoriteRepo *favrepo.Repository
+}
+
+func RegisterRoutes(s *fiberServer) {
+
+	repositories := initializeRepositories(s)
+	services := initializeServices(s, repositories)
+
+	// ⭐ สร้างครั้งเดียวตรงนี้
+	authMiddleware := jwt.Protected(
+		s.conf.Auth.AccessTokenSecret,
+		repositories.UserRepo,
+	)
 
 	initializeHealthCheckRoutes(s)
 	initializeFileRoutes(s)
 
-	initializeDraftRoutes(s, services)
-	initializeTransactionRoutes(s, services)
-	initializeTransactionItemRoutes(s, services)
-	initializeAuthRoutes(s, services)
-	initializeCategoryRoutes(s, services)
-	initializeOverviewRoutes(s, services)
-	initializeFavoriteRoutes(s, services)
+	initializeDraftRoutes(s, services, authMiddleware)
+	initializeTransactionRoutes(s, services, authMiddleware)
+	initializeTransactionItemRoutes(s, services, authMiddleware)
+	initializeAuthRoutes(s, services, authMiddleware)
+	initializeCategoryRoutes(s, services, authMiddleware)
+	initializeOverviewRoutes(s, services, authMiddleware)
+	initializeFavoriteRoutes(s, services, authMiddleware)
 }
 
-func initializeServices(s *fiberServer) *Services {
-
+func initializeRepositories(s *fiberServer) *Repositories {
 	categoryRepo := catrepo.NewRepository(s.db.GetDb())
 	userRepo := userepo.NewRepository(s.db.GetDb())
 	transactionRepo := txrepo.NewRepository(s.db.GetDb())
@@ -75,6 +91,28 @@ func initializeServices(s *fiberServer) *Services {
 
 	draftRepo := draft.NewDraftRepository(s.rdb)
 	favRepo := favrepo.NewRepository(s.db.GetDb())
+
+	return &Repositories{
+		UserRepo:            userRepo,
+		TransactionRepo:     transactionRepo,
+		TransactionItemRepo: transactionItemRepo,
+		CategoryRepo:        categoryRepo,
+
+		OverviewRepo: overviewRepo,
+		DraftRepo:    draftRepo,
+		FavoriteRepo: favRepo,
+	}
+}
+
+func initializeServices(s *fiberServer, repositories *Repositories) *Services {
+	categoryRepo := repositories.CategoryRepo
+	userRepo := repositories.UserRepo
+	transactionRepo := repositories.TransactionRepo
+	transactionItemRepo := repositories.TransactionItemRepo
+	overviewRepo := repositories.OverviewRepo
+
+	draftRepo := repositories.DraftRepo
+	favRepo := repositories.FavoriteRepo
 
 	transactionSvc := txsvc.NewService(
 		s.db.GetDb(),
@@ -133,12 +171,12 @@ func initializeHealthCheckRoutes(s *fiberServer) {
 	})
 }
 
-func initializeAuthRoutes(s *fiberServer, services *Services) {
+func initializeAuthRoutes(s *fiberServer, services *Services, authMiddleware fiber.Handler) {
 	userHandler := userhandler.NewHandler(services.UserService)
 
 	// Register user routes
 	userApi := s.app.Group("/v1/user")
-	userApi.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
+	userApi.Use(authMiddleware)
 
 	userApi.Get("", userHandler.GetSelf)
 	userApi.Put("", userHandler.Update)
@@ -163,7 +201,7 @@ func initializeAuthRoutes(s *fiberServer, services *Services) {
 
 }
 
-func initializeTransactionRoutes(s *fiberServer, services *Services) {
+func initializeTransactionRoutes(s *fiberServer, services *Services, authMiddleware fiber.Handler) {
 	transactionHandler := txhandler.NewHandler(
 		services.TransactionService,
 		s.asynqClient,
@@ -173,7 +211,7 @@ func initializeTransactionRoutes(s *fiberServer, services *Services) {
 	)
 
 	txApi := s.app.Group("/v1/transaction")
-	txApi.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
+	txApi.Use(authMiddleware)
 
 	txApi.Post("/manual", transactionHandler.Create)
 	txApi.Post("/upload", transactionHandler.UploadImage) // async
@@ -183,24 +221,24 @@ func initializeTransactionRoutes(s *fiberServer, services *Services) {
 	txApi.Delete("/:transaction_id", transactionHandler.Delete)
 }
 
-func initializeTransactionItemRoutes(s *fiberServer, services *Services) {
+func initializeTransactionItemRoutes(s *fiberServer, services *Services, authMiddleware fiber.Handler) {
 	transactionItemHandler := txihandler.NewHandler(services.TransactionItemService)
 
 	// Register routes
 	txItemApi := s.app.Group("/v1/transaction/:transaction_id/item")
-	txItemApi.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
+	txItemApi.Use(authMiddleware)
 
 	txItemApi.Get("/:item_id", transactionItemHandler.GetByID)
 	txItemApi.Put("/:item_id", transactionItemHandler.Update)
 	txItemApi.Delete("/:item_id", transactionItemHandler.Delete)
 }
 
-func initializeCategoryRoutes(s *fiberServer, services *Services) {
+func initializeCategoryRoutes(s *fiberServer, services *Services, authMiddleware fiber.Handler) {
 	categoryHandler := cathandler.NewHandler(services.CategoryService)
 
 	// Register routes
 	api := s.app.Group("/v1/category")
-	api.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
+	api.Use(authMiddleware)
 
 	api.Post("", categoryHandler.Create)
 	api.Get("", categoryHandler.GetAll)
@@ -209,23 +247,23 @@ func initializeCategoryRoutes(s *fiberServer, services *Services) {
 	api.Delete("/:id", categoryHandler.Delete)
 }
 
-func initializeOverviewRoutes(s *fiberServer, services *Services) {
+func initializeOverviewRoutes(s *fiberServer, services *Services, authMiddleware fiber.Handler) {
 	overviewHandler := overviewhandler.NewHandler(services.OverviewService)
 
 	// Register routes
 	api := s.app.Group("/v1/overview")
-	api.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
+	api.Use(authMiddleware)
 
 	api.Get("", overviewHandler.GetOverview)
 }
 
-func initializeDraftRoutes(s *fiberServer, services *Services) {
+func initializeDraftRoutes(s *fiberServer, services *Services, authMiddleware fiber.Handler) {
 	handler := draft.NewHandler(
 		services.DraftService,
 	)
 
 	api := s.app.Group("/v1/draft")
-	api.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
+	api.Use(authMiddleware)
 
 	api.Get("", handler.ListDraft)
 	api.Get("/stats", handler.GetDraftStats)
@@ -235,12 +273,12 @@ func initializeDraftRoutes(s *fiberServer, services *Services) {
 	api.Delete("/:draftID", handler.DeleteDraft)
 }
 
-func initializeFavoriteRoutes(s *fiberServer, services *Services) {
+func initializeFavoriteRoutes(s *fiberServer, services *Services, authMiddleware fiber.Handler) {
 	favHandler := favhandler.NewHandler(services.FavoriteService)
 
 	// Register routes
 	api := s.app.Group("/v1/favorites")
-	api.Use(jwt.Protected(s.conf.Auth.AccessTokenSecret))
+	api.Use(authMiddleware)
 
 	api.Post("", favHandler.Create)
 	api.Get("", favHandler.GetAll)

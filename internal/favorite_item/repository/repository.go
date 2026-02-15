@@ -47,7 +47,7 @@ func (r *Repository) FindByID(uid, favoriteID string) (*e.FavoriteItem, error) {
 	err := r.db.
 		Where("favorite_id = ? AND user_id = ?", favoriteID, uid).
 		Preload("Category", func(db *gorm.DB) *gorm.DB {
-			return db.Select("category_id", "icon", "color_code")
+			return db.Select("category_id", "icon", "color_code", "category_name")
 		}).
 		First(&favorite).Error
 	return &favorite, err
@@ -62,7 +62,7 @@ func (r *Repository) FindByIDTx(
 	err := tx.
 		Where("favorite_id = ? AND user_id = ?", favoriteID, uid).
 		Preload("Category", func(db *gorm.DB) *gorm.DB {
-			return db.Select("category_id", "icon", "color_code")
+			return db.Select("category_id", "icon", "color_code", "category_name")
 		}).
 		First(&favorite).Error
 	return &favorite, err

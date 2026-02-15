@@ -2,7 +2,7 @@ package transactionhandler
 
 import (
 	"fmt"
-	"log"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -61,17 +61,19 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(500, "failed to create draft")
 	}
-
+	
 	task, err := tasks.NewBuildTransactionTask(userID, path, draftID)
 	if err != nil {
 		return fiber.NewError(500, "Failed to create job")
 	}
 
 	_, err = h.asynqClient.Enqueue(task,
+		asynq.TaskID(draftID), // 🔥 กัน enqueue ซ้ำ
 		asynq.MaxRetry(5),
 		asynq.Timeout(10*time.Minute),
 		asynq.ProcessIn(3*time.Second),
 	)
+
 	if err != nil {
 		h.draftService.DeleteDraft(ctx, draftID, userID)
 		return fiber.NewError(500, "Failed to enqueue job")
@@ -98,17 +100,12 @@ func getImageData(c *fiber.Ctx) ([]byte, error) {
 	if err != nil {
 		return nil, fiber.NewError(fiber.StatusInternalServerError, "Failed to process uploaded image")
 	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			log.Printf("failed to close file: %v", err)
-		}
-	}()
+	defer file.Close()
 
-	imageData := make([]byte, image.Size)
-	_, err = file.Read(imageData)
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return nil, fiber.NewError(fiber.StatusInternalServerError, "Failed to read uploaded image")
 	}
 
-	return imageData, nil
+	return data, nil
 }
