@@ -45,43 +45,68 @@ func (p *Processor) Register(mux *asynq.ServeMux) {
 	mux.HandleFunc(tasks.TaskPurgeUser, p.HandlePurgeUser)
 
 }
+func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Task) (err error) {
 
-func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Task) error {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("[JOB] PANIC: %v", r)
+			err = fmt.Errorf("panic: %v", r)
+		}
+	}()
 
 	var payload tasks.BuildTransactionPayload
 	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
-		log.Printf("JOB decode payload error: %v", err)
+		log.Printf("[JOB] decode payload error: %+v", err)
 		return err
 	}
 
-	log.Printf("[JOB %s] Start transaction build. user=%s path=%s",
+	start := time.Now()
+
+	log.Printf("[JOB %s] START user=%s path=%s",
 		payload.DraftID, payload.UserID, payload.Path)
 
+	defer func() {
+		log.Printf("[JOB %s] END in %s err=%v",
+			payload.DraftID, time.Since(start), err)
+	}()
+
+	// --------------------------------------------------
+	// 1) GET DRAFT
+	// --------------------------------------------------
+	exDraft, err := p.draftRepo.Get(ctx, payload.DraftID)
+	if err != nil {
+		log.Printf("[JOB %s] get draft error: %+v", payload.DraftID, err)
+		return err
+	}
+
+	// ✅ IDEMPOTENT GUARD
+	if exDraft.Status == d.DraftStatusWaitingConfirm {
+		log.Printf("[JOB %s] already done → skip", payload.DraftID)
+		return nil
+	}
+
+	// --------------------------------------------------
+	// 2) LOAD FILE
+	// --------------------------------------------------
 	data, err := p.storage.Load(ctx, payload.Path)
 	if err != nil {
 
 		if os.IsNotExist(err) {
 
-			retryCount, ok1 := asynq.GetRetryCount(ctx)
-			maxRetry, ok2 := asynq.GetMaxRetry(ctx)
+			retryCount, _ := asynq.GetRetryCount(ctx)
+			maxRetry, _ := asynq.GetMaxRetry(ctx)
 
-			if !ok1 || !ok2 {
-				log.Printf("[JOB %s] retry metadata missing", payload.DraftID)
-			}
-
-			log.Printf("[JOB %s] file not ready (retry %d/%d)",
+			log.Printf("[JOB %s] file not ready (%d/%d)",
 				payload.DraftID, retryCount+1, maxRetry)
 
 			if retryCount+1 >= maxRetry {
 
-				if err := p.draftRepo.UpdateStatus(
+				_ = p.draftRepo.UpdateStatus(
 					ctx,
 					payload.DraftID,
 					d.DraftStatusFailed,
 					"file missing",
-				); err != nil {
-					log.Printf("update failed status error: %v", err)
-				}
+				)
 
 				return asynq.SkipRetry
 			}
@@ -89,39 +114,51 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 			return fmt.Errorf("file not ready: %w", err)
 		}
 
+		log.Printf("[JOB %s] load file error: %+v", payload.DraftID, err)
 		return err
 	}
 
-	if err := p.draftRepo.UpdateStatus(
-		ctx,
-		payload.DraftID,
-		d.DraftStatusProcessing,
-		"",
-	); err != nil {
-		log.Printf("update status error: %v", err)
+	// --------------------------------------------------
+	// 3) UPDATE → PROCESSING
+	// --------------------------------------------------
+	if exDraft.Status != d.DraftStatusProcessing {
+		if err := p.draftRepo.UpdateStatus(
+			ctx,
+			payload.DraftID,
+			d.DraftStatusProcessing,
+			"",
+		); err != nil {
+			log.Printf("[JOB %s] update processing status error: %+v",
+				payload.DraftID, err)
+		}
 	}
+
+	// --------------------------------------------------
+	// 4) CALL AI
+	// --------------------------------------------------
+	log.Printf("[JOB %s] calling AI...", payload.DraftID)
 
 	draftResult, err := p.txService.ProcessUploadedFile(data, payload.UserID)
 	if err != nil {
 
-		if err := p.draftRepo.UpdateStatus(
+		log.Printf("[JOB %s] AI error: %+v", payload.DraftID, err)
+
+		_ = p.draftRepo.UpdateStatus(
 			ctx,
 			payload.DraftID,
 			d.DraftStatusFailed,
 			err.Error(),
-		); err != nil {
-			log.Printf("update failed status error: %v", err)
-		}
+		)
 
 		return err
 	}
 
-	exDraft, err := p.draftRepo.Get(ctx, payload.DraftID)
-	if err != nil {
-		log.Printf("[JOB %s] get draft error: %v", payload.DraftID, err)
-		return err
-	}
+	log.Printf("[JOB %s] AI SUCCESS title=%s",
+		payload.DraftID, draftResult.Title)
 
+	// --------------------------------------------------
+	// 5) SAVE RESULT
+	// --------------------------------------------------
 	exDraft.Title = draftResult.Title
 	exDraft.Date = draftResult.Date
 	exDraft.Items = draftResult.Items
@@ -129,17 +166,13 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 	exDraft.UpdatedAt = time.Now()
 
 	if err := p.draftRepo.Save(ctx, *exDraft); err != nil {
-		log.Printf("[JOB %s] save draft error: %v", payload.DraftID, err)
-		return err
+		log.Printf("[JOB %s] save draft error: %+v", payload.DraftID, err)
+
+		// ❗ AI สำเร็จแล้ว → ห้าม retry ยิง AI ซ้ำ
+		return asynq.SkipRetry
 	}
 
-	/*
-		if err := p.storage.Delete(ctx, payload.Path); err != nil {
-			log.Printf("[JOB %s] delete file error: %v", payload.DraftID, err)
-		}
-	*/
-
-	log.Printf("[JOB %s] Done → waiting user confirm", payload.DraftID)
+	log.Printf("[JOB %s] DONE → waiting confirm", payload.DraftID)
 
 	return nil
 }
