@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"errors"
+
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	internaljwt "github.com/cp25sy5-modjot/main-service/internal/jwt"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
@@ -12,29 +14,36 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// RefreshHandler validates a refresh token and issues a new access token.
-func RefreshHandler(c *fiber.Ctx, usvc u.Service, config *config.Auth) error {
+func RefreshHandler(c *fiber.Ctx, usvc u.Service, conf *config.Auth) error {
 	var req RefreshRequest
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
 
-	// Parse and validate the refresh token claims.
-	token, err := jwt.ParseWithClaims(req.RefreshToken, &internaljwt.Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(config.RefreshTokenSecret), nil
-	})
+	token, err := jwt.ParseWithClaims(
+		req.RefreshToken,
+		&internaljwt.Claims{},
+		func(token *jwt.Token) (interface{}, error) {
+
+			if token.Method != jwt.SigningMethodHS256 {
+				return nil, fiber.ErrUnauthorized
+			}
+
+			return []byte(conf.RefreshTokenSecret), nil
+		},
+	)
+
+	if errors.Is(err, jwt.ErrTokenExpired) {
+		return fiber.NewError(fiber.StatusUnauthorized, "Refresh token expired")
+	}
 
 	if err != nil || !token.Valid {
 		return fiber.NewError(fiber.StatusUnauthorized, "Invalid refresh token")
 	}
 
 	claims, ok := token.Claims.(*internaljwt.Claims)
-	if !ok {
+	if !ok || claims.Type != "refresh" {
 		return fiber.NewError(fiber.StatusUnauthorized, "Invalid token claims")
-	}
-
-	if claims.Type != "refresh" {
-		return fiber.NewError(fiber.StatusUnauthorized, "Invalid token type")
 	}
 
 	user, err := usvc.GetByID(claims.Subject)
@@ -49,8 +58,8 @@ func RefreshHandler(c *fiber.Ctx, usvc u.Service, config *config.Auth) error {
 	userInfo := &internaljwt.UserInfo{
 		UserID: user.UserID,
 	}
-	// Generate a new access token only.
-	newAccessToken, _, err := internaljwt.GenerateTokens(userInfo, config)
+
+	newAccessToken, _, err := internaljwt.GenerateTokens(userInfo, conf)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to generate access token")
 	}
