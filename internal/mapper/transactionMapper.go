@@ -39,6 +39,7 @@ func BuildTransactionItemResponse(item *e.TransactionItem) *m.TransactionItemRes
 		CategoryID:    item.CategoryID,
 		CategoryName:  item.Category.CategoryName,
 		CategoryColor: item.Category.ColorCode,
+		CategoryIcon:  item.Category.Icon,
 	}
 }
 
