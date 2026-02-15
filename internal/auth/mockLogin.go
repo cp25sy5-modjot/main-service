@@ -1,10 +1,14 @@
 package auth
 
 import (
+	"errors"
+	"time"
+
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
 	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
+	"gorm.io/gorm"
 
 	c "github.com/cp25sy5-modjot/main-service/internal/category/service"
 	u "github.com/cp25sy5-modjot/main-service/internal/user/service"
@@ -23,14 +27,21 @@ func MockLoginHandler(c *fiber.Ctx, usvc u.Service, csvc c.Service, config *conf
 
 	if user != nil {
 		if user.Status == e.UserStatusInactive {
-			return fiber.NewError(
-				fiber.StatusForbidden,
-				"account has been deactivated",
-			)
+			expireAt := user.UnsubscribedAt.Add(30 * 24 * time.Hour)
+			remaining := time.Until(expireAt)
+
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"code":              "ACCOUNT_DEACTIVATED",
+				"remaining_seconds": int(remaining.Seconds()),
+			})
 		}
+
 	}
 
 	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fiber.NewError(fiber.StatusInternalServerError, "Failed to get user")
+		}
 		user, err = usvc.CreateMockUser(&u.UserCreateInput{
 			Name: userName,
 		}, userName)

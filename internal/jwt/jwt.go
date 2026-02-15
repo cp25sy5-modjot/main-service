@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
 
 	userrepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
@@ -32,6 +33,9 @@ func Protected(secret string, userRepo *userrepo.Repository) fiber.Handler {
 			user, err := userRepo.FindByID(userID)
 			if err != nil || user == nil {
 				return fiber.NewError(fiber.StatusUnauthorized, "User no longer exists")
+			}
+			if user.Status == e.UserStatusInactive {
+				return fiber.NewError(fiber.StatusForbidden, "Account is deactivated")
 			}
 
 			c.Locals("authUser", user)
