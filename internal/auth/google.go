@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"time"
 
 	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
 	"gorm.io/gorm"
@@ -39,11 +40,15 @@ func HandleGoogleTokenExchange(c *fiber.Ctx, usvc u.Service, csvc c.Service, con
 
 	if user != nil {
 		if user.Status == e.UserStatusInactive {
-			return fiber.NewError(
-				fiber.StatusForbidden,
-				"account has been deactivated",
-			)
+			expireAt := user.UnsubscribedAt.Add(30 * 24 * time.Hour)
+			remaining := time.Until(expireAt)
+
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"code":              "ACCOUNT_DEACTIVATED",
+				"remaining_seconds": int(remaining.Seconds()),
+			})
 		}
+
 	}
 
 	if user == nil {
@@ -112,9 +117,10 @@ func HandleRestore(c *fiber.Ctx, usvc u.Service, config *config.Config) error {
 
 	user, err := usvc.RestoreByGoogleID(googleID)
 	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return fiber.NewError(fiber.StatusInternalServerError, "failed to get user")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fiber.NewError(fiber.StatusNotFound, "account not found")
 		}
+		return fiber.NewError(fiber.StatusInternalServerError, "failed to restore user")
 	}
 
 	return issueToken(&jwt.UserInfo{
