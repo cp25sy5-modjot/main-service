@@ -49,7 +49,7 @@ func jwtErrorHandler(c *fiber.Ctx, err error) error {
 	if errors.Is(err, jwt.ErrTokenExpired) {
 		return fiber.NewError(fiber.StatusUnauthorized, "Token has expired")
 	}
-	return fiber.NewError(fiber.StatusUnauthorized, "Invalid or malformed token")
+	return fiber.NewError(fiber.StatusUnauthorized, err.Error())
 }
 
 // GenerateTokens creates and returns new access and refresh tokens.
