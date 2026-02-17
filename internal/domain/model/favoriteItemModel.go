@@ -4,13 +4,13 @@ import "time"
 
 type FavoriteItemInsertReq struct {
 	Title      string  `json:"title" validate:"required,min=1,max=50"`
-	Price      float64 `json:"price" validate:"required,gt=0"`
+	Price      float64 `json:"price" validate:"required,min=0"`
 	CategoryID string  `json:"category_id" validate:"required,uuid4"`
 }
 
 type FavoriteItemUpdateReq struct {
 	Title      *string  `json:"title" validate:"required,min=1,max=50"`
-	Price      *float64 `json:"price" validate:"required,gt=0"`
+	Price      *float64 `json:"price" validate:"required,min=0"`
 	CategoryID *string  `json:"category_id" validate:"required,uuid4"`
 }
 
