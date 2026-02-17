@@ -29,9 +29,9 @@ type DraftTxn struct {
 
 type DraftItem struct {
 	Path       string  `json:"path"`
-	Title      string  `json:"title"`
-	Price      float64 `json:"price"`
-	CategoryID string  `json:"category_id"`
+	Title      string  `json:"title" validate:"required,min=1,max=20"`
+	Price      float64 `json:"price" validate:"required,min=0"`
+	CategoryID string  `json:"category_id" validate:"required"`
 }
 
 type NewDraftRequest struct {
