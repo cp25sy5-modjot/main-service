@@ -22,7 +22,7 @@ type Service interface {
 }
 
 type service struct {
-	db *gorm.DB
+	db   *gorm.DB
 	repo *favrepo.Repository
 }
 
@@ -83,8 +83,8 @@ func (s *service) Update(input *m.FavoriteItemUpdateInput) (*e.FavoriteItem, err
 
 func (s *service) Delete(uid, favID string) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		fav, err := s.repo.FindByIDTx(tx, uid, favID)
-		if err != nil {
+
+		if _, err := s.repo.FindByIDTx(tx, uid, favID); err != nil {
 			return err
 		}
 
@@ -92,9 +92,10 @@ func (s *service) Delete(uid, favID string) error {
 			return err
 		}
 
-		return s.repo.ShiftLeftAfterTx(tx, uid, fav.Position)
+		return s.repo.ResequencePositionsTx(tx, uid)
 	})
 }
+
 func (s *service) ReOrder(req *m.FavoriteItemReOrderInput) error {
 	if len(req.ReOrderList) == 0 {
 		return nil

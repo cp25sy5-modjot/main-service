@@ -152,3 +152,18 @@ func (r *Repository) UpdatePositionTx(
 		Update("position", position).
 		Error
 }
+
+func (r *Repository) ResequencePositionsTx(tx *gorm.DB, uid string) error {
+	return tx.Exec(`
+		WITH ranked AS (
+			SELECT favorite_id,
+				   ROW_NUMBER() OVER (ORDER BY position) AS new_pos
+			FROM favorite_items
+			WHERE user_id = ?
+		)
+		UPDATE favorite_items f
+		SET position = r.new_pos
+		FROM ranked r
+		WHERE f.favorite_id = r.favorite_id
+	`, uid).Error
+}
