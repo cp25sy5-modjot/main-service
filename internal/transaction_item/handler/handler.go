@@ -29,10 +29,10 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 
 	resp, err := h.service.GetByID(TransactionItemSearchParams)
 	if err != nil {
-		return fiber.NewError(fiber.StatusNotFound, "Transaction not found")
+		return fiber.NewError(fiber.StatusNotFound, "Transaction item not found")
 	}
 
-	return sresp.OK(c, buildTransactionItemResponse(resp), "Transaction retrieved successfully")
+	return sresp.OK(c, buildTransactionItemResponse(resp), "Transaction item retrieved successfully")
 }
 
 // PUT /transactions/:transaction_id/item/:item_id
@@ -53,7 +53,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to update transaction")
 	}
-	return sresp.OK(c, buildTransactionItemResponse(resp), "Transaction updated successfully")
+	return sresp.OK(c, buildTransactionItemResponse(resp), "Transaction item updated successfully")
 }
 
 // DELETE /transactions/:transaction_id/item/:item_id
@@ -64,10 +64,10 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 	}
 
 	if err := h.service.Delete(TransactionItemSearchParams); err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to delete transaction")
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to delete transaction item")
 	}
 
-	return sresp.OK(c, nil, "Transaction deleted successfully")
+	return sresp.OK(c, nil, "Transaction item deleted successfully")
 }
 
 // utils

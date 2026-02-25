@@ -36,6 +36,13 @@ func UnprocessableEntity(detail string, err error) error {
 	}
 }
 
+func AccountDeactivated(remainingSeconds int) error {
+	return &AccountDeactivatedError{
+		RemainingSeconds: remainingSeconds,
+		Message:          "Account deactivated",
+	}
+}
+
 // Note: You might want a custom error type for validation to pass the fields
 // Here's an example:
 type ValidationError struct {
@@ -44,5 +51,14 @@ type ValidationError struct {
 }
 
 func (e *ValidationError) Error() string {
+	return e.Message
+}
+
+type AccountDeactivatedError struct {
+	RemainingSeconds int
+	Message          string
+}
+
+func (e *AccountDeactivatedError) Error() string {
 	return e.Message
 }

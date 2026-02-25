@@ -23,6 +23,12 @@ func GlobalErrorHandler(c *fiber.Ctx, err error) error {
 	if errors.As(err, &valErr) {
 		return r.WriteError(c, fiber.StatusUnprocessableEntity, valErr.Message, "validation_failed", valErr.Message, v.MapValidationErrors(valErr.OriginalErr))
 	}
+	if errors.Is(err, &utils.AccountDeactivatedError{}) {
+		var accErr *utils.AccountDeactivatedError
+		if errors.As(err, &accErr) {
+			return r.WriteAccountDeactivatedError(c, fiber.StatusForbidden, accErr.Message, "account_deactivated", "Your account has been deactivated. Please restore first.", accErr.RemainingSeconds)
+		}
+	}
 
 	var fe *fiber.Error
 	if errors.As(err, &fe) {
@@ -34,7 +40,7 @@ func GlobalErrorHandler(c *fiber.Ctx, err error) error {
 		case fiber.StatusUnauthorized:
 			return eresp.Unauthorized(c, fe.Message)
 		case fiber.StatusForbidden:
-			return eresp.Forbidden(c, fe.Message)
+			return eresp.Forbidden(c, fe.Message, nil)
 		case fiber.StatusConflict:
 			return eresp.Conflict(c, fe.Message)
 		case fiber.StatusTooManyRequests:

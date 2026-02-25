@@ -25,10 +25,10 @@ func (h *Handler) GetDraft(c *fiber.Ctx) error {
 
 	d, err := h.service.GetDraftWithCategory(c.Context(), draftID, userID)
 	if err != nil {
-		return fiber.NewError(404, "draft not found")
+		return fiber.NewError(404, "Draft not found")
 	}
 
-	return sresp.OK(c, d, "draft retrieved successfully")
+	return sresp.OK(c, d, "Draft retrieved successfully")
 }
 
 func (h *Handler) ListDraft(c *fiber.Ctx) error {
@@ -43,7 +43,7 @@ func (h *Handler) ListDraft(c *fiber.Ctx) error {
 		return fiber.NewError(500, err.Error())
 	}
 
-	return sresp.OK(c, list, "drafts retrieved successfully")
+	return sresp.OK(c, list, "Drafts retrieved successfully")
 }
 
 func (h *Handler) Update(c *fiber.Ctx) error {
@@ -64,7 +64,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		return fiber.NewError(400, err.Error())
 	}
 
-	return sresp.OK(c, d, "draft updated successfully")
+	return sresp.OK(c, d, "Draft updated successfully")
 }
 
 func (h *Handler) Confirm(c *fiber.Ctx) error {
@@ -90,7 +90,7 @@ func (h *Handler) Confirm(c *fiber.Ctx) error {
 		return fiber.NewError(400, err.Error())
 	}
 
-	return sresp.OK(c, mapper.BuildTransactionResponse(tx), "draft confirmed successfully")
+	return sresp.OK(c, mapper.BuildTransactionResponse(tx), "Draft confirmed successfully")
 }
 
 func (h *Handler) GetDraftStats(c *fiber.Ctx) error {
@@ -105,7 +105,7 @@ func (h *Handler) GetDraftStats(c *fiber.Ctx) error {
 		return fiber.NewError(500, err.Error())
 	}
 
-	return sresp.OK(c, stats, "draft stats retrieved successfully")
+	return sresp.OK(c, stats, "Draft stats retrieved successfully")
 }
 
 func (h *Handler) GetDraftImageURL(c *fiber.Ctx) error {
@@ -125,7 +125,7 @@ func (h *Handler) GetDraftImageURL(c *fiber.Ctx) error {
 		return fiber.NewError(400, err.Error())
 	}
 
-	return sresp.OK(c, map[string]string{"image_url": url}, "draft image URL retrieved successfully")
+	return sresp.OK(c, map[string]string{"image_url": url}, "Draft image URL retrieved successfully")
 }
 
 func (h *Handler) DeleteDraft(c *fiber.Ctx) error {
@@ -140,5 +140,5 @@ func (h *Handler) DeleteDraft(c *fiber.Ctx) error {
 		return fiber.NewError(400, err.Error())
 	}
 
-	return sresp.OK(c, nil, "draft deleted successfully")
+	return sresp.OK(c, nil, "Draft deleted successfully")
 }

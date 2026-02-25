@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	c "github.com/cp25sy5-modjot/main-service/internal/category/service"
+	utils "github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	u "github.com/cp25sy5-modjot/main-service/internal/user/service"
 	"github.com/gofiber/fiber/v2"
 )
@@ -30,10 +31,7 @@ func MockLoginHandler(c *fiber.Ctx, usvc u.Service, csvc c.Service, config *conf
 			expireAt := user.UnsubscribedAt.Add(30 * 24 * time.Hour)
 			remaining := time.Until(expireAt)
 
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"code":              "ACCOUNT_DEACTIVATED",
-				"remaining_seconds": int(remaining.Seconds()),
-			})
+			return utils.AccountDeactivated(int(remaining.Seconds()))
 		}
 
 	}

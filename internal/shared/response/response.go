@@ -46,6 +46,24 @@ func WriteError(c *fiber.Ctx, status int, msg, typ, detail string, fields []v.Fi
 	return c.Status(status).JSON(resp)
 }
 
+func WriteAccountDeactivatedError(c *fiber.Ctx, status int, msg, typ, detail string, remainingTime int) error {
+	resp := Response{
+		Method:  c.Method(),
+		Path:    c.Path(),
+		Status:  "error",
+		Code:    status,
+		Message: msg,
+		Error: &ErrorBody{
+			Type:   typ,
+			Detail: detail,
+			RemainingSeconds: remainingTime},
+		TraceID:   getTraceID(c),
+		Timestamp: time.Now().UTC(),
+	}
+	LogError(resp)
+	return c.Status(status).JSON(resp)
+}
+
 func getTraceID(c *fiber.Ctx) string {
 	if v := c.Locals("request_id"); v != nil {
 		if s, ok := v.(string); ok {

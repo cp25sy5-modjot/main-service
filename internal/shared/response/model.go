@@ -20,7 +20,8 @@ type Response struct {
 }
 
 type ErrorBody struct {
-	Type   string         `json:"type,omitempty"`
-	Detail string         `json:"detail,omitempty"`
-	Fields []v.FieldError `json:"fields,omitempty"`
+	Type             string         `json:"type,omitempty"`
+	Detail           string         `json:"detail,omitempty"`
+	Fields           []v.FieldError `json:"fields,omitempty"`
+	RemainingSeconds int            `json:"remaining_seconds,omitempty"`
 }

@@ -17,7 +17,7 @@ func Unauthorized(c *fiber.Ctx, detail string) error {
 }
 
 // Forbidden → 403
-func Forbidden(c *fiber.Ctx, detail string) error {
+func Forbidden(c *fiber.Ctx, detail string, err error) error {
 	return response.WriteError(c, fiber.StatusForbidden, "Forbidden", "forbidden", detail, nil)
 }
 
