@@ -95,10 +95,9 @@ func issueToken(userInfo *jwt.UserInfo, c *fiber.Ctx, config *config.Config) err
 	}, "Login successful")
 }
 
-func validateIDToken(idToken, platform string, config *config.Google) (*idtoken.Payload, error) {
+func validateIDToken(idToken string, config *config.Google) (*idtoken.Payload, error) {
 	ctx := context.Background()
-	aud := config.ClientID
-	payload, err := idtoken.Validate(ctx, idToken, aud)
+	payload, err := idtoken.Validate(ctx, idToken, config.ClientID)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +137,7 @@ func parseGoogleToken(
 		return nil, err
 	}
 
-	payload, err := validateIDToken(req.IdToken, req.Platform, config.Google)
+	payload, err := validateIDToken(req.IdToken, config.Google)
 	if err != nil {
 		return nil, err
 	}

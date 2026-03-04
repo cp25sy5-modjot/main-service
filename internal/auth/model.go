@@ -1,8 +1,7 @@
 package auth
 
 type GoogleTokenRequest struct {
-	IdToken  string `form:"id_token" validate:"required"`
-	Platform string `form:"platform" validate:"required,oneof=ios android"`
+	IdToken string `form:"id_token" validate:"required"`
 }
 
 type RefreshRequest struct {
