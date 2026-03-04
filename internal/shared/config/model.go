@@ -35,8 +35,7 @@ type Auth struct {
 }
 
 type Google struct {
-	IOSClientID string
-	ADClientID  string
+	ClientID   string
 }
 
 type AIService struct {

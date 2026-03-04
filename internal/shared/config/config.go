@@ -32,8 +32,7 @@ func LoadConfig() *Config {
 			Issuer:             os.Getenv("JWT_ISSUER"),
 		},
 		Google: &Google{
-			IOSClientID: os.Getenv("GOOGLE_IOS_CLIENT_ID"),
-			ADClientID:  os.Getenv("GOOGLE_AD_CLIENT_ID"),
+			ClientID: os.Getenv("GOOGLE_IOS_CLIENT_ID"),
 		},
 		AIService: &AIService{
 			Url: os.Getenv("AI_WRAPPER_ADDR"),

@@ -97,10 +97,7 @@ func issueToken(userInfo *jwt.UserInfo, c *fiber.Ctx, config *config.Config) err
 
 func validateIDToken(idToken, platform string, config *config.Google) (*idtoken.Payload, error) {
 	ctx := context.Background()
-	aud := config.IOSClientID
-	if platform == "android" {
-		aud = config.ADClientID
-	}
+	aud := config.ClientID
 	payload, err := idtoken.Validate(ctx, idToken, aud)
 	if err != nil {
 		return nil, err
@@ -143,7 +140,7 @@ func parseGoogleToken(
 
 	payload, err := validateIDToken(req.IdToken, req.Platform, config.Google)
 	if err != nil {
-		return nil, fiber.NewError(fiber.StatusUnauthorized, "Invalid ID token")
+		return nil, err
 	}
 	return payload, nil
 }
