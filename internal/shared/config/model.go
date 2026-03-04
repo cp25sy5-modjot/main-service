@@ -7,7 +7,7 @@ type Config struct {
 	Google     *Google
 	AIService  *AIService
 	Redis      *Redis
-	Storage   *Storage
+	Storage    *Storage
 }
 
 type Fiber struct {
@@ -35,7 +35,8 @@ type Auth struct {
 }
 
 type Google struct {
-	ClientID string
+	IOSClientID string
+	ADClientID  string
 }
 
 type AIService struct {
