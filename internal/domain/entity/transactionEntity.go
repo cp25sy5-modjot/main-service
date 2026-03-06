@@ -7,13 +7,14 @@ import (
 type TransactionType string
 
 const (
-	TransactionManual TransactionType = "manual"
-	TransactionUpload TransactionType = "upload"
+	TransactionManual  TransactionType = "manual"
+	TransactionUpload  TransactionType = "upload"
+	TransactionFixCost TransactionType = "fix_cost"
 )
 
 type Transaction struct {
 	TransactionID string `gorm:"primaryKey;autoIncrement:false" `
-	UserID        string 
+	UserID        string
 	Title         string
 	Date          time.Time
 	Type          TransactionType

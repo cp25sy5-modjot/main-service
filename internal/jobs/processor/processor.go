@@ -12,6 +12,8 @@ import (
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	d "github.com/cp25sy5-modjot/main-service/internal/draft"
+	fcrepo "github.com/cp25sy5-modjot/main-service/internal/fix_cost/repository"
+	fcsvc "github.com/cp25sy5-modjot/main-service/internal/fix_cost/service"
 	"github.com/cp25sy5-modjot/main-service/internal/jobs/tasks"
 	"github.com/cp25sy5-modjot/main-service/internal/storage"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
@@ -22,8 +24,10 @@ type Processor struct {
 	txService txsvc.Service
 	storage   storage.Storage
 
-	draftRepo *d.DraftRepository
-	userRepo  *userrepo.Repository
+	draftRepo   *d.DraftRepository
+	userRepo    *userrepo.Repository
+	fixCostRepo *fcrepo.Repository
+	client      *asynq.Client
 }
 
 func NewProcessor(
@@ -31,19 +35,23 @@ func NewProcessor(
 	st storage.Storage,
 	dr *d.DraftRepository,
 	userRepo *userrepo.Repository,
+	fixCostRepo *fcrepo.Repository,
+	client *asynq.Client,
 ) *Processor {
 	return &Processor{
-		txService: txService,
-		storage:   st,
-		draftRepo: dr,
-		userRepo:  userRepo,
+		txService:   txService,
+		storage:     st,
+		draftRepo:   dr,
+		userRepo:    userRepo,
+		fixCostRepo: fixCostRepo,
+		client:      client,
 	}
 }
 
 func (p *Processor) Register(mux *asynq.ServeMux) {
 	mux.HandleFunc(tasks.TaskBuildTransaction, p.handleBuildTransactionTask)
 	mux.HandleFunc(tasks.TaskPurgeUser, p.HandlePurgeUser)
-
+	mux.HandleFunc(tasks.TaskRunFixCost, p.HandleRunFixCost)
 }
 func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Task) (err error) {
 
@@ -208,4 +216,72 @@ func (p *Processor) HandlePurgeUser(ctx context.Context, t *asynq.Task) error {
 
 	log.Printf("[JOB purge_user] purged user=%s", payload.UserID)
 	return nil
+}
+
+func (p *Processor) HandleRunFixCost(ctx context.Context, t *asynq.Task) error {
+
+	var payload tasks.RunFixCostPayload
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		return err
+	}
+
+	log.Printf("[JOB fix_cost] run fix_cost_id=%s", payload.FixCostID)
+
+	fc, err := p.fixCostRepo.FindByID(ctx, payload.FixCostID, payload.UserID)
+	if err != nil {
+		return err
+	}
+
+	// skip if not active
+	if fc.Status != "active" {
+		return nil
+	}
+
+	// create transaction
+	_, err = p.txService.CreateFromFixCost(ctx, fc)
+	if err != nil {
+		return err
+	}
+
+	// calculate next run
+	next := fcsvc.CalculateNextRun(*fc)
+
+	// check end date
+	if fc.EndDate != nil && next.After(*fc.EndDate) {
+		log.Printf("[JOB fix_cost] reached end date → stop")
+		return nil
+	}
+
+	// handle remaining runs
+	if fc.RemainingRuns != nil {
+
+		*fc.RemainingRuns--
+
+		if *fc.RemainingRuns <= 0 {
+			log.Printf("[JOB fix_cost] no remaining runs → stop")
+			return nil
+		}
+	}
+
+	// update next run
+	fc.NextRunDate = next
+
+	err = p.fixCostRepo.Update(ctx, fc)
+	if err != nil {
+		return err
+	}
+
+	// schedule next job
+	task, err := tasks.NewRunFixCostTask(fc.FixCostID)
+	if err != nil {
+		return err
+	}
+
+	_, err = p.client.Enqueue(
+		task,
+		asynq.ProcessAt(next),
+		asynq.TaskID("fixcost:"+fc.FixCostID),
+	)
+
+	return err
 }

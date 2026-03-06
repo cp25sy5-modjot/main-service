@@ -29,6 +29,8 @@ type Service interface {
 	GetByID(params *m.TransactionSearchParams) (*e.Transaction, error)
 	Update(params *m.TransactionSearchParams, input *m.TransactionUpdateInput) (*e.Transaction, error)
 	Delete(params *m.TransactionSearchParams) error
+
+	CreateFromFixCost(ctx context.Context, fixCost *e.FixCost) (*e.Transaction, error)
 }
 
 // concrete implementation
@@ -269,6 +271,29 @@ func (s *service) Delete(params *m.TransactionSearchParams) error {
 		return err
 	}
 	return s.repo.Delete(params)
+}
+
+func (s *service) CreateFromFixCost(
+	ctx context.Context,
+	fixCost *e.FixCost,
+) (*e.Transaction, error) {
+
+	input := &m.TransactionCreateInput{
+		Title: fixCost.Title,
+		Date:  fixCost.NextRunDate,
+		Items: []m.TransactionItemInput{
+			{
+				Title:      fixCost.Title,
+				Price:      fixCost.Price,
+				CategoryID: fixCost.CategoryID,
+			},
+		},
+	}
+
+	txID := uuid.New().String()
+	tx, items := buildTransactionToCreate(txID, fixCost.UserID, e.TransactionFixCost, input)
+
+	return s.saveNewTransaction(tx, items)
 }
 
 // utils functions for service
