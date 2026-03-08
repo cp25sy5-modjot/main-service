@@ -12,7 +12,7 @@ func ParseBody(c *fiber.Ctx, req interface{}) error {
 	return nil
 }
 
-func ValidateStruct(c *fiber.Ctx, req interface{}) error {
+func ValidateStruct(req interface{}) error {
 	if err := v.Validator().Struct(req); err != nil {
 		return UnprocessableEntity("Validation Failed", err)
 	}
@@ -20,12 +20,37 @@ func ValidateStruct(c *fiber.Ctx, req interface{}) error {
 }
 
 func ParseBodyAndValidate(c *fiber.Ctx, req interface{}) error {
+
 	if err := ParseBody(c, req); err != nil {
 		return err
 	}
-	if err := ValidateStruct(c, req); err != nil {
+
+	if err := ValidateStruct(req); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func ParseQuery(c *fiber.Ctx, req interface{}) error {
+
+	if err := c.QueryParser(req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid query parameters")
+	}
+
+	return nil
+}
+
+func ParseQueryAndValidate(c *fiber.Ctx, req interface{}) error {
+
+	if err := ParseQuery(c, req); err != nil {
+		return err
+	}
+
+	if err := ValidateStruct(req); err != nil {
+		return err
+	}
+
 	return nil
 }
 

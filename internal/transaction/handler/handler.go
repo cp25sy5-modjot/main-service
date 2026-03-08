@@ -81,7 +81,7 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 	}
 
 	filter := &m.TransactionFilter{
-		Date:       utils.ConvertStringToTime(date),
+		Date:       utils.ConvertStringToTimeWithDefault(date),
 		Categories: categories,
 	}
 

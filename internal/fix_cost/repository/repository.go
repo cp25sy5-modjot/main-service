@@ -1,4 +1,4 @@
-package fixcostrepository
+package fixcostrepo
 
 import (
 	"context"

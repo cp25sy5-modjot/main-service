@@ -25,12 +25,27 @@ func GenerateRandomColor() string {
 	return "#" + hex.EncodeToString(bytes)
 }
 
-func ConvertStringToTime(s string) *time.Time {
+func ConvertStringToTimeWithDefault(s string) *time.Time {
 	t, err := time.Parse(time.DateOnly, s)
 	if err != nil {
 		log.Printf("Failed to parse date: %v will use current date", err)
 		now := time.Now().UTC()
 		return &now
 	}
+	return &t
+}
+
+func ConvertStringToTime(s string) *time.Time {
+
+	if s == "" {
+		return nil
+	}
+
+	t, err := time.Parse(time.DateOnly, s)
+	if err != nil {
+		log.Printf("Failed to parse date: %v", err)
+		return nil
+	}
+
 	return &t
 }

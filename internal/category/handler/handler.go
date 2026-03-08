@@ -60,7 +60,7 @@ func (h *Handler) GetAll(c *fiber.Ctx) error {
 	if isIncludeTransactions {
 		date := c.Query("date")
 		filter := &m.TransactionFilter{
-			Date: utils.ConvertStringToTime(date),
+			Date: utils.ConvertStringToTimeWithDefault(date),
 		}
 		categories, err := h.service.GetAllByUserIDWithTransactions(userID, filter)
 		if err != nil {
@@ -97,7 +97,7 @@ func (h *Handler) GetByID(c *fiber.Ctx) error {
 	if isIncludeTransactions {
 		date := c.Query("date")
 		filter := &m.TransactionFilter{
-			Date: utils.ConvertStringToTime(date),
+			Date: utils.ConvertStringToTimeWithDefault(date),
 		}
 		category, err := h.service.GetByIDWithTransactions(params, filter)
 		if err != nil {
