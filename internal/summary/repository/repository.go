@@ -67,7 +67,7 @@ func (r *Repository) CategorySummary(
 		Joins("JOIN categories c ON c.category_id = ti.category_id").
 		Where("tr.user_id = ?", userID).
 		Where("tr.date >= ? AND tr.date < ?", start, end).
-		Group("c.category_id, c.icon, c.name, c.color").
+		Group("c.category_id, c.icon, c.category_name, c.color_code").
 		Order("total DESC").
 		Scan(&result).Error
 
