@@ -14,11 +14,11 @@ import (
 	cathandler "github.com/cp25sy5-modjot/main-service/internal/category/handler"
 	catrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
 	catsvc "github.com/cp25sy5-modjot/main-service/internal/category/service"
-
 	draft "github.com/cp25sy5-modjot/main-service/internal/draft"
 	favhandler "github.com/cp25sy5-modjot/main-service/internal/favorite_item/handler"
 	favrepo "github.com/cp25sy5-modjot/main-service/internal/favorite_item/repository"
 	favsvc "github.com/cp25sy5-modjot/main-service/internal/favorite_item/service"
+	fchandler "github.com/cp25sy5-modjot/main-service/internal/fix_cost/handler"
 	fcrepo "github.com/cp25sy5-modjot/main-service/internal/fix_cost/repository"
 	fcsvc "github.com/cp25sy5-modjot/main-service/internal/fix_cost/service"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
@@ -358,13 +358,14 @@ func generateHMAC(data, secret string) string {
 }
 
 func initializeFixCostRoutes(s *fiberServer, services *Services, authMiddleware fiber.Handler) {
-	fixCostHandler := cathandler.NewHandler(services.CategoryService)
+	fixCostHandler := fchandler.NewHandler(services.FixCostService)
 
 	// Register routes
 	api := s.app.Group("/v1/fix_cost")
 	api.Use(authMiddleware)
 
 	api.Post("", fixCostHandler.Create)
+	api.Get("", fixCostHandler.GetAllByUserID)
 	api.Get("/:id", fixCostHandler.GetByID)
 	api.Put("/:id", fixCostHandler.Update)
 	api.Delete("/:id", fixCostHandler.Delete)
