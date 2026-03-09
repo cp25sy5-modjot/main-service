@@ -37,11 +37,19 @@ func NewService(repo *fcrepo.Repository, asynqClient *asynq.Client) Service {
 }
 
 func (s *service) GetByID(ctx context.Context, id string, userID string) (*e.FixCost, error) {
-	return s.repo.FindByID(ctx, id, userID)
+	fc, err := s.repo.FindByID(ctx, id, userID)
+	if err != nil {
+		return nil, err
+	}
+	return fc, nil
 }
 
 func (s *service) GetAllByUserID(ctx context.Context, userID string) ([]*e.FixCost, error) {
-	return s.repo.FindAllByUserID(ctx, userID)
+	fcs, err := s.repo.FindAllByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return fcs, nil
 }
 
 func (s *service) Create(ctx context.Context, input *m.FixCostCreateInput) (*e.FixCost, error) {
