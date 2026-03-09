@@ -145,7 +145,7 @@ func (s *service) GetCategorySummary(
 			start = time.Date(ref.Year(), ref.Month(), 1, 0, 0, 0, 0, time.UTC)
 			end = start.AddDate(0, 1, 0)
 
-			units = 1
+			units = 12
 		}
 
 	case Year:
