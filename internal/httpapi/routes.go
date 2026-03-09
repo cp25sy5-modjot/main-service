@@ -361,7 +361,7 @@ func initializeFixCostRoutes(s *fiberServer, services *Services, authMiddleware 
 	fixCostHandler := fchandler.NewHandler(services.FixCostService)
 
 	// Register routes
-	api := s.app.Group("/v1/fix_cost")
+	api := s.app.Group("/v1/fixcost")
 	api.Use(authMiddleware)
 
 	api.Post("", fixCostHandler.Create)

@@ -49,7 +49,9 @@ func (r *Repository) FindByID(ctx context.Context, id string, userID string) (*e
 	var fc e.FixCost
 
 	err := r.db.WithContext(ctx).
+		Preload("Category").
 		Where("fix_cost_id = ? AND user_id = ?", id, userID).
+		Order("created_at DESC").
 		First(&fc).Error
 
 	if err != nil {
@@ -63,7 +65,9 @@ func (r *Repository) FindAllByUserID(ctx context.Context, userID string) ([]*e.F
 	var fixCosts []*e.FixCost
 
 	err := r.db.WithContext(ctx).
+		Preload("Category").
 		Where("user_id = ?", userID).
+		Order("created_at DESC").
 		Find(&fixCosts).Error
 
 	if err != nil {
