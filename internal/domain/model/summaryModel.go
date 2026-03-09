@@ -6,6 +6,7 @@ type ExpenseSummaryRes struct {
 }
 
 type ExpenseSummary struct {
+	Key   string  `json:"key"`
 	Label string  `json:"label"`
 	Total float64 `json:"total"`
 }

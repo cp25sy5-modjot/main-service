@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
@@ -17,10 +18,10 @@ const (
 
 func fillZero(period Period, start, end time.Time, data []m.ExpenseSummary) []m.ExpenseSummary {
 
-	resultMap := map[string]float64{}
+	resultMap := make(map[string]float64)
 
 	for _, d := range data {
-		resultMap[d.Label] = d.Total
+		resultMap[d.Key] = d.Total
 	}
 
 	var result []m.ExpenseSummary
@@ -31,11 +32,13 @@ func fillZero(period Period, start, end time.Time, data []m.ExpenseSummary) []m.
 
 		for d := start; d.Before(end); d = d.AddDate(0, 0, 1) {
 
-			label := d.Format("2006-01-02")
+			key := d.Format("2006-01-02")
+			label := d.Weekday().String()[:3]
 
 			result = append(result, m.ExpenseSummary{
+				Key:   key,
 				Label: label,
-				Total: resultMap[label],
+				Total: resultMap[key],
 			})
 		}
 
@@ -43,26 +46,28 @@ func fillZero(period Period, start, end time.Time, data []m.ExpenseSummary) []m.
 
 		for i := 1; i <= 12; i++ {
 
-			label := fmt.Sprintf("%02d", i)
+			key := fmt.Sprintf("%02d", i)
+			label := time.Month(i).String()[:3]
 
 			result = append(result, m.ExpenseSummary{
+				Key:   key,
 				Label: label,
-				Total: resultMap[label],
+				Total: resultMap[key],
 			})
 		}
 
 	case Year:
 
-		for y := start.Year(); y <= end.Year(); y++ {
+		for y := start.Year(); y < end.Year(); y++ {
 
-			label := fmt.Sprintf("%d", y)
+			key := strconv.Itoa(y)
 
 			result = append(result, m.ExpenseSummary{
-				Label: label,
-				Total: resultMap[label],
+				Key:   key,
+				Label: key,
+				Total: resultMap[key],
 			})
 		}
-
 	}
 
 	return result

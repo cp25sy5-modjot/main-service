@@ -2,6 +2,7 @@ package summaryrepo
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
@@ -26,17 +27,19 @@ func (r *Repository) ExpenseSummary(
 
 	var result []m.ExpenseSummary
 
+	selectClause := fmt.Sprintf(`
+		TO_CHAR(tr.date, '%s') AS key,
+		COALESCE(SUM(ti.price),0) AS total
+	`, format)
+
 	err := r.db.WithContext(ctx).
 		Table("transaction_items ti").
-		Select(`
-			DATE_FORMAT(tr.date, ?) AS label,
-			COALESCE(SUM(ti.price),0) AS total
-		`, format).
+		Select(selectClause).
 		Joins("JOIN transactions tr ON tr.transaction_id = ti.transaction_id").
 		Where("tr.user_id = ?", userID).
 		Where("tr.date >= ? AND tr.date < ?", start, end).
-		Group("label").
-		Order("label").
+		Group("key").
+		Order("key").
 		Scan(&result).Error
 
 	return result, err
@@ -56,8 +59,8 @@ func (r *Repository) CategorySummary(
 		Select(`
 			c.category_id,
 			c.icon AS category_icon,
-			c.name AS category_name,
-			c.color AS category_color,
+			c.category_name AS category_name,
+			c.color_code AS category_color,	
 			COALESCE(SUM(ti.price),0) AS total
 		`).
 		Joins("JOIN transactions tr ON tr.transaction_id = ti.transaction_id").

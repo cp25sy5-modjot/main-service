@@ -23,7 +23,6 @@ func NewService(repo *summaryrepo.Repository) Service {
 	return &service{repo}
 }
 
-
 func (s *service) GetExpenseSummary(
 	ctx context.Context,
 	userID string,
@@ -47,24 +46,33 @@ func (s *service) GetExpenseSummary(
 			weekday = 7
 		}
 
-		start = now.AddDate(0, 0, -weekday+1)
+		start = time.Date(
+			now.Year(),
+			now.Month(),
+			now.Day()-weekday+1,
+			0, 0, 0, 0,
+			time.UTC,
+		)
+
 		end = start.AddDate(0, 0, 7)
 
-		format = "%Y-%m-%d"
+		format = "YYYY-MM-DD"
 
 	case Month:
 
+		// ทุกเดือนของปีนี้
 		start = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
 		end = start.AddDate(1, 0, 0)
 
-		format = "%m"
+		format = "MM"
 
 	case Year:
 
+		// 3 ปีล่าสุด
 		start = time.Date(now.Year()-2, 1, 1, 0, 0, 0, 0, time.UTC)
-		end = now.AddDate(1, 0, 0)
+		end = time.Date(now.Year()+1, 1, 1, 0, 0, 0, 0, time.UTC)
 
-		format = "%Y"
+		format = "YYYY"
 
 	default:
 		return m.ExpenseSummaryRes{}, errors.New("invalid period")
