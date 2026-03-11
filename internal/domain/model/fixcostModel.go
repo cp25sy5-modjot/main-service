@@ -5,9 +5,9 @@ import (
 )
 
 type FixCostCreateReq struct {
-	Title      string `json:"title"`
-	Price      float64  `json:"price"`
-	CategoryID string `json:"category_id"`
+	Title      string  `json:"title"`
+	Price      float64 `json:"price"`
+	CategoryID string  `json:"category_id"`
 
 	StartDate     time.Time  `json:"start_date"`
 	EndDate       *time.Time `json:"end_date,omitempty"`
@@ -32,13 +32,14 @@ type FixCostCreateInput struct {
 }
 
 type FixCostUpdateReq struct {
-	Title      *string `json:"title"`
-	Price      *float64  `json:"price"`
-	CategoryID *string `json:"category_id"`
+	Title      *string  `json:"title"`
+	Price      *float64 `json:"price"`
+	CategoryID *string  `json:"category_id"`
 
 	StartDate     *time.Time `json:"start_date"`
 	EndDate       *time.Time `json:"end_date"`
 	RemainingRuns *int       `json:"remaining_runs"`
+	Status        *string    `json:"status" validate:"oneof=active paused"`
 
 	IntervalType  *string `json:"interval_type" validate:"oneof=daily weekly monthly yearly"` // daily, weekly, monthly, yearly
 	IntervalValue *int    `json:"interval_value" validate:"min=1"`                            // e.g., every 2 weeks
@@ -55,16 +56,17 @@ type FixCostUpdateInput struct {
 	StartDate     *time.Time
 	EndDate       *time.Time
 	RemainingRuns *int
+	Status        *string
 
 	IntervalType  *string
 	IntervalValue *int
 }
 
 type FixCostRes struct {
-	FixCostID  string `json:"fix_cost_id"`
-	Title      string `json:"title"`
-	Price      float64  `json:"price"`
-	CategoryID string `json:"category_id"`
+	FixCostID  string  `json:"fix_cost_id"`
+	Title      string  `json:"title"`
+	Price      float64 `json:"price"`
+	CategoryID string  `json:"category_id"`
 
 	StartDate     time.Time  `json:"start_date"`
 	EndDate       *time.Time `json:"end_date,omitempty"`

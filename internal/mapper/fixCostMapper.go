@@ -36,6 +36,7 @@ func ParseFixCostUpdateReqToServiceInput(
 		StartDate:     req.StartDate,
 		EndDate:       req.EndDate,
 		RemainingRuns: req.RemainingRuns,
+		Status:        req.Status,
 		IntervalType:  req.IntervalType,
 		IntervalValue: req.IntervalValue,
 	}

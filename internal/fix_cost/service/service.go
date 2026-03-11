@@ -111,6 +111,7 @@ func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) error
 		exists.StartDate = *input.StartDate
 	}
 
+	exists.Status = e.FixCostStatusActive
 	// always update these 2 fields since they affect the schedule
 	exists.EndDate = input.EndDate
 	exists.RemainingRuns = input.RemainingRuns
