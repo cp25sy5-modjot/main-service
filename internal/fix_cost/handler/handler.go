@@ -57,11 +57,12 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	}
 	input := mapper.ParseFixCostUpdateReqToServiceInput(userID, fixCostID, &req)
 
-	if err := h.service.Update(c.Context(), input); err != nil {
+	fc, err := h.service.Update(c.Context(), input);
+	if err != nil {
 		return err
 	}
 
-	return sresp.NoContent(c)
+	return sresp.OK(c, mapper.BuildFixCostResponse(fc), "Fix cost updated successfully")
 }
 
 // DELETE /fix_cost/:id

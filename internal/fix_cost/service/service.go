@@ -17,7 +17,7 @@ type Service interface {
 	GetByID(ctx context.Context, id string, userID string) (*e.FixCost, error)
 	GetAllByUserID(ctx context.Context, userID string) ([]*e.FixCost, error)
 	Create(ctx context.Context, input *m.FixCostCreateInput) (*e.FixCost, error)
-	Update(ctx context.Context, input *m.FixCostUpdateInput) error
+	Update(ctx context.Context, input *m.FixCostUpdateInput) (*e.FixCost, error)
 	Delete(ctx context.Context, id string, userID string) error
 
 	RecoverFixCostJobs()
@@ -94,15 +94,15 @@ func (s *service) Create(ctx context.Context, input *m.FixCostCreateInput) (*e.F
 	return fc, nil
 }
 
-func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) error {
+func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) (*e.FixCost, error) {
 
 	exists, err := s.repo.FindByID(ctx, input.FixCostID, input.UserID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if exists == nil {
-		return gorm.ErrRecordNotFound
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	scheduleChanged := false
@@ -163,12 +163,12 @@ func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) error
 
 	err = s.repo.Update(ctx, exists)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fc, err := s.repo.FindByID(ctx, input.FixCostID, input.UserID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if scheduleChanged {
@@ -186,7 +186,7 @@ func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) error
 		}
 	}
 
-	return nil
+	return fc, nil
 }
 
 func (s *service) Delete(ctx context.Context, id string, userID string) error {
