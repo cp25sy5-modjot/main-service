@@ -54,6 +54,7 @@ func BuildFixCostResponse(fc *e.FixCost) *m.FixCostRes {
 		IntervalType:  string(fc.IntervalType),
 		IntervalValue: fc.IntervalValue,
 		Status:        string(fc.Status),
+		NextRunDate:   fc.NextRunDate,
 
 		CategoryIcon:  fc.Category.Icon,
 		CategoryColor: fc.Category.ColorCode,

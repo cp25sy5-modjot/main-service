@@ -54,8 +54,9 @@ func (s *service) GetAllByUserID(ctx context.Context, userID string) ([]*e.FixCo
 
 func (s *service) Create(ctx context.Context, input *m.FixCostCreateInput) (*e.FixCost, error) {
 
-	fc := e.FixCost{
-		FixCostID:     uuid.New().String(),
+	fcId := uuid.New().String()
+	newfc := e.FixCost{
+		FixCostID:     fcId,
 		UserID:        input.UserID,
 		Title:         input.Title,
 		Price:         input.Price,
@@ -69,22 +70,28 @@ func (s *service) Create(ctx context.Context, input *m.FixCostCreateInput) (*e.F
 		Status:        e.FixCostStatusActive,
 	}
 
-	err := s.repo.Create(ctx, &fc)
+	err := s.repo.Create(ctx, &newfc)
 	if err != nil {
 		return nil, err
 	}
-	task, _ := tasks.NewRunFixCostTask(fc.FixCostID)
+	task, _ := tasks.NewRunFixCostTask(fcId)
 
 	_, err = s.asynqClient.Enqueue(
 		task,
-		asynq.ProcessAt(fc.NextRunDate),
-		asynq.TaskID("fixcost:"+fc.FixCostID),
+		asynq.ProcessAt(newfc.NextRunDate),
+		asynq.TaskID("fixcost:"+fcId),
 	)
 
 	if err != nil {
 		log.Printf("[FIX COST] enqueue error: %v", err)
 	}
-	return &fc, nil
+
+	fc, err := s.repo.FindByID(ctx, fcId, newfc.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return fc, nil
 }
 
 func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) error {
