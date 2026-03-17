@@ -98,36 +98,61 @@ func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) error
 		return gorm.ErrRecordNotFound
 	}
 
+	scheduleChanged := false
+
+	// compare first
+	if input.IntervalType != nil && string(exists.IntervalType) != *input.IntervalType {
+		scheduleChanged = true
+	}
+
+	if input.IntervalValue != nil && exists.IntervalValue != *input.IntervalValue {
+		scheduleChanged = true
+	}
+
+	if input.EndDate != nil {
+		if exists.EndDate == nil || !exists.EndDate.Equal(*input.EndDate) {
+			scheduleChanged = true
+		}
+	}
+
+	if input.RemainingRuns != nil {
+		if exists.RemainingRuns == nil || *exists.RemainingRuns != *input.RemainingRuns {
+			scheduleChanged = true
+		}
+	}
+
+	// update fields
 	if input.Title != nil {
 		exists.Title = *input.Title
 	}
+
 	if input.CategoryID != nil {
 		exists.CategoryID = *input.CategoryID
 	}
+
 	if input.Price != nil {
 		exists.Price = *input.Price
 	}
+
 	if input.StartDate != nil {
 		exists.StartDate = *input.StartDate
 	}
 
-	exists.Status = e.FixCostStatusActive
-	// always update these 2 fields since they affect the schedule
-	exists.EndDate = input.EndDate
-	exists.RemainingRuns = input.RemainingRuns
-
 	if input.IntervalType != nil {
 		exists.IntervalType = e.IntervalType(*input.IntervalType)
 	}
+
 	if input.IntervalValue != nil {
 		exists.IntervalValue = *input.IntervalValue
 	}
 
-	// check schedule change
-	scheduleChanged :=
-		string(exists.IntervalType) != *input.IntervalType ||
-			exists.IntervalValue != *input.IntervalValue ||
-			!exists.EndDate.Equal(*input.EndDate)
+	if input.EndDate != nil {
+		exists.EndDate = input.EndDate
+	}
+
+	if input.RemainingRuns != nil {
+		exists.RemainingRuns = input.RemainingRuns
+	}
 
 	err = s.repo.Update(ctx, exists)
 	if err != nil {
