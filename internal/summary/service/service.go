@@ -125,7 +125,8 @@ func (s *service) GetCategorySummary(
 				weekday = 7
 			}
 
-			start = ref.AddDate(0, 0, -weekday+1)
+			tmp := ref.AddDate(0, 0, -weekday+1)
+			start = time.Date(tmp.Year(), tmp.Month(), tmp.Day(), 0, 0, 0, 0, time.UTC)
 			end = start.AddDate(0, 0, 7)
 
 			units = 7
@@ -135,16 +136,15 @@ func (s *service) GetCategorySummary(
 
 		if date != nil {
 
-			start = time.Date(ref.Year(), ref.Month(), ref.Day(), 0, 0, 0, 0, time.UTC)
-			end = start.AddDate(0, 0, 1)
-
-			units = 1
+			start = time.Date(ref.Year(), ref.Month(), 1, 0, 0, 0, 0, time.UTC)
+			end = start.AddDate(0, 1, 0)
+			// avg รายวัน
+			units = int(end.Sub(start).Hours() / 24)
 
 		} else {
 
 			start = time.Date(ref.Year(), ref.Month(), 1, 0, 0, 0, 0, time.UTC)
 			end = start.AddDate(0, 1, 0)
-
 			units = 12
 		}
 
@@ -152,10 +152,10 @@ func (s *service) GetCategorySummary(
 
 		if date != nil {
 
-			start = time.Date(ref.Year(), ref.Month(), ref.Day(), 0, 0, 0, 0, time.UTC)
-			end = start.AddDate(0, 0, 1)
+			start = time.Date(ref.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
+			end = time.Date(ref.Year()+1, 1, 1, 0, 0, 0, 0, time.UTC)
 
-			units = 1
+			units = 12
 
 		} else {
 
