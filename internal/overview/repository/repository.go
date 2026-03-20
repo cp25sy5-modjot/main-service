@@ -33,7 +33,8 @@ func (r *Repository) GetLastTransactions(userID string, limit int) ([]m.LastTran
 			tr.type,
 			ti.category_id,
 			COALESCE(c.category_name, '') AS category_name,
-			COALESCE(c.color_code, '')   AS category_color
+			COALESCE(c.color_code, '')   AS category_color,
+			COALECOALESCE(c.icon, '')         AS icon
 		`).
 		Joins("JOIN transactions tr ON tr.transaction_id = ti.transaction_id").
 		Joins("LEFT JOIN categories c ON c.category_id = ti.category_id AND c.user_id = tr.user_id").
@@ -60,6 +61,7 @@ func (r *Repository) GetTopCategoriesBySpending(
 			c.category_name,
 			c.color_code,
 			c.budget,
+			c.icon,
 			COALESCE(SUM(ti.price), 0) AS budget_usage
 		FROM categories c
 		LEFT JOIN (
@@ -81,7 +83,6 @@ func (r *Repository) GetTopCategoriesBySpending(
 	return list, err
 }
 
-
 func (r *Repository) GetMonthTotal(userID string, start, end time.Time) (float64, error) {
 	var total float64
 
@@ -94,4 +95,3 @@ func (r *Repository) GetMonthTotal(userID string, start, end time.Time) (float64
 
 	return total, err
 }
-

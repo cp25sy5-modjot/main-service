@@ -3,22 +3,23 @@ package model
 import "time"
 
 type LastTransaction struct {
-	TransactionID     string    `json:"transaction_id"`
-	ItemID            string    `json:"item_id"`
-	Title             string    `json:"title"`
-	Price             float64   `json:"price"`
-	Date              time.Time `json:"date"`
-	Type              string    `json:"type"`
-	CategoryID        *string   `json:"category_id"`
-	CategoryName      string    `json:"category_name"`
+	TransactionID string    `json:"transaction_id"`
+	ItemID        string    `json:"item_id"`
+	Title         string    `json:"title"`
+	Price         float64   `json:"price"`
+	Date          time.Time `json:"date"`
+	Type          string    `json:"type"`
+	CategoryID    *string   `json:"category_id"`
+	CategoryName  string    `json:"category_name"`
 	CategoryColor string    `json:"category_color"`
-	Icon              string    `json:"icon"`
+	Icon          string    `json:"icon"`
 }
 
 type TopCategoryUsage struct {
 	CategoryID   string  `json:"category_id"`
 	CategoryName string  `json:"category_name"`
 	ColorCode    string  `json:"color_code"`
+	Icon         string  `json:"icon"`
 	Budget       float64 `json:"budget"`
 	BudgetUsage  float64 `json:"budget_usage"`
 }
