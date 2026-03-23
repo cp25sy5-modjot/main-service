@@ -13,9 +13,10 @@ type RunFixCostPayload struct {
 	UserID    string `json:"user_id"`
 }
 
-func NewRunFixCostTask(fixCostID string) (*asynq.Task, error) {
+func NewRunFixCostTask(fixCostID string, userID string) (*asynq.Task, error) {
 	payload, err := json.Marshal(RunFixCostPayload{
 		FixCostID: fixCostID,
+		UserID:    userID,
 	})
 	if err != nil {
 		return nil, err

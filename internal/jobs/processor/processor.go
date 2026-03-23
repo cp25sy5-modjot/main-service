@@ -272,7 +272,7 @@ func (p *Processor) HandleRunFixCost(ctx context.Context, t *asynq.Task) error {
 	}
 
 	// schedule next job
-	task, err := tasks.NewRunFixCostTask(fc.FixCostID)
+	task, err := tasks.NewRunFixCostTask(fc.FixCostID, fc.UserID)
 	if err != nil {
 		return err
 	}

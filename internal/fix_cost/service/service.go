@@ -74,7 +74,7 @@ func (s *service) Create(ctx context.Context, input *m.FixCostCreateInput) (*e.F
 	if err != nil {
 		return nil, err
 	}
-	task, _ := tasks.NewRunFixCostTask(fcId)
+	task, _ := tasks.NewRunFixCostTask(fcId, newfc.UserID)
 
 	_, err = s.asynqClient.Enqueue(
 		task,
@@ -173,7 +173,7 @@ func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) (*e.F
 
 	if scheduleChanged {
 
-		task, _ := tasks.NewRunFixCostTask(fc.FixCostID)
+		task, _ := tasks.NewRunFixCostTask(fc.FixCostID, fc.UserID)
 
 		_, err = s.asynqClient.Enqueue(
 			task,
@@ -204,7 +204,7 @@ func (s *service) RecoverFixCostJobs() {
 
 	for _, fc := range fixCosts {
 
-		task, _ := tasks.NewRunFixCostTask(fc.FixCostID)
+		task, _ := tasks.NewRunFixCostTask(fc.FixCostID, fc.UserID)
 
 		_, err := s.asynqClient.Enqueue(
 			task,
