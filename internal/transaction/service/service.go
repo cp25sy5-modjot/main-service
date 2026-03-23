@@ -298,33 +298,7 @@ func (s *service) CreateFromFixCost(
 	txID := uuid.New().String()
 	tx, items := buildTransactionToCreate(txID, fixCost.UserID, e.TransactionFixCost, input)
 
-	err := s.db.Transaction(func(db *gorm.DB) error {
-
-		// 🔥 สำคัญ: ON CONFLICT DO NOTHING
-		if err := db.
-			Clauses(clause.OnConflict{
-				DoNothing: true,
-			}).
-			Create(tx).Error; err != nil {
-			return err
-		}
-
-		// 👉 ถ้า insert ไม่เข้า (duplicate)
-		if db.RowsAffected == 0 {
-			return nil
-		}
-
-		return s.txirepo.CreateManyTx(db, items)
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return s.repo.FindByIDWithRelations(&m.TransactionSearchParams{
-		TransactionID: tx.TransactionID,
-		UserID:        tx.UserID,
-	})
+	return s.saveNewTransactionV2(tx, items)
 }
 
 // utils functions for service
@@ -403,6 +377,41 @@ func callAIServiceToBuildTransaction(fileData []byte, categories []e.Category, a
 		return nil, err
 	}
 	return tResponse, nil
+}
+
+func (s *service) saveNewTransactionV2(
+	tx *e.Transaction,
+	items []e.TransactionItem,
+) (*e.Transaction, error) {
+
+	err := s.db.Transaction(func(db *gorm.DB) error {
+
+		res := db.
+			Clauses(clause.OnConflict{
+				DoNothing: true,
+			}).
+			Create(tx)
+
+		if res.Error != nil {
+			return res.Error
+		}
+
+		// 🔥 ถ้า duplicate → skip items
+		if res.RowsAffected == 0 {
+			return nil
+		}
+
+		return s.txirepo.CreateManyTx(db, items)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.FindByIDWithRelations(&m.TransactionSearchParams{
+		TransactionID: tx.TransactionID,
+		UserID:        tx.UserID,
+	})
 }
 
 func (s *service) saveNewTransaction(

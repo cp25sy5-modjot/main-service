@@ -254,7 +254,6 @@ func (p *Processor) HandleRunFixCost(ctx context.Context, t *asynq.Task) error {
 		return nil
 	}
 
-	// ✅ 3. create transaction (ควรมี idempotency ใน DB ด้วย)
 	_, err = p.txService.CreateFromFixCost(ctx, fc)
 	if err != nil {
 		return err
