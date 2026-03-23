@@ -19,6 +19,10 @@ type Transaction struct {
 	Date          time.Time
 	Type          TransactionType
 
+	//fixcost
+	RunDate   *time.Time `gorm:"type:date;index"`
+	FixCostID *string
+
 	// Relationships
 	Items []TransactionItem `gorm:"foreignKey:TransactionID;references:TransactionID"`
 }

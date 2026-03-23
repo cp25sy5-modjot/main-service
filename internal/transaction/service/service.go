@@ -16,6 +16,7 @@ import (
 	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Service interface {
@@ -278,9 +279,13 @@ func (s *service) CreateFromFixCost(
 	fixCost *e.FixCost,
 ) (*e.Transaction, error) {
 
+	runDate := fixCost.NextRunDate.UTC().Truncate(24 * time.Hour)
+
 	input := &m.TransactionCreateInput{
-		Title: fixCost.Title,
-		Date:  fixCost.NextRunDate,
+		Title:     fixCost.Title,
+		Date:      fixCost.NextRunDate,
+		RunDate:   &runDate,
+		FixCostID: &fixCost.FixCostID,
 		Items: []m.TransactionItemInput{
 			{
 				Title:      fixCost.Title,
@@ -293,7 +298,33 @@ func (s *service) CreateFromFixCost(
 	txID := uuid.New().String()
 	tx, items := buildTransactionToCreate(txID, fixCost.UserID, e.TransactionFixCost, input)
 
-	return s.saveNewTransaction(tx, items)
+	err := s.db.Transaction(func(db *gorm.DB) error {
+
+		// 🔥 สำคัญ: ON CONFLICT DO NOTHING
+		if err := db.
+			Clauses(clause.OnConflict{
+				DoNothing: true,
+			}).
+			Create(tx).Error; err != nil {
+			return err
+		}
+
+		// 👉 ถ้า insert ไม่เข้า (duplicate)
+		if db.RowsAffected == 0 {
+			return nil
+		}
+
+		return s.txirepo.CreateManyTx(db, items)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.FindByIDWithRelations(&m.TransactionSearchParams{
+		TransactionID: tx.TransactionID,
+		UserID:        tx.UserID,
+	})
 }
 
 // utils functions for service
@@ -337,6 +368,8 @@ func buildTransactionToCreate(
 		Type:          txType,
 		Title:         input.Title,
 		Date:          input.Date.UTC(),
+		RunDate:       input.RunDate,
+		FixCostID:     input.FixCostID,
 	}
 
 	return tx, items

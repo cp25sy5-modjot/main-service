@@ -3,6 +3,7 @@ package fixcostsvc
 import (
 	"context"
 	"log"
+	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
@@ -80,6 +81,7 @@ func (s *service) Create(ctx context.Context, input *m.FixCostCreateInput) (*e.F
 		task,
 		asynq.ProcessAt(newfc.NextRunDate),
 		asynq.TaskID("fixcost:"+fcId),
+		asynq.Unique(24*time.Hour),
 	)
 
 	if err != nil {
@@ -173,12 +175,16 @@ func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) (*e.F
 
 	if scheduleChanged {
 
-		task, _ := tasks.NewRunFixCostTask(fc.FixCostID, fc.UserID)
+		task, err := tasks.NewRunFixCostTask(fc.FixCostID, fc.UserID)
+		if err != nil {
+			return nil, err
+		}
 
 		_, err = s.asynqClient.Enqueue(
 			task,
 			asynq.ProcessAt(fc.NextRunDate),
 			asynq.TaskID("fixcost:"+fc.FixCostID),
+			asynq.Unique(24*time.Hour),
 		)
 
 		if err != nil {
@@ -210,6 +216,7 @@ func (s *service) RecoverFixCostJobs() {
 			task,
 			asynq.ProcessAt(fc.NextRunDate),
 			asynq.TaskID("fixcost:"+fc.FixCostID),
+			asynq.Unique(24*time.Hour),
 		)
 
 		if err != nil {

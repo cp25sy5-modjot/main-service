@@ -20,7 +20,7 @@ type UserInsertReq struct {
 }
 
 type UserUpdateReq struct {
-	Name string `json:"name" validate:"min=1,max=15"`
+	Name       string  `json:"name" validate:"min=1,max=15"`
 }
 
 type UserRes struct {

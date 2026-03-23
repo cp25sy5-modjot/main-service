@@ -218,8 +218,13 @@ func (p *Processor) HandlePurgeUser(ctx context.Context, t *asynq.Task) error {
 	return nil
 }
 
-func (p *Processor) HandleRunFixCost(ctx context.Context, t *asynq.Task) error {
+func sameUTCDate(a, b time.Time) bool {
+	ay, am, ad := a.UTC().Date()
+	by, bm, bd := b.UTC().Date()
+	return ay == by && am == bm && ad == bd
+}
 
+func (p *Processor) HandleRunFixCost(ctx context.Context, t *asynq.Task) error {
 	var payload tasks.RunFixCostPayload
 	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
 		return err
@@ -237,33 +242,50 @@ func (p *Processor) HandleRunFixCost(ctx context.Context, t *asynq.Task) error {
 		return nil
 	}
 
-	// create transaction
+	now := time.Now().UTC()
+
+	// ❗ 1. ยังไม่ถึงวัน (เทียบแค่ date)
+	if now.Before(fc.NextRunDate) && !sameUTCDate(now, fc.NextRunDate) {
+		return nil
+	}
+
+	// ❗ 2. กัน run ซ้ำในวันเดียวกัน
+	if fc.LastRunAt != nil && sameUTCDate(*fc.LastRunAt, fc.NextRunDate) {
+		return nil
+	}
+
+	// ✅ 3. create transaction (ควรมี idempotency ใน DB ด้วย)
 	_, err = p.txService.CreateFromFixCost(ctx, fc)
 	if err != nil {
 		return err
 	}
 
-	// calculate next run
+	// ✅ 4. calculate next run
 	next := fcsvc.CalculateNextRun(*fc)
 
-	// check end date
+	// ❗ 5. check end date
 	if fc.EndDate != nil && next.After(*fc.EndDate) {
 		log.Printf("[JOB fix_cost] reached end date → stop")
-		return nil
+
+		// update last run เพื่อกันซ้ำ
+		fc.LastRunAt = &fc.NextRunDate
+		return p.fixCostRepo.Update(ctx, fc)
 	}
 
-	// handle remaining runs
+	// ❗ 6. handle remaining runs
 	if fc.RemainingRuns != nil {
-
-		*fc.RemainingRuns--
+		*fc.RemainingRuns = *fc.RemainingRuns - 1
 
 		if *fc.RemainingRuns <= 0 {
 			log.Printf("[JOB fix_cost] no remaining runs → stop")
-			return nil
+
+			fc.LastRunAt = &fc.NextRunDate
+			return p.fixCostRepo.Update(ctx, fc)
 		}
 	}
 
-	// update next run
+	// ✅ 7. update state
+	fc.LastRunAt = &fc.NextRunDate
 	fc.NextRunDate = next
 
 	err = p.fixCostRepo.Update(ctx, fc)
@@ -271,7 +293,7 @@ func (p *Processor) HandleRunFixCost(ctx context.Context, t *asynq.Task) error {
 		return err
 	}
 
-	// schedule next job
+	// ✅ 8. schedule next job
 	task, err := tasks.NewRunFixCostTask(fc.FixCostID, fc.UserID)
 	if err != nil {
 		return err
@@ -281,6 +303,7 @@ func (p *Processor) HandleRunFixCost(ctx context.Context, t *asynq.Task) error {
 		task,
 		asynq.ProcessAt(next),
 		asynq.TaskID("fixcost:"+fc.FixCostID),
+		asynq.Unique(24*time.Hour), // 🔥 กันซ้ำ
 	)
 
 	return err

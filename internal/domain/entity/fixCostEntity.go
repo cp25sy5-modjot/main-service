@@ -33,6 +33,7 @@ type FixCost struct {
 	IntervalType  IntervalType // "daily", "weekly", "monthly", "yearly"
 	IntervalValue int          // Number of intervals between runs (e.g., every 2 weeks)
 
+	LastRunAt   *time.Time    // Last time the fix cost was processed
 	NextRunDate time.Time     `gorm:"index"`
 	Status      FixCostStatus `gorm:"index"`
 

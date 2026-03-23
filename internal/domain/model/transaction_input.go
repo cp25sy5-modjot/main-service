@@ -5,9 +5,11 @@ import (
 )
 
 type TransactionCreateInput struct {
-	Title string
-	Date  time.Time
-	Items []TransactionItemInput
+	Title     string
+	Date      time.Time
+	Items     []TransactionItemInput
+	RunDate   *time.Time
+	FixCostID *string
 }
 
 type TransactionItemInput struct {

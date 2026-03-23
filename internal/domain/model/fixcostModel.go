@@ -72,11 +72,12 @@ type FixCostRes struct {
 	EndDate       *time.Time `json:"end_date,omitempty"`
 	RemainingRuns *int       `json:"remaining_runs,omitempty"`
 
-	IntervalType  string    `json:"interval_type"`  // daily, weekly, monthly, yearly
-	IntervalValue int       `json:"interval_value"` // e.g., every 2 weeks
-	NextRunDate   time.Time `json:"next_run_date"`
-
-	Status string `json:"status"`
+	IntervalType  string     `json:"interval_type"`  // daily, weekly, monthly, yearly
+	IntervalValue int        `json:"interval_value"` // e.g., every 2 weeks
+	NextRunDate   time.Time  `json:"next_run_date"`
+	LastRunAt     *time.Time `json:"last_run_at,omitempty"`
+	
+	Status        string     `json:"status"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
