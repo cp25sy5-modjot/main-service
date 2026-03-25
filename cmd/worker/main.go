@@ -4,10 +4,17 @@ import (
 	"log"
 
 	"github.com/hibiken/asynq"
+	"github.com/redis/go-redis/v9"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
+	// internal
 	catrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
+	"github.com/cp25sy5-modjot/main-service/internal/cron"
 	"github.com/cp25sy5-modjot/main-service/internal/database"
 	d "github.com/cp25sy5-modjot/main-service/internal/draft"
+	fcrepo "github.com/cp25sy5-modjot/main-service/internal/fix_cost/repository"
+	fcsvc "github.com/cp25sy5-modjot/main-service/internal/fix_cost/service"
 	"github.com/cp25sy5-modjot/main-service/internal/jobs/processor"
 	jobsserver "github.com/cp25sy5-modjot/main-service/internal/jobs/server"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
@@ -16,19 +23,21 @@ import (
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
 	txirepo "github.com/cp25sy5-modjot/main-service/internal/transaction_item/repository"
 	userrepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
+
 	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
-	"github.com/redis/go-redis/v9"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
 	conf := config.LoadConfig()
 
-	// DB
+	// =========================
+	// DATABASE
+	// =========================
 	db := database.NewPostgresDatabase(conf)
 
-	// gRPC AI client (same as API server)
+	// =========================
+	// gRPC (AI SERVICE)
+	// =========================
 	grpcConn, err := grpc.NewClient(
 		conf.AIService.Url,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -36,24 +45,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server: %v", err)
 	}
-
-	defer func() {
-		if err := grpcConn.Close(); err != nil {
-			log.Printf("failed to close grpc connection: %v", err)
-		}
-	}()
+	defer grpcConn.Close()
 
 	aiClient := pb.NewAiWrapperServiceClient(grpcConn)
 
-	// Redis addr
-	redisAddr := ""
-	if conf.Redis != nil {
+	// =========================
+	// REDIS
+	// =========================
+	redisAddr := "localhost:6379"
+	if conf.Redis != nil && conf.Redis.Addr != "" {
 		redisAddr = conf.Redis.Addr
 	}
-	if redisAddr == "" {
-		redisAddr = "localhost:6379"
-	}
-	// ===== REDIS FOR DRAFT =====
+
 	rdb := redis.NewClient(&redis.Options{
 		Addr: redisAddr,
 	})
@@ -62,35 +65,74 @@ func main() {
 		Addr: redisAddr,
 	})
 
-	// Services
+	// =========================
+	// REPOSITORIES
+	// =========================
 	txRepo := txrepo.NewRepository(db.GetDb())
 	txiRepo := txirepo.NewRepository(db.GetDb())
 	catRepo := catrepo.NewRepository(db.GetDb())
 	userRepo := userrepo.NewRepository(db.GetDb())
+	fcRepo := fcrepo.NewRepository(db.GetDb())
 
+	// =========================
+	// SERVICES
+	// =========================
 	txService := txsvc.NewService(db.GetDb(), txRepo, txiRepo, catRepo, aiClient)
+	fcService := fcsvc.NewService(fcRepo)
 
-	// Storage
+	// =========================
+	// STORAGE
+	// =========================
 	uploadDir := conf.Storage.UploadDir
 	if uploadDir == "" {
 		uploadDir = "./uploads"
 	}
+
 	st, err := localfs.NewLocalStorage(uploadDir)
 	if err != nil {
 		log.Fatalf("failed to init storage: %v", err)
 	}
 
-	// สร้าง draft repo
+	// =========================
+	// DRAFT
+	// =========================
 	draftRepo := d.NewDraftRepository(rdb)
 
-	// Asynq server
+	// =========================
+	// FIX COST PROCESSOR
+	// =========================
+	fixCostProcessor := cron.NewFixCostProcessor(fcRepo, fcService, txService)
+
+	// =========================
+	// CRON (enqueue job)
+	// =========================
+	scheduler := cron.NewScheduler(asynqClient)
+	scheduler.Start()
+
+	// =========================
+	// ASYNQ SERVER
+	// =========================
 	srv := jobsserver.NewAsynqServer(redisAddr, 5)
 	mux := asynq.NewServeMux()
 
-	// Job processor
-	p := processor.NewProcessor(txService, st, draftRepo, userRepo, asynqClient)
+	// =========================
+	// PROCESSOR (handlers)
+	// =========================
+	p := processor.NewProcessor(
+		txService,
+		st,
+		draftRepo,
+		userRepo,
+		asynqClient,
+		fcRepo,
+		fixCostProcessor,
+	)
+
 	p.Register(mux)
 
+	// =========================
+	// START WORKER
+	// =========================
 	log.Printf("Starting worker with Redis at %s", redisAddr)
 	jobsserver.RunServer(srv, mux)
 }

@@ -13,6 +13,7 @@ import (
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	d "github.com/cp25sy5-modjot/main-service/internal/draft"
 	fcrepo "github.com/cp25sy5-modjot/main-service/internal/fix_cost/repository"
+	fcsvc "github.com/cp25sy5-modjot/main-service/internal/fix_cost/service"
 	"github.com/cp25sy5-modjot/main-service/internal/jobs/tasks"
 	"github.com/cp25sy5-modjot/main-service/internal/storage"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
@@ -35,20 +36,25 @@ func NewProcessor(
 	dr *d.DraftRepository,
 	userRepo *userrepo.Repository,
 	client *asynq.Client,
+	fixCostRepo *fcrepo.Repository,
+
 ) *Processor {
 	return &Processor{
-		txService: txService,
-		storage:   st,
-		draftRepo: dr,
-		userRepo:  userRepo,
-		client:    client,
+		txService:   txService,
+		storage:     st,
+		draftRepo:   dr,
+		userRepo:    userRepo,
+		client:      client,
+		fixCostRepo: fixCostRepo,
 	}
 }
 
 func (p *Processor) Register(mux *asynq.ServeMux) {
 	mux.HandleFunc(tasks.TaskBuildTransaction, p.handleBuildTransactionTask)
 	mux.HandleFunc(tasks.TaskPurgeUser, p.HandlePurgeUser)
+	mux.HandleFunc(tasks.TypeProcessFixCost, p.HandleFixCost)
 }
+
 func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Task) (err error) {
 
 	defer func() {
@@ -212,4 +218,77 @@ func (p *Processor) HandlePurgeUser(ctx context.Context, t *asynq.Task) error {
 
 	log.Printf("[JOB purge_user] purged user=%s", payload.UserID)
 	return nil
+}
+
+func (p *Processor) HandleFixCost(ctx context.Context, t *asynq.Task) error {
+	var payload tasks.ProcessFixCostPayload
+
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		return err
+	}
+
+	log.Printf(
+		"[FIXCOST] start id=%s user=%s date=%s",
+		payload.FixCostID,
+		payload.UserID,
+		payload.Date,
+	)
+
+	return p.processOneByID(
+		ctx,
+		payload.FixCostID,
+		payload.Date,
+		payload.UserID,
+	)
+}
+
+func (p *Processor) processOneByID(ctx context.Context, id string, date time.Time, userId string) error {
+	fc, err := p.fixCostRepo.FindByID(ctx, id, userId)
+	if err != nil {
+		return err
+	}
+
+	if fc.LastRunAt != nil && sameUTCDate(*fc.LastRunAt, date) {
+		return nil
+	}
+
+	return p.processOne(ctx, fc)
+}
+
+func (p *Processor) processOne(ctx context.Context, fc *e.FixCost) error {
+
+	_, err := p.txService.CreateFromFixCost(ctx, fc)
+	if err != nil {
+		return err
+	}
+
+	next := fcsvc.CalculateNextRun(*fc)
+
+	if fc.EndDate != nil && next.After(*fc.EndDate) {
+		fc.Status = "finished"
+		fc.LastRunAt = &fc.NextRunDate
+		return p.fixCostRepo.Update(ctx, fc)
+	}
+
+	if fc.RemainingRuns != nil {
+		*fc.RemainingRuns--
+
+		if *fc.RemainingRuns <= 0 {
+			fc.Status = "finished"
+			fc.LastRunAt = &fc.NextRunDate
+			return p.fixCostRepo.Update(ctx, fc)
+		}
+	}
+
+	// ✅ update state
+	fc.LastRunAt = &fc.NextRunDate
+	fc.NextRunDate = next
+
+	return p.fixCostRepo.Update(ctx, fc)
+}
+
+func sameUTCDate(a, b time.Time) bool {
+	ay, am, ad := a.UTC().Date()
+	by, bm, bd := b.UTC().Date()
+	return ay == by && am == bm && ad == bd
 }

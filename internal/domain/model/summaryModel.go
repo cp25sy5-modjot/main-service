@@ -27,6 +27,6 @@ type CategorySummary struct {
 }
 
 type CategorySummaryQuery struct {
-	Period string `query:"period" validate:"required,oneof=week month year"`
+	Period string `query:"period" validate:"required,oneof=day week month year past_year"`
 	Date   string `query:"date"`
 }
