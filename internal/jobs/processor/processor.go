@@ -284,6 +284,13 @@ func (p *Processor) processOne(ctx context.Context, fc *e.FixCost) error {
 	fc.LastRunAt = &fc.NextRunDate
 	fc.NextRunDate = next
 
+	log.Printf(
+		"[FIXCOST] success id=%s user=%s next_run=%s",
+		fc.FixCostID,
+		fc.UserID,
+		fc.NextRunDate,
+	)
+
 	return p.fixCostRepo.Update(ctx, fc)
 }
 
