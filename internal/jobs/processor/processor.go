@@ -259,6 +259,11 @@ func (p *Processor) processOne(ctx context.Context, fc *e.FixCost) error {
 
 	_, err := p.txService.CreateFromFixCost(ctx, fc)
 	if err != nil {
+		log.Printf(
+			"[FIXCOST] create tx failed id=%s err=%v",
+			fc.FixCostID,
+			err,
+		)
 		return err
 	}
 
