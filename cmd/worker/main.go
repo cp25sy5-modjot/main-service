@@ -118,6 +118,7 @@ func main() {
 		userRepo,
 		asynqClient,
 		fcRepo,
+		txRepo,
 	)
 
 	p.Register(mux)
