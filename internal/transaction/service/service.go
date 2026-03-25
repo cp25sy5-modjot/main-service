@@ -409,11 +409,23 @@ func (s *service) saveNewTransactionV2(
 		return nil, err
 	}
 
-	return s.repo.FindByFixCostIDAndRunDate(&m.TransactionFixCostSearchParams{
+	txe, err := s.repo.FindByFixCostIDAndRunDate(&m.TransactionFixCostSearchParams{
 		FixCostID: *tx.FixCostID,
 		RunDate:   *tx.RunDate,
 		UserID:    tx.UserID,
 	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if txe == nil {
+		// ❗ ไม่ควรเกิด
+		log.Println("WARNING: tx not found after insert")
+		return nil, nil // หรือ return error ก็ได้
+	}
+
+	return tx, nil
 }
 
 func (s *service) saveNewTransaction(
