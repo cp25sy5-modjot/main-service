@@ -11,11 +11,13 @@ import (
 	"github.com/hibiken/asynq"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	d "github.com/cp25sy5-modjot/main-service/internal/draft"
 	fcrepo "github.com/cp25sy5-modjot/main-service/internal/fix_cost/repository"
 	fcsvc "github.com/cp25sy5-modjot/main-service/internal/fix_cost/service"
 	"github.com/cp25sy5-modjot/main-service/internal/jobs/tasks"
 	"github.com/cp25sy5-modjot/main-service/internal/storage"
+	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
 	txsvc "github.com/cp25sy5-modjot/main-service/internal/transaction/service"
 	userrepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
 )
@@ -28,6 +30,7 @@ type Processor struct {
 	userRepo    *userrepo.Repository
 	fixCostRepo *fcrepo.Repository
 	client      *asynq.Client
+	txRepo      *txrepo.Repository
 }
 
 func NewProcessor(
@@ -37,6 +40,7 @@ func NewProcessor(
 	userRepo *userrepo.Repository,
 	client *asynq.Client,
 	fixCostRepo *fcrepo.Repository,
+	txRepo *txrepo.Repository,
 
 ) *Processor {
 	return &Processor{
@@ -46,6 +50,7 @@ func NewProcessor(
 		userRepo:    userRepo,
 		client:      client,
 		fixCostRepo: fixCostRepo,
+		txRepo:      txRepo,
 	}
 }
 
@@ -248,7 +253,22 @@ func (p *Processor) processOneByID(ctx context.Context, id string, date time.Tim
 		return err
 	}
 
-	if fc.LastRunAt != nil && sameUTCDate(*fc.LastRunAt, date) {
+	// 🔥 normalize date ให้ตรง DB
+	runDate := date.UTC().Truncate(24 * time.Hour)
+
+	// 🔥 เช็ค transaction จริง
+	tx, err := p.txRepo.FindByFixCostIDAndRunDate(&m.TransactionFixCostSearchParams{
+		FixCostID: fc.FixCostID,
+		RunDate:   runDate,
+		UserID:    fc.UserID,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if tx != nil {
+		log.Printf("[FIXCOST] skip (already exists) id=%s", fc.FixCostID)
 		return nil
 	}
 
