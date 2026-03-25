@@ -11,6 +11,7 @@ import (
 
 	c "github.com/cp25sy5-modjot/main-service/internal/category/service"
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
@@ -61,7 +62,7 @@ func HandleGoogleTokenExchange(c *fiber.Ctx, usvc u.Service, csvc c.Service, con
 			name = "New User"
 		}
 
-		user, err = usvc.Create(&u.UserCreateInput{
+		user, err = usvc.Create(&m.UserCreateInput{
 			Name: name,
 			UserBinding: e.UserBinding{
 				GoogleID: googleID,

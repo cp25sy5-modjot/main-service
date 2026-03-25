@@ -11,9 +11,11 @@ import (
 type Period string
 
 const (
-	Week  Period = "week"
-	Month Period = "month"
-	Year  Period = "year"
+	Day      Period = "day"
+	Week     Period = "week"
+	Month    Period = "month"
+	Year     Period = "year"
+	PastYear Period = "past_year"
 )
 
 func fillZero(period Period, start, end time.Time, data []m.ExpenseSummary) []m.ExpenseSummary {
@@ -95,4 +97,25 @@ func ParsePeriod(s string) (Period, error) {
 	default:
 		return "", fmt.Errorf("invalid period")
 	}
+}
+
+func startOfDay(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func startOfWeek(t time.Time) time.Time {
+	weekday := int(t.Weekday())
+	if weekday == 0 {
+		weekday = 7
+	}
+	d := t.AddDate(0, 0, -weekday+1)
+	return startOfDay(d)
+}
+
+func startOfMonth(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+}
+
+func startOfYear(t time.Time) time.Time {
+	return time.Date(t.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
 }

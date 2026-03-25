@@ -30,6 +30,7 @@ type fiberServer struct {
 	aiClient    pb.AiWrapperServiceClient
 	asynqClient *asynq.Client
 	storage     storage.Storage
+	redisOpt    asynq.RedisClientOpt
 }
 
 func NewFiberServer(conf *config.Config, db database.Database, aiClient pb.AiWrapperServiceClient) Server {
@@ -55,6 +56,10 @@ func NewFiberServer(conf *config.Config, db database.Database, aiClient pb.AiWra
 		log.Fatalf("failed to init storage: %v", err)
 	}
 
+	redisOpt := asynq.RedisClientOpt{
+		Addr: conf.Redis.Addr,
+	}
+
 	return &fiberServer{
 		app:         app,
 		db:          db,
@@ -63,6 +68,7 @@ func NewFiberServer(conf *config.Config, db database.Database, aiClient pb.AiWra
 		aiClient:    aiClient,
 		asynqClient: asynqClient,
 		storage:     st,
+		redisOpt:    redisOpt,
 	}
 }
 

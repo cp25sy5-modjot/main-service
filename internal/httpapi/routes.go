@@ -168,7 +168,7 @@ func initializeServices(s *fiberServer, repositories *Repositories) *Services {
 	userSvc := usersvc.NewService(userRepo, s.asynqClient)
 	transactionItemSvc := txisvc.NewService(transactionItemRepo, transactionRepo)
 	overviewSvc := overviewsvc.NewService(overviewRepo)
-	fixCostSvc := fcsvc.NewService(fixCostRepo, s.asynqClient)
+	fixCostSvc := fcsvc.NewService(fixCostRepo)
 	sumSvc := sumsvc.NewService(sumRepo)
 	pushSvc := pushsvc.NewService(pushRepo)
 

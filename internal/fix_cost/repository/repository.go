@@ -2,6 +2,7 @@ package fixcostrepo
 
 import (
 	"context"
+	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	"gorm.io/gorm"
@@ -75,4 +76,16 @@ func (r *Repository) FindAllByUserID(ctx context.Context, userID string) ([]*e.F
 	}
 
 	return fixCosts, nil
+}
+
+func (r *Repository) FindDueFixCosts(ctx context.Context) ([]*e.FixCost, error) {
+	var fcs []*e.FixCost
+
+	err := r.db.WithContext(ctx).
+		Where("status = ? AND next_run_date <= ?", "active", time.Now().UTC()).
+		Order("next_run_date ASC").
+		Limit(100).
+		Find(&fcs).Error
+
+	return fcs, err
 }

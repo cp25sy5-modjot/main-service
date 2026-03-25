@@ -8,8 +8,6 @@ import (
 	catrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
 	"github.com/cp25sy5-modjot/main-service/internal/database"
 	d "github.com/cp25sy5-modjot/main-service/internal/draft"
-	fcrepo "github.com/cp25sy5-modjot/main-service/internal/fix_cost/repository"
-	fixcostsvc "github.com/cp25sy5-modjot/main-service/internal/fix_cost/service"
 	"github.com/cp25sy5-modjot/main-service/internal/jobs/processor"
 	jobsserver "github.com/cp25sy5-modjot/main-service/internal/jobs/server"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
@@ -69,15 +67,8 @@ func main() {
 	txiRepo := txirepo.NewRepository(db.GetDb())
 	catRepo := catrepo.NewRepository(db.GetDb())
 	userRepo := userrepo.NewRepository(db.GetDb())
-	fixcostRepo := fcrepo.NewRepository(db.GetDb())
 
 	txService := txsvc.NewService(db.GetDb(), txRepo, txiRepo, catRepo, aiClient)
-
-	fixCostService := fixcostsvc.NewService(fixcostRepo, asynqClient)
-
-	// Recover scheduled fixcost jobs
-	log.Println("[WORKER] recovering fix cost jobs")
-	fixCostService.RecoverFixCostJobs()
 
 	// Storage
 	uploadDir := conf.Storage.UploadDir
@@ -97,7 +88,7 @@ func main() {
 	mux := asynq.NewServeMux()
 
 	// Job processor
-	p := processor.NewProcessor(txService, st, draftRepo, userRepo, fixcostRepo, asynqClient)
+	p := processor.NewProcessor(txService, st, draftRepo, userRepo, asynqClient)
 	p.Register(mux)
 
 	log.Printf("Starting worker with Redis at %s", redisAddr)

@@ -38,7 +38,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	if err := utils.ParseBodyAndValidate(c, &req); err != nil {
 		return err
 	}
-	input := &svc.UserCreateInput{
+	input := &m.UserCreateInput{
 		UserBinding: e.UserBinding{
 			GoogleID: req.UserBinding.GoogleID,
 			// FacebookID: req.UserBinding.FacebookID,
@@ -67,7 +67,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	input := &svc.UserUpdateInput{
+	input := &m.UserUpdateInput{
 		Name: req.Name,
 	}
 

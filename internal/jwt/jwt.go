@@ -101,7 +101,7 @@ func parseTime(timeStr string) time.Duration {
 	return duration
 }
 
-func GetUserIDFromClaims(c *fiber.Ctx) (string, error) {
+var GetUserIDFromClaims = func(c *fiber.Ctx) (string, error) {
 
 	userVal := c.Locals("user")
 	if userVal == nil {

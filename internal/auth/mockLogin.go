@@ -5,6 +5,7 @@ import (
 	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/jwt"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
 	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
@@ -40,7 +41,7 @@ func MockLoginHandler(c *fiber.Ctx, usvc u.Service, csvc c.Service, config *conf
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return fiber.NewError(fiber.StatusInternalServerError, "Failed to get user")
 		}
-		user, err = usvc.CreateMockUser(&u.UserCreateInput{
+		user, err = usvc.CreateMockUser(&m.UserCreateInput{
 			Name: userName,
 		}, userName)
 		if err != nil {

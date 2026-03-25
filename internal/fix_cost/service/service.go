@@ -2,13 +2,10 @@ package fixcostsvc
 
 import (
 	"context"
-	"log"
-	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	fcrepo "github.com/cp25sy5-modjot/main-service/internal/fix_cost/repository"
-	"github.com/cp25sy5-modjot/main-service/internal/jobs/tasks"
 	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
 	"gorm.io/gorm"
@@ -20,20 +17,16 @@ type Service interface {
 	Create(ctx context.Context, input *m.FixCostCreateInput) (*e.FixCost, error)
 	Update(ctx context.Context, input *m.FixCostUpdateInput) (*e.FixCost, error)
 	Delete(ctx context.Context, id string, userID string) error
-
-	RecoverFixCostJobs()
 }
 
 type service struct {
-	repo *fcrepo.Repository
-
-	asynqClient *asynq.Client
+	repo     *fcrepo.Repository
+	redisOpt asynq.RedisClientOpt
 }
 
-func NewService(repo *fcrepo.Repository, asynqClient *asynq.Client) Service {
+func NewService(repo *fcrepo.Repository) Service {
 	return &service{
-		repo:        repo,
-		asynqClient: asynqClient,
+		repo: repo,
 	}
 }
 
@@ -75,18 +68,6 @@ func (s *service) Create(ctx context.Context, input *m.FixCostCreateInput) (*e.F
 	if err != nil {
 		return nil, err
 	}
-	task, _ := tasks.NewRunFixCostTask(fcId, newfc.UserID)
-
-	_, err = s.asynqClient.Enqueue(
-		task,
-		asynq.ProcessAt(newfc.NextRunDate),
-		asynq.TaskID("fixcost:"+fcId),
-		asynq.Unique(24*time.Hour),
-	)
-
-	if err != nil {
-		log.Printf("[FIX COST] enqueue error: %v", err)
-	}
 
 	fc, err := s.repo.FindByID(ctx, fcId, newfc.UserID)
 	if err != nil {
@@ -105,29 +86,6 @@ func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) (*e.F
 
 	if exists == nil {
 		return nil, gorm.ErrRecordNotFound
-	}
-
-	scheduleChanged := false
-
-	// compare first
-	if input.IntervalType != nil && string(exists.IntervalType) != *input.IntervalType {
-		scheduleChanged = true
-	}
-
-	if input.IntervalValue != nil && exists.IntervalValue != *input.IntervalValue {
-		scheduleChanged = true
-	}
-
-	if input.EndDate != nil {
-		if exists.EndDate == nil || !exists.EndDate.Equal(*input.EndDate) {
-			scheduleChanged = true
-		}
-	}
-
-	if input.RemainingRuns != nil {
-		if exists.RemainingRuns == nil || *exists.RemainingRuns != *input.RemainingRuns {
-			scheduleChanged = true
-		}
 	}
 
 	// update fields
@@ -173,54 +131,19 @@ func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) (*e.F
 		return nil, err
 	}
 
-	if scheduleChanged {
-
-		task, err := tasks.NewRunFixCostTask(fc.FixCostID, fc.UserID)
-		if err != nil {
-			return nil, err
-		}
-
-		_, err = s.asynqClient.Enqueue(
-			task,
-			asynq.ProcessAt(fc.NextRunDate),
-			asynq.TaskID("fixcost:"+fc.FixCostID),
-			asynq.Unique(24*time.Hour),
-		)
-
-		if err != nil {
-			log.Printf("[FIX COST] enqueue error: %v", err)
-		}
-	}
-
 	return fc, nil
 }
 
 func (s *service) Delete(ctx context.Context, id string, userID string) error {
-	return s.repo.Delete(ctx, id, userID)
-}
-
-func (s *service) RecoverFixCostJobs() {
-	ctx := context.Background()
-
-	fixCosts, err := s.repo.FindAllActive(ctx)
+	// 1. ลบ fixcost
+	err := s.repo.Delete(ctx, id, userID)
 	if err != nil {
-		log.Printf("[FIX COST SERVICE] recover error: %v", err)
-		return
+		return err
 	}
 
-	for _, fc := range fixCosts {
+	inspector := asynq.NewInspector(s.redisOpt)
 
-		task, _ := tasks.NewRunFixCostTask(fc.FixCostID, fc.UserID)
+	_ = inspector.DeleteTask("default", "fixcost:"+id)
 
-		_, err := s.asynqClient.Enqueue(
-			task,
-			asynq.ProcessAt(fc.NextRunDate),
-			asynq.TaskID("fixcost:"+fc.FixCostID),
-			asynq.Unique(24*time.Hour),
-		)
-
-		if err != nil {
-			log.Printf("[FIX COST SERVICE] enqueue error: %v", err)
-		}
-	}
+	return nil
 }

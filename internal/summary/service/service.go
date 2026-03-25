@@ -97,76 +97,15 @@ func (s *service) GetCategorySummary(
 	period Period,
 	date *time.Time,
 ) (m.CategorySummaryRes, error) {
-	var start time.Time
-	var end time.Time
-	var units int
 
 	ref := time.Now().UTC()
-
 	if date != nil {
 		ref = date.UTC()
 	}
 
-	switch period {
-
-	case Week:
-
-		if date != nil {
-
-			start = time.Date(ref.Year(), ref.Month(), ref.Day(), 0, 0, 0, 0, time.UTC)
-			end = start.AddDate(0, 0, 1)
-
-			units = 1
-
-		} else {
-
-			weekday := int(ref.Weekday())
-			if weekday == 0 {
-				weekday = 7
-			}
-
-			tmp := ref.AddDate(0, 0, -weekday+1)
-			start = time.Date(tmp.Year(), tmp.Month(), tmp.Day(), 0, 0, 0, 0, time.UTC)
-			end = start.AddDate(0, 0, 7)
-
-			units = 7
-		}
-
-	case Month:
-
-		if date != nil {
-
-			start = time.Date(ref.Year(), ref.Month(), 1, 0, 0, 0, 0, time.UTC)
-			end = start.AddDate(0, 1, 0)
-			// avg รายวัน
-			units = int(end.Sub(start).Hours() / 24)
-
-		} else {
-
-			start = time.Date(ref.Year(), ref.Month(), 1, 0, 0, 0, 0, time.UTC)
-			end = start.AddDate(0, 1, 0)
-			units = 12
-		}
-
-	case Year:
-
-		if date != nil {
-
-			start = time.Date(ref.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
-			end = time.Date(ref.Year()+1, 1, 1, 0, 0, 0, 0, time.UTC)
-
-			units = 12
-
-		} else {
-
-			start = time.Date(ref.Year()-2, 1, 1, 0, 0, 0, 0, time.UTC)
-			end = time.Date(ref.Year()+1, 1, 1, 0, 0, 0, 0, time.UTC)
-
-			units = end.Year() - start.Year()
-		}
-
-	default:
-		return m.CategorySummaryRes{}, fmt.Errorf("invalid period")
+	start, end, units, err := resolvePeriodRange(period, ref)
+	if err != nil {
+		return m.CategorySummaryRes{}, err
 	}
 
 	data, err := s.repo.CategorySummary(ctx, userID, start, end)
@@ -175,12 +114,11 @@ func (s *service) GetCategorySummary(
 	}
 
 	var total float64
-
 	for _, d := range data {
 		total += d.Total
 	}
 
-	avg := 0.0
+	var avg float64
 	if units > 0 {
 		avg = total / float64(units)
 	}
@@ -191,4 +129,46 @@ func (s *service) GetCategorySummary(
 		Average: avg,
 		Data:    data,
 	}, nil
+}
+
+func resolvePeriodRange(period Period, ref time.Time) (
+	start time.Time,
+	end time.Time,
+	units int,
+	err error,
+) {
+
+	switch period {
+
+	case Day:
+		start = startOfDay(ref)
+		end = start.AddDate(0, 0, 1)
+		units = 1
+
+	case Week:
+		start = startOfWeek(ref)
+		end = start.AddDate(0, 0, 7)
+		units = 7
+
+	case Month:
+		start = startOfMonth(ref)
+		end = start.AddDate(0, 1, 0)
+		units = int(end.Sub(start).Hours() / 24)
+
+	case Year:
+		start = startOfYear(ref)
+		end = start.AddDate(1, 0, 0)
+		units = 12
+
+	case PastYear:
+		const years = 3
+		start = startOfYear(ref.AddDate(-years+1, 0, 0))
+		end = startOfYear(ref.AddDate(1, 0, 0))
+		units = years
+
+	default:
+		err = fmt.Errorf("invalid period")
+	}
+
+	return
 }

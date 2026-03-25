@@ -5,6 +5,7 @@ import (
 	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	"github.com/cp25sy5-modjot/main-service/internal/jobs/tasks"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
 	userrepo "github.com/cp25sy5-modjot/main-service/internal/user/repository"
@@ -13,8 +14,8 @@ import (
 )
 
 type Service interface {
-	Create(input *UserCreateInput) (*e.User, error)
-	CreateMockUser(input *UserCreateInput, uid string) (*e.User, error)
+	Create(input *m.UserCreateInput) (*e.User, error)
+	CreateMockUser(input *m.UserCreateInput, uid string) (*e.User, error)
 
 	GetAll() ([]*e.User, error)
 	GetByID(userID string) (*e.User, error)
@@ -22,7 +23,7 @@ type Service interface {
 	// GetByFacebookID(facebook_id string) (*e.User, error)
 	// GetByAppleID(apple_id string) (*e.User, error)
 
-	Update(userID string, input *UserUpdateInput) (*e.User, error)
+	Update(userID string, input *m.UserUpdateInput) (*e.User, error)
 	Delete(userID string) error
 	SoftDelete(userID string) error
 	TestSoftDelete(userID string) error
@@ -39,7 +40,7 @@ func NewService(repo *userrepo.Repository, asynqClient *asynq.Client) *service {
 	return &service{repo: repo, asynqClient: asynqClient}
 }
 
-func (s *service) Create(input *UserCreateInput) (*e.User, error) {
+func (s *service) Create(input *m.UserCreateInput) (*e.User, error) {
 	UserID := uuid.New().String()
 	u := buildUserObjectToCreate(UserID, input)
 	userCreated, err := s.repo.Create(u)
@@ -49,7 +50,7 @@ func (s *service) Create(input *UserCreateInput) (*e.User, error) {
 	return userCreated, nil
 }
 
-func (s *service) CreateMockUser(input *UserCreateInput, uid string) (*e.User, error) {
+func (s *service) CreateMockUser(input *m.UserCreateInput, uid string) (*e.User, error) {
 	u := buildUserObjectToCreate(uid, input)
 	userCreated, err := s.repo.Create(u)
 	if err != nil {
@@ -82,23 +83,7 @@ func (s *service) GetByGoogleID(google_id string) (*e.User, error) {
 	return user, nil
 }
 
-// func (s *service) GetByFacebookID(facebook_id string) (*e.User, error) {
-// 	user, err := s.repo.FindByFacebookID(facebook_id)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return user, nil
-// }
-
-// func (s *service) GetByAppleID(apple_id string) (*e.User, error) {
-// 	user, err := s.repo.FindByAppleID(apple_id)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return user, nil
-// }
-
-func (s *service) Update(userID string, input *UserUpdateInput) (*e.User, error) {
+func (s *service) Update(userID string, input *m.UserUpdateInput) (*e.User, error) {
 	exists, err := s.repo.FindByID(userID)
 	if err != nil {
 		return nil, err
@@ -205,7 +190,7 @@ func (s *service) RestoreByUserID(userID string) (*e.User, error) {
 }
 
 // utils functions for service
-func buildUserObjectToCreate(uid string, input *UserCreateInput) *e.User {
+func buildUserObjectToCreate(uid string, input *m.UserCreateInput) *e.User {
 	return &e.User{
 		UserID: uid,
 		UserBinding: e.UserBinding{
