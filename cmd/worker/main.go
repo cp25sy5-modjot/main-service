@@ -14,7 +14,6 @@ import (
 	"github.com/cp25sy5-modjot/main-service/internal/database"
 	d "github.com/cp25sy5-modjot/main-service/internal/draft"
 	fcrepo "github.com/cp25sy5-modjot/main-service/internal/fix_cost/repository"
-	fcsvc "github.com/cp25sy5-modjot/main-service/internal/fix_cost/service"
 	"github.com/cp25sy5-modjot/main-service/internal/jobs/processor"
 	jobsserver "github.com/cp25sy5-modjot/main-service/internal/jobs/server"
 	"github.com/cp25sy5-modjot/main-service/internal/shared/config"
@@ -78,7 +77,6 @@ func main() {
 	// SERVICES
 	// =========================
 	txService := txsvc.NewService(db.GetDb(), txRepo, txiRepo, catRepo, aiClient)
-	fcService := fcsvc.NewService(fcRepo)
 
 	// =========================
 	// STORAGE
@@ -99,14 +97,9 @@ func main() {
 	draftRepo := d.NewDraftRepository(rdb)
 
 	// =========================
-	// FIX COST PROCESSOR
-	// =========================
-	fixCostProcessor := cron.NewFixCostProcessor(fcRepo, fcService, txService)
-
-	// =========================
 	// CRON (enqueue job)
 	// =========================
-	scheduler := cron.NewScheduler(asynqClient)
+	scheduler := cron.NewScheduler(asynqClient, fcRepo)
 	scheduler.Start()
 
 	// =========================
@@ -125,7 +118,6 @@ func main() {
 		userRepo,
 		asynqClient,
 		fcRepo,
-		fixCostProcessor,
 	)
 
 	p.Register(mux)
