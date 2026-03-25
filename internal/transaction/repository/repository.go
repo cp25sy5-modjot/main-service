@@ -1,6 +1,7 @@
 package transactionrepo
 
 import (
+	"errors"
 	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
@@ -170,16 +171,21 @@ func (r *Repository) FindByFixCostIDAndRunDate(
 
 	var tx e.Transaction
 
+	runDate := params.RunDate.UTC().Truncate(24 * time.Hour)
+
 	err := r.db.
 		Preload("Items").
 		Where("fix_cost_id = ? AND run_date = ? AND user_id = ?",
 			params.FixCostID,
-			params.RunDate,
+			runDate,
 			params.UserID,
 		).
 		First(&tx).Error
 
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // 🔥 สำคัญ
+		}
 		return nil, err
 	}
 
