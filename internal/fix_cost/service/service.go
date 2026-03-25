@@ -121,6 +121,10 @@ func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) (*e.F
 		exists.RemainingRuns = input.RemainingRuns
 	}
 
+	if input.Status != nil {
+		exists.Status = e.FixCostStatus(*input.Status)
+	}
+
 	err = s.repo.Update(ctx, exists)
 	if err != nil {
 		return nil, err
