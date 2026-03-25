@@ -61,8 +61,7 @@ func (s *service) Create(ctx context.Context, input *m.FixCostCreateInput) (*e.F
 		RemainingRuns: input.RemainingRuns,
 		IntervalType:  e.IntervalType(input.IntervalType),
 		IntervalValue: input.IntervalValue,
-		Status:        e.FixCostStatusActive,
-	}
+		Status:        calculateStatus(input.EndDate, input.RemainingRuns)}
 
 	err := s.repo.Create(ctx, &newfc)
 	if err != nil {

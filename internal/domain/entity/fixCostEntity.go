@@ -5,9 +5,9 @@ import "time"
 type FixCostStatus string
 
 const (
-	FixCostStatusActive    FixCostStatus = "active"
-	FixCostStatusPaused    FixCostStatus = "paused"
-	FixCostStatusCompleted FixCostStatus = "finished"
+	FixCostStatusActive   FixCostStatus = "active"
+	FixCostStatusPaused   FixCostStatus = "paused"
+	FixCostStatusFinished FixCostStatus = "finished"
 )
 
 type IntervalType string
@@ -42,4 +42,16 @@ type FixCost struct {
 
 	// Relationships
 	Category Category `gorm:"foreignKey:CategoryID;references:CategoryID"`
+}
+
+func (fc *FixCost) IsActive() bool {
+	now := time.Now()
+
+	if fc.EndDate != nil && now.After(*fc.EndDate) {
+		return false
+	}
+	if fc.RemainingRuns != nil && *fc.RemainingRuns <= 0 {
+		return false
+	}
+	return true
 }

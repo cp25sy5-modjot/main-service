@@ -2,6 +2,7 @@ package fixcostsvc
 
 import (
 	"time"
+
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 )
 
@@ -23,4 +24,21 @@ func CalculateNextRun(fc e.FixCost) time.Time {
 	default:
 		return fc.NextRunDate
 	}
+}
+
+func calculateStatus(endDate *time.Time, remainingRuns *int) e.FixCostStatus {
+	now := time.Now()
+
+	// 1. ถ้ามี EndDate และเลยแล้ว → หมดอายุ
+	if endDate != nil && now.After(*endDate) {
+		return e.FixCostStatusFinished
+	}
+
+	// 2. ถ้ามี RemainingRuns และเหลือ <= 0 → หมด
+	if remainingRuns != nil && *remainingRuns <= 0 {
+		return e.FixCostStatusFinished
+	}
+
+	// 3. default → active
+	return e.FixCostStatusActive
 }
