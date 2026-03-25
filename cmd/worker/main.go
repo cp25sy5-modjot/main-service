@@ -12,7 +12,7 @@ import (
 	catrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
 	"github.com/cp25sy5-modjot/main-service/internal/cron"
 	"github.com/cp25sy5-modjot/main-service/internal/database"
-	d "github.com/cp25sy5-modjot/main-service/internal/draft"
+	drepo "github.com/cp25sy5-modjot/main-service/internal/draft/repository"
 	fcrepo "github.com/cp25sy5-modjot/main-service/internal/fix_cost/repository"
 	"github.com/cp25sy5-modjot/main-service/internal/jobs/processor"
 	jobsserver "github.com/cp25sy5-modjot/main-service/internal/jobs/server"
@@ -94,7 +94,7 @@ func main() {
 	// =========================
 	// DRAFT
 	// =========================
-	draftRepo := d.NewDraftRepository(rdb)
+	draftRepo := drepo.NewDraftRepository(rdb)
 
 	// =========================
 	// CRON (enqueue job)

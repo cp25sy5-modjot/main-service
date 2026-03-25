@@ -14,10 +14,10 @@ import (
 
 type Scheduler struct {
 	client *asynq.Client
-	repo   *fcrepo.Repository
+	repo   fcrepo.Repository
 }
 
-func NewScheduler(client *asynq.Client, repo *fcrepo.Repository) *Scheduler {
+func NewScheduler(client *asynq.Client, repo fcrepo.Repository) *Scheduler {
 	return &Scheduler{client: client, repo: repo}
 }
 func (s *Scheduler) Start() {

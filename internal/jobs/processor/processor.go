@@ -12,7 +12,7 @@ import (
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
-	d "github.com/cp25sy5-modjot/main-service/internal/draft"
+	drepo "github.com/cp25sy5-modjot/main-service/internal/draft/repository"
 	fcrepo "github.com/cp25sy5-modjot/main-service/internal/fix_cost/repository"
 	fcsvc "github.com/cp25sy5-modjot/main-service/internal/fix_cost/service"
 	"github.com/cp25sy5-modjot/main-service/internal/jobs/tasks"
@@ -26,21 +26,21 @@ type Processor struct {
 	txService txsvc.Service
 	storage   storage.Storage
 
-	draftRepo   *d.DraftRepository
-	userRepo    *userrepo.Repository
-	fixCostRepo *fcrepo.Repository
+	draftRepo   drepo.Repository
+	userRepo    userrepo.Repository
+	fixCostRepo fcrepo.Repository
 	client      *asynq.Client
-	txRepo      *txrepo.Repository
+	txRepo      txrepo.Repository
 }
 
 func NewProcessor(
 	txService txsvc.Service,
 	st storage.Storage,
-	dr *d.DraftRepository,
-	userRepo *userrepo.Repository,
+	dr drepo.Repository,
+	userRepo userrepo.Repository,
 	client *asynq.Client,
-	fixCostRepo *fcrepo.Repository,
-	txRepo *txrepo.Repository,
+	fixCostRepo fcrepo.Repository,
+	txRepo txrepo.Repository,
 
 ) *Processor {
 	return &Processor{
@@ -95,7 +95,7 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 	}
 
 	// ✅ IDEMPOTENT GUARD
-	if exDraft.Status == d.DraftStatusWaitingConfirm {
+	if exDraft.Status == m.DraftStatusWaitingConfirm {
 		log.Printf("[JOB %s] already done → skip", payload.DraftID)
 		return nil
 	}
@@ -119,7 +119,7 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 				_ = p.draftRepo.UpdateStatus(
 					ctx,
 					payload.DraftID,
-					d.DraftStatusFailed,
+					m.DraftStatusFailed,
 					"file missing",
 				)
 
@@ -136,11 +136,11 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 	// --------------------------------------------------
 	// 3) UPDATE → PROCESSING
 	// --------------------------------------------------
-	if exDraft.Status != d.DraftStatusProcessing {
+	if exDraft.Status != m.DraftStatusProcessing {
 		if err := p.draftRepo.UpdateStatus(
 			ctx,
 			payload.DraftID,
-			d.DraftStatusProcessing,
+			m.DraftStatusProcessing,
 			"",
 		); err != nil {
 			log.Printf("[JOB %s] update processing status error: %+v",
@@ -161,7 +161,7 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 		_ = p.draftRepo.UpdateStatus(
 			ctx,
 			payload.DraftID,
-			d.DraftStatusFailed,
+			m.DraftStatusFailed,
 			err.Error(),
 		)
 
@@ -177,7 +177,7 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 	exDraft.Title = draftResult.Title
 	exDraft.Date = draftResult.Date
 	exDraft.Items = draftResult.Items
-	exDraft.Status = d.DraftStatusWaitingConfirm
+	exDraft.Status = m.DraftStatusWaitingConfirm
 	exDraft.UpdatedAt = time.Now()
 
 	if err := p.draftRepo.Save(ctx, *exDraft); err != nil {

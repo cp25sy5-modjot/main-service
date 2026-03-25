@@ -39,7 +39,7 @@ type FixCostUpdateReq struct {
 	StartDate     *time.Time `json:"start_date"`
 	EndDate       *time.Time `json:"end_date"`
 	RemainingRuns *int       `json:"remaining_runs"`
-	Status        *string    `json:"status" validate:"oneof=active paused"`
+	Status        *string    `json:"status" validate:"oneof=active paused finished"`
 
 	IntervalType  *string `json:"interval_type" validate:"oneof=daily weekly monthly yearly"` // daily, weekly, monthly, yearly
 	IntervalValue *int    `json:"interval_value" validate:"min=1"`                            // e.g., every 2 weeks

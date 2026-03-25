@@ -13,187 +13,155 @@ import (
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	jwt "github.com/cp25sy5-modjot/main-service/internal/jwt"
 	userhandler "github.com/cp25sy5-modjot/main-service/internal/user/handler"
-	"github.com/cp25sy5-modjot/main-service/internal/user/mocks")
+	"github.com/cp25sy5-modjot/main-service/internal/user/mocks"
+)
 
-//
-// 🔥 MOCK JWT (override behavior)
-//
+func TestUserHandler(t *testing.T) {
 
-// create a fake function variable (you need this in your jwt package)
-// see note below 👇
-var fakeGetUserID = func(c *fiber.Ctx) (string, error) {
-	return "u-1", nil
-}
+	jwt.GetUserIDFromClaims = func(c *fiber.Ctx) (string, error) {
+		return "u-1", nil
+	}
 
-//
-// 🧪 TEST: GetSelf
-//
+	// ===================== GET SELF =====================
+	t.Run("GetSelf Success", func(t *testing.T) {
+		app := fiber.New()
+		mockSvc := mocks.NewMockService(t)
 
-func TestGetSelf_Success(t *testing.T) {
-	app := fiber.New()
+		h := userhandler.NewHandler(mockSvc)
+		app.Get("/user", h.GetSelf)
 
-	mockSvc := new(mocks.Service)
-	h := userhandler.NewHandler(mockSvc)
+		mockSvc.EXPECT().
+			GetByID("u-1").
+			Return(&e.User{Name: "James"}, nil)
 
-	// 👇 override jwt behavior
-	jwt.GetUserIDFromClaims = fakeGetUserID
+		req := httptest.NewRequest("GET", "/user", nil)
+		resp, err := app.Test(req)
 
-	app.Get("/user", h.GetSelf)
+		assert.NoError(t, err)
+		assert.Equal(t, 200, resp.StatusCode)
+	})
 
-	mockSvc.On("GetByID", "u-1").
-		Return(&e.User{Name: "James"}, nil)
+	t.Run("GetSelf Error", func(t *testing.T) {
+		app := fiber.New()
+		mockSvc := mocks.NewMockService(t)
 
-	req := httptest.NewRequest("GET", "/user", nil)
-	resp, err := app.Test(req)
+		h := userhandler.NewHandler(mockSvc)
+		app.Get("/user", h.GetSelf)
 
-	assert.NoError(t, err)
-	assert.Equal(t, 200, resp.StatusCode)
+		mockSvc.EXPECT().
+			GetByID("u-1").
+			Return(nil, errors.New("db error"))
 
-	mockSvc.AssertExpectations(t)
-}
+		req := httptest.NewRequest("GET", "/user", nil)
+		resp, _ := app.Test(req)
 
-//
-// 🧪 TEST: GetSelf error
-//
+		assert.Equal(t, 500, resp.StatusCode)
+	})
 
-func TestGetSelf_Error(t *testing.T) {
-	app := fiber.New()
+	// ===================== CREATE =====================
+	t.Run("Create Success", func(t *testing.T) {
+		app := fiber.New()
+		mockSvc := mocks.NewMockService(t)
 
-	mockSvc := new(mocks.Service)
-	h := userhandler.NewHandler(mockSvc)
+		h := userhandler.NewHandler(mockSvc)
+		app.Post("/user", h.Create)
 
-	jwt.GetUserIDFromClaims = fakeGetUserID
+		body := `{
+			"name": "James",
+			"userBinding": {
+				"googleID": "g-123"
+			}
+		}`
 
-	app.Get("/user", h.GetSelf)
+		mockSvc.EXPECT().
+			Create(mock.Anything).
+			Return(&e.User{Name: "James"}, nil)
 
-	mockSvc.On("GetByID", "u-1").
-		Return(nil, errors.New("db error"))
+		req := httptest.NewRequest(
+			"POST",
+			"/user",
+			bytes.NewBufferString(body),
+		)
+		req.Header.Set("Content-Type", "application/json")
 
-	req := httptest.NewRequest("GET", "/user", nil)
-	resp, _ := app.Test(req)
+		resp, _ := app.Test(req)
 
-	assert.Equal(t, 500, resp.StatusCode)
-}
+		assert.Equal(t, 201, resp.StatusCode)
+	})
 
-//
-// 🧪 TEST: Create (no jwt needed)
-//
+	// ===================== UPDATE =====================
+	t.Run("Update Success", func(t *testing.T) {
+		app := fiber.New()
+		mockSvc := mocks.NewMockService(t)
 
-func TestCreate_Success(t *testing.T) {
-	app := fiber.New()
+		h := userhandler.NewHandler(mockSvc)
+		app.Put("/user", h.Update)
 
-	mockSvc := new(mocks.Service)
-	h := userhandler.NewHandler(mockSvc)
+		body := `{
+			"name": "NewName"
+		}`
 
-	app.Post("/user", h.Create)
+		mockSvc.EXPECT().
+			Update("u-1", mock.Anything).
+			Return(&e.User{Name: "NewName"}, nil)
 
-	body := `{
-		"name": "James",
-		"userBinding": {
-			"googleID": "g-123"
-		}
-	}`
+		req := httptest.NewRequest(
+			"PUT",
+			"/user",
+			bytes.NewBufferString(body),
+		)
+		req.Header.Set("Content-Type", "application/json")
 
-	mockSvc.On("Create", mock.Anything).
-		Return(&e.User{Name: "James"}, nil)
+		resp, _ := app.Test(req)
 
-	req := httptest.NewRequest("POST", "/user", bytes.NewBufferString(body))
-	req.Header.Set("Content-Type", "application/json")
+		assert.Equal(t, 200, resp.StatusCode)
+	})
 
-	resp, _ := app.Test(req)
+	// ===================== DELETE =====================
+	t.Run("Delete Soft", func(t *testing.T) {
+		app := fiber.New()
+		mockSvc := mocks.NewMockService(t)
 
-	assert.Equal(t, 201, resp.StatusCode)
-}
+		h := userhandler.NewHandler(mockSvc)
+		app.Delete("/user", h.Delete)
 
-//
-// 🧪 TEST: Update
-//
+		mockSvc.EXPECT().
+			SoftDelete("u-1").
+			Return(nil)
 
-func TestUpdate_Success(t *testing.T) {
-	app := fiber.New()
+		req := httptest.NewRequest("DELETE", "/user?mode=soft", nil)
+		resp, _ := app.Test(req)
 
-	mockSvc := new(mocks.Service)
-	h := userhandler.NewHandler(mockSvc)
+		assert.Equal(t, 200, resp.StatusCode)
+	})
 
-	jwt.GetUserIDFromClaims = fakeGetUserID
+	t.Run("Delete Hard", func(t *testing.T) {
+		app := fiber.New()
+		mockSvc := mocks.NewMockService(t)
 
-	app.Put("/user", h.Update)
+		h := userhandler.NewHandler(mockSvc)
+		app.Delete("/user", h.Delete)
 
-	body := `{
-		"name": "NewName"
-	}`
+		mockSvc.EXPECT().
+			Delete("u-1").
+			Return(nil)
 
-	mockSvc.On("Update", "u-1", mock.Anything).
-		Return(&e.User{Name: "NewName"}, nil)
+		req := httptest.NewRequest("DELETE", "/user?mode=hard", nil)
+		resp, _ := app.Test(req)
 
-	req := httptest.NewRequest("PUT", "/user", bytes.NewBufferString(body))
-	req.Header.Set("Content-Type", "application/json")
+		assert.Equal(t, 200, resp.StatusCode)
+	})
 
-	resp, _ := app.Test(req)
+	t.Run("Delete Invalid Mode", func(t *testing.T) {
+		app := fiber.New()
+		mockSvc := mocks.NewMockService(t)
 
-	assert.Equal(t, 200, resp.StatusCode)
-}
+		h := userhandler.NewHandler(mockSvc)
+		app.Delete("/user", h.Delete)
 
-//
-// 🧪 TEST: Delete soft
-//
+		req := httptest.NewRequest("DELETE", "/user?mode=unknown", nil)
+		resp, _ := app.Test(req)
 
-func TestDelete_Soft(t *testing.T) {
-	app := fiber.New()
-
-	mockSvc := new(mocks.Service)
-	h := userhandler.NewHandler(mockSvc)
-
-	jwt.GetUserIDFromClaims = fakeGetUserID
-
-	app.Delete("/user", h.Delete)
-
-	mockSvc.On("SoftDelete", "u-1").Return(nil)
-
-	req := httptest.NewRequest("DELETE", "/user?mode=soft", nil)
-	resp, _ := app.Test(req)
-
-	assert.Equal(t, 200, resp.StatusCode)
-}
-
-//
-// 🧪 TEST: Delete hard
-//
-
-func TestDelete_Hard(t *testing.T) {
-	app := fiber.New()
-
-	mockSvc := new(mocks.Service)
-	h := userhandler.NewHandler(mockSvc)
-
-	jwt.GetUserIDFromClaims = fakeGetUserID
-
-	app.Delete("/user", h.Delete)
-
-	mockSvc.On("Delete", "u-1").Return(nil)
-
-	req := httptest.NewRequest("DELETE", "/user?mode=hard", nil)
-	resp, _ := app.Test(req)
-
-	assert.Equal(t, 200, resp.StatusCode)
-}
-
-//
-// 🧪 TEST: Delete invalid mode
-//
-
-func TestDelete_InvalidMode(t *testing.T) {
-	app := fiber.New()
-
-	mockSvc := new(mocks.Service)
-	h := userhandler.NewHandler(mockSvc)
-
-	jwt.GetUserIDFromClaims = fakeGetUserID
-
-	app.Delete("/user", h.Delete)
-
-	req := httptest.NewRequest("DELETE", "/user?mode=unknown", nil)
-	resp, _ := app.Test(req)
-
-	assert.Equal(t, 400, resp.StatusCode)
+		assert.Equal(t, 400, resp.StatusCode)
+	})
 }

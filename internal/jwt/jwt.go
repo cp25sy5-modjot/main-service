@@ -14,7 +14,7 @@ import (
 )
 
 // Protected creates and returns the JWT middleware.
-func Protected(secret string, userRepo *userrepo.Repository) fiber.Handler {
+func Protected(secret string, userRepo userrepo.Repository) fiber.Handler {
 	return jwtware.New(jwtware.Config{
 		SigningKey: jwtware.SigningKey{
 			Key:    []byte(secret),

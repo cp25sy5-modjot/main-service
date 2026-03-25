@@ -1,0 +1,498 @@
+package transactionsvc
+
+import (
+	"context"
+	"errors"
+	"log"
+	"time"
+
+	catrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
+	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
+	"github.com/cp25sy5-modjot/main-service/internal/shared/utils"
+	txrepo "github.com/cp25sy5-modjot/main-service/internal/transaction/repository"
+	txirepo "github.com/cp25sy5-modjot/main-service/internal/transaction_item/repository"
+	pb "github.com/cp25sy5-modjot/proto/gen/ai/v2"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+type Service interface {
+	Create(userID string, input *m.TransactionCreateInput) (*e.Transaction, error)
+	ProcessUploadedFile(fileData []byte, userID string) (*m.DraftTxn, error)
+
+	GetAllByUserID(userID string) ([]e.Transaction, error)
+	GetAllByUserIDWithFilter(userID string, filter *m.TransactionFilter) ([]e.Transaction, error)
+	GetAllComparePreviousMonthAndByUserIDWithFilter(userID string, filter *m.TransactionFilter) (*MonthlyResult, error)
+
+	GetByID(params *m.TransactionSearchParams) (*e.Transaction, error)
+	Update(params *m.TransactionSearchParams, input *m.TransactionUpdateInput) (*e.Transaction, error)
+	Delete(params *m.TransactionSearchParams) error
+
+	CreateFromFixCost(ctx context.Context, fixCost *e.FixCost) (*e.Transaction, error)
+}
+
+// concrete implementation
+type service struct {
+	db      *gorm.DB
+	repo    txrepo.Repository
+	txirepo txirepo.Repository
+	catrepo catrepo.Repository
+
+	aiClient pb.AiWrapperServiceClient
+}
+
+func NewService(db *gorm.DB, repo txrepo.Repository, txirepo txirepo.Repository, catrepo catrepo.Repository, aiClient pb.AiWrapperServiceClient) *service {
+	return &service{db: db, repo: repo, txirepo: txirepo, catrepo: catrepo, aiClient: aiClient}
+}
+
+func (s *service) Create(
+	userID string,
+	input *m.TransactionCreateInput,
+) (*e.Transaction, error) {
+	return s.CreateInternal(userID, e.TransactionManual, input)
+}
+
+func (s *service) CreateInternal(
+	userID string,
+	txType e.TransactionType,
+	input *m.TransactionCreateInput,
+) (*e.Transaction, error) {
+
+	// 1. validate
+	if err := s.validateCreateInput(userID, input); err != nil {
+		return nil, err
+	}
+
+	// 2. build
+	txID := uuid.New().String()
+	tx, items := buildTransactionToCreate(txID, userID, txType, input)
+
+	// 3. save (atomic)
+	return s.saveNewTransaction(tx, items)
+}
+
+func (s *service) ProcessUploadedFile(
+	fileData []byte,
+	userID string,
+) (*m.DraftTxn, error) {
+
+	if s.aiClient == nil {
+		return nil, errors.New("AI client not configured (this method should only be used in worker process)")
+	}
+
+	// 1. fetch categories
+	categories, err := s.catrepo.FindAllByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. call AI service
+	resp, err := callAIServiceToBuildTransaction(fileData, categories, s.aiClient)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("AI Service Response: %+v", resp)
+
+	return mapToDraft(resp, categories, userID)
+}
+
+func (s *service) GetAllByUserID(userID string) ([]e.Transaction, error) {
+	transactions, err := s.repo.FindAllByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return transactions, nil
+}
+
+func (s *service) GetAllByUserIDWithFilter(userID string, filter *m.TransactionFilter) ([]e.Transaction, error) {
+	if filter.Date == nil {
+		now := time.Now().UTC()
+		filter.Date = &now
+	}
+	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
+	transactions, err := s.repo.FindAllByUserIDAndFiltered(userID, start, end)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if transactions == nil {
+		return []e.Transaction{}, nil
+	}
+
+	return transactions, nil
+}
+
+type MonthlyResult struct {
+	CurrentMonth          []e.Transaction `json:"current_month"`
+	PreviousMonth         []e.Transaction `json:"previous_month"`
+	CurrentMonthItemCount int             `json:"current_month_item_count"`
+}
+
+func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(
+	userID string,
+	filter *m.TransactionFilter,
+) (*MonthlyResult, error) {
+
+	// --- Current Month ---
+	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
+
+	itemCount, err := s.repo.CountItemsByUserAndDateRange(
+		userID,
+		start,
+		end,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	current, err := s.repo.FindAllByUserIDWithRelationsAndFiltered(
+		userID,
+		start,
+		end,
+		filter.Categories,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// --- Previous Month ---
+	previousStart, previousEnd := utils.GetStartAndEndOfPreviousMonth(*filter.Date)
+
+	previous, err := s.repo.FindAllByUserIDWithRelationsAndFiltered(
+		userID,
+		previousStart,
+		previousEnd,
+		filter.Categories,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &MonthlyResult{
+		CurrentMonth:          current,
+		PreviousMonth:         previous,
+		CurrentMonthItemCount: itemCount,
+	}, nil
+}
+
+func (s *service) GetByID(params *m.TransactionSearchParams) (*e.Transaction, error) {
+	tx, err := s.repo.FindByIDWithRelations(params)
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
+func (s *service) Update(
+	params *m.TransactionSearchParams,
+	input *m.TransactionUpdateInput,
+) (*e.Transaction, error) {
+
+	exists, err := s.repo.FindByIDWithRelations(params)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+
+		// --- update transaction fields ---
+		updates := map[string]interface{}{}
+
+		if input.Title != nil {
+			updates["title"] = *input.Title
+		}
+
+		if input.Date != nil {
+			updates["date"] = input.Date.UTC()
+		}
+
+		if len(updates) > 0 {
+			if err := s.repo.UpdateFieldsTx(
+				tx,
+				exists.TransactionID,
+				updates,
+			); err != nil {
+				return err
+			}
+		}
+
+		// --- Items (replace semantics) ---
+		if input.Items != nil {
+
+			if err := s.validateUpdateItems(
+				params.UserID,
+				input.Items,
+			); err != nil {
+				return err
+			}
+			newItems, err := ReplaceTransactionItems(
+				exists.TransactionID,
+				input.Items,
+			)
+			if err != nil {
+				return err
+			}
+
+			if err := s.txirepo.DeleteByTransactionIDTx(
+				tx,
+				exists.TransactionID,
+			); err != nil {
+				return err
+			}
+
+			if err := s.txirepo.CreateManyTx(
+				tx,
+				newItems,
+			); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.FindByIDWithRelations(params)
+}
+
+func (s *service) Delete(params *m.TransactionSearchParams) error {
+	_, err := s.repo.FindByID(params)
+	if err != nil {
+		return err
+	}
+	return s.repo.Delete(params)
+}
+
+func (s *service) CreateFromFixCost(
+	ctx context.Context,
+	fixCost *e.FixCost,
+) (*e.Transaction, error) {
+
+	runDate := fixCost.NextRunDate.UTC().Truncate(24 * time.Hour)
+
+	input := &m.TransactionCreateInput{
+		Title:     fixCost.Title,
+		Date:      fixCost.NextRunDate,
+		RunDate:   &runDate,
+		FixCostID: &fixCost.FixCostID,
+		Items: []m.TransactionItemInput{
+			{
+				Title:      fixCost.Title,
+				Price:      fixCost.Price,
+				CategoryID: fixCost.CategoryID,
+			},
+		},
+	}
+
+	txID := uuid.New().String()
+	tx, items := buildTransactionToCreate(txID, fixCost.UserID, e.TransactionFixCost, input)
+
+	return s.saveNewTransactionV2(tx, items)
+}
+
+// utils functions for service
+func GetCategoryNames(categories []e.Category) ([]string, error) {
+	//parse categories to string slice
+	var categoryNames []string
+	for _, cate := range categories {
+		categoryNames = append(categoryNames, cate.CategoryName)
+	}
+	return categoryNames, nil
+}
+
+func isDefaultDate(t time.Time) bool {
+	return t.Year() == 1 && t.Month() == time.January && t.Day() == 1
+}
+
+func buildTransactionToCreate(
+	txID, userID string,
+	txType e.TransactionType,
+	input *m.TransactionCreateInput,
+) (*e.Transaction, []e.TransactionItem) {
+
+	if isDefaultDate(input.Date) {
+		input.Date = time.Now().UTC()
+	}
+
+	items := make([]e.TransactionItem, 0, len(input.Items))
+	for _, it := range input.Items {
+		items = append(items, e.TransactionItem{
+			TransactionID: txID,
+			ItemID:        uuid.New().String(),
+			Title:         it.Title,
+			Price:         it.Price,
+			CategoryID:    it.CategoryID,
+		})
+	}
+
+	tx := &e.Transaction{
+		TransactionID: txID,
+		UserID:        userID,
+		Type:          txType,
+		Title:         input.Title,
+		Date:          input.Date.UTC(),
+		RunDate:       input.RunDate,
+		FixCostID:     input.FixCostID,
+	}
+
+	return tx, items
+}
+
+func matchCategoryFromName(categories []e.Category, categoryName string) *e.Category {
+	for i := range categories {
+		if categories[i].CategoryName == categoryName {
+			return &categories[i]
+		}
+	}
+	return nil
+}
+
+func callAIServiceToBuildTransaction(fileData []byte, categories []e.Category, aiClient pb.AiWrapperServiceClient) (*pb.TransactionResponseV2, error) {
+	//get category names to send to ai service
+	categoryNames, err := GetCategoryNames(categories)
+	if err != nil {
+		return nil, err
+	}
+	req := &pb.BuildTransactionFromImageRequest{
+		ImageData:  fileData,
+		Categories: categoryNames,
+	}
+	const timeout = 5*time.Minute + 30*time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout) // 30 sec timeout for upload
+	defer cancel()
+
+	tResponse, err := aiClient.BuildTransactionFromImage(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return tResponse, nil
+}
+
+func (s *service) saveNewTransactionV2(
+	tx *e.Transaction,
+	items []e.TransactionItem,
+) (*e.Transaction, error) {
+
+	err := s.db.Transaction(func(db *gorm.DB) error {
+
+		res := db.
+			Clauses(clause.OnConflict{
+				DoNothing: true,
+			}).
+			Create(tx)
+
+		if res.Error != nil {
+			return res.Error
+		}
+
+		// 🔥 duplicate → ถือว่าสำเร็จ
+		if res.RowsAffected == 0 {
+			log.Println("[FIXCOST] duplicate transaction")
+			return nil
+		}
+
+		return s.txirepo.CreateManyTx(db, items)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	txe, err := s.repo.FindByFixCostIDAndRunDate(&m.TransactionFixCostSearchParams{
+		FixCostID: *tx.FixCostID,
+		RunDate:   *tx.RunDate,
+		UserID:    tx.UserID,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if txe == nil {
+		// ❗ ไม่ควรเกิด
+		log.Println("WARNING: tx not found after insert")
+		return nil, nil // หรือ return error ก็ได้
+	}
+
+	return tx, nil
+}
+
+func (s *service) saveNewTransaction(
+	tx *e.Transaction,
+	items []e.TransactionItem,
+) (*e.Transaction, error) {
+
+	if tx == nil {
+		return nil, errors.New("transaction is nil")
+	}
+	if len(items) == 0 {
+		return nil, errors.New("no transaction items to save")
+	}
+
+	err := s.db.Transaction(func(db *gorm.DB) error {
+
+		if err := s.repo.WithTx(db).Create(tx); err != nil {
+			return err
+		}
+
+		if err := s.txirepo.CreateManyTx(db, items); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.FindByIDWithRelations(&m.TransactionSearchParams{
+		TransactionID: tx.TransactionID,
+		UserID:        tx.UserID,
+	})
+}
+
+func (s *service) validateCreateInput(
+	userID string,
+	input *m.TransactionCreateInput,
+) error {
+
+	if input == nil {
+		return errors.New("input is required")
+	}
+
+	if len(input.Items) == 0 {
+		return errors.New("at least one item is required")
+	}
+	categories, err := s.catrepo.FindAllByUserID(userID)
+	if err != nil {
+		return err
+	}
+
+	categoryMap := map[string]bool{}
+	for _, c := range categories {
+		categoryMap[c.CategoryID] = true
+	}
+
+	for _, it := range input.Items {
+		if it.Title == "" {
+			return errors.New("item title is required")
+		}
+		if it.Price < 0 {
+			return errors.New("item price must be positive")
+		}
+		if !categoryMap[it.CategoryID] {
+			return errors.New("invalid category")
+		}
+	}
+
+	return nil
+}

@@ -14,7 +14,9 @@ import (
 	cathandler "github.com/cp25sy5-modjot/main-service/internal/category/handler"
 	catrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
 	catsvc "github.com/cp25sy5-modjot/main-service/internal/category/service"
-	draft "github.com/cp25sy5-modjot/main-service/internal/draft"
+	dhandler "github.com/cp25sy5-modjot/main-service/internal/draft/handler"
+	drepo "github.com/cp25sy5-modjot/main-service/internal/draft/repository"
+	dsvc "github.com/cp25sy5-modjot/main-service/internal/draft/service"
 	favhandler "github.com/cp25sy5-modjot/main-service/internal/favorite_item/handler"
 	favrepo "github.com/cp25sy5-modjot/main-service/internal/favorite_item/repository"
 	favsvc "github.com/cp25sy5-modjot/main-service/internal/favorite_item/service"
@@ -52,7 +54,7 @@ type Services struct {
 	CategoryService        catsvc.Service
 
 	OverviewService overviewsvc.Service
-	DraftService    draft.Service
+	DraftService    dsvc.Service
 	FavoriteService favsvc.Service
 	FixCostService  fcsvc.Service
 	SummaryService  sumsvc.Service
@@ -60,17 +62,17 @@ type Services struct {
 }
 
 type Repositories struct {
-	UserRepo            *userepo.Repository
-	TransactionRepo     *txrepo.Repository
-	TransactionItemRepo *txirepo.Repository
-	CategoryRepo        *catrepo.Repository
+	UserRepo            userepo.Repository
+	TransactionRepo     txrepo.Repository
+	TransactionItemRepo txirepo.Repository
+	CategoryRepo        catrepo.Repository
 
-	OverviewRepo *overviewrepo.Repository
-	DraftRepo    *draft.DraftRepository
-	FavoriteRepo *favrepo.Repository
-	FixCostRepo  *fcrepo.Repository
-	SummaryRepo  *sumrepo.Repository
-	PushRepo     *pushrepo.Repository
+	OverviewRepo overviewrepo.Repository
+	DraftRepo    drepo.Repository
+	FavoriteRepo favrepo.Repository
+	FixCostRepo  fcrepo.Repository
+	SummaryRepo  sumrepo.Repository
+	PushRepo     pushrepo.Repository
 }
 
 func RegisterRoutes(s *fiberServer) {
@@ -107,7 +109,7 @@ func initializeRepositories(s *fiberServer) *Repositories {
 	overviewRepo := overviewrepo.NewRepository(s.db.GetDb())
 	fixCostRepo := fcrepo.NewRepository(s.db.GetDb())
 
-	draftRepo := draft.NewDraftRepository(s.rdb)
+	draftRepo := drepo.NewDraftRepository(s.rdb)
 	favRepo := favrepo.NewRepository(s.db.GetDb())
 	sumRepo := sumrepo.NewRepository(s.db.GetDb())
 	pushRepo := pushrepo.NewRepository(s.db.GetDb())
@@ -149,7 +151,7 @@ func initializeServices(s *fiberServer, repositories *Repositories) *Services {
 	)
 
 	// 👇 สำคัญ: inject createInternal
-	draftSvc := draft.NewService(
+	draftSvc := dsvc.NewService(
 		draftRepo,
 		categoryRepo,
 		s.storage,
@@ -290,7 +292,7 @@ func initializeOverviewRoutes(s *fiberServer, services *Services, authMiddleware
 }
 
 func initializeDraftRoutes(s *fiberServer, services *Services, authMiddleware fiber.Handler) {
-	handler := draft.NewHandler(
+	handler := dhandler.NewHandler(
 		services.DraftService,
 	)
 
@@ -313,7 +315,6 @@ func initializeFavoriteRoutes(s *fiberServer, services *Services, authMiddleware
 	api := s.app.Group("/v1/favorites")
 	api.Use(authMiddleware)
 
-	api.Post("", favHandler.Create)
 	api.Get("", favHandler.GetAll)
 	api.Get("/:id", favHandler.GetByID)
 	api.Put("/:id", favHandler.Update)

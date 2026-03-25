@@ -1,0 +1,62 @@
+with-expecter: true
+inpackage: false
+
+packages:
+  github.com/cp25sy5-modjot/main-service/internal/fix_cost/service:
+    config:
+      dir: internal/fix_cost/mocks
+      outpkg: mocks
+
+  github.com/cp25sy5-modjot/main-service/internal/favorite_item/service:
+    config:
+      dir: internal/favorite_item/mocks
+      outpkg: mocks
+
+  github.com/cp25sy5-modjot/main-service/internal/user/service:
+    config:
+      dir: internal/user/mocks
+      outpkg: mocks
+
+  github.com/cp25sy5-modjot/main-service/internal/transaction/service:
+    config:
+      dir: internal/transaction/mocks
+      outpkg: mocks
+
+  github.com/cp25sy5-modjot/main-service/internal/transaction_item/service:
+    config:
+      dir: internal/transaction_item/mocks
+      outpkg: mocks
+
+  github.com/cp25sy5-modjot/main-service/internal/category/service:
+    config:
+      dir: internal/category/mocks
+      outpkg: mocks
+
+  github.com/cp25sy5-modjot/main-service/internal/draft/service:
+    config:
+      dir: internal/draft/mocks
+      outpkg: mocks
+
+  github.com/cp25sy5-modjot/main-service/internal/summary/service:
+    config:
+      dir: internal/summary/mocks
+      outpkg: mocks
+
+  github.com/cp25sy5-modjot/main-service/internal/overview/service:
+    config:
+      dir: internal/overview/mocks
+      outpkg: mocks
+
+  github.com/cp25sy5-modjot/main-service/internal/queue:
+    interfaces:
+      Queue:
+        config:
+          dir: internal/queue/mocks
+          outpkg: mocks
+
+  github.com/cp25sy5-modjot/main-service/internal/storage:
+    interfaces:
+      Storage:
+        config:
+          dir: internal/storage/mocks
+          outpkg: mocks

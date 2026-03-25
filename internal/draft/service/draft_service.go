@@ -1,0 +1,300 @@
+package draftsvc
+
+import (
+	"context"
+	"errors"
+	"log"
+	"time"
+
+	catrepo "github.com/cp25sy5-modjot/main-service/internal/category/repository"
+	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
+	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
+	drepo  "github.com/cp25sy5-modjot/main-service/internal/draft/repository"
+	"github.com/cp25sy5-modjot/main-service/internal/storage"
+	mapper "github.com/cp25sy5-modjot/main-service/internal/mapper"
+)
+
+type Service interface {
+	SaveDraft(ctx context.Context, draftID, userID string, req m.NewDraftRequest) (*m.DraftTxn, error)
+	UpdateDraft(ctx context.Context, draftID, userID string, req m.ConfirmRequest) (*m.DraftTxn, error)
+	ConfirmDraft(ctx context.Context, draftID string, userID string, req m.ConfirmRequest) (*e.Transaction, error)
+	DeleteDraft(ctx context.Context, draftID string, userID string) error
+	GetDraftStats(ctx context.Context, userID string) (*m.DraftStats, error)
+	GetDraftWithCategory(ctx context.Context, draftID, userID string) (*m.DraftRes, error)
+	ListDraftWithCategory(ctx context.Context, userID string) ([]m.DraftRes, error)
+	GetDraftImageURL(ctx context.Context, draftID, userID string) (string, error)
+}
+
+type service struct {
+	draftRepo    drepo.Repository
+	categoryRepo catrepo.Repository
+	storage      storage.Storage
+	secret       string
+
+	createInternal func(
+		userID string,
+		transactionType e.TransactionType,
+		input *m.TransactionCreateInput,
+	) (*e.Transaction, error)
+}
+
+func NewService(
+	repo drepo.Repository,
+	categoryRepo catrepo.Repository,
+	storage storage.Storage,
+	secret string,
+	createFn func(string, e.TransactionType, *m.TransactionCreateInput) (*e.Transaction, error),
+) Service {
+	return &service{
+		draftRepo:      repo,
+		categoryRepo:   categoryRepo,
+		storage:        storage,
+		secret:         secret,
+		createInternal: createFn,
+	}
+}
+
+func (s *service) GetDraft(ctx context.Context, draftID, userID string) (*m.DraftTxn, error) {
+
+	d, err := s.draftRepo.Get(ctx, draftID)
+	if err != nil {
+		return nil, err
+	}
+
+	if d.UserID != userID {
+		return nil, errors.New("not owner")
+	}
+
+	return d, nil
+}
+
+func (s *service) ListDraft(ctx context.Context, userID string) ([]m.DraftTxn, error) {
+	return s.draftRepo.ListByUser(ctx, userID)
+}
+
+func (s *service) UpdateDraft(
+	ctx context.Context,
+	draftID string,
+	userID string,
+	req m.ConfirmRequest,
+) (*m.DraftTxn, error) {
+
+	d, err := s.draftRepo.Get(ctx, draftID)
+	if err != nil {
+		return nil, errors.New("draft not found")
+	}
+
+	if d.UserID != userID {
+		return nil, errors.New("not owner")
+	}
+
+	if d.Status != m.DraftStatusWaitingConfirm {
+		return nil, errors.New("cannot edit at this stage")
+	}
+
+	// apply change
+	if len(req.Items) > 0 {
+		d.Items = req.Items
+	}
+
+	if req.Date != nil {
+		d.Date = req.Date
+	}
+
+	// validate
+	for _, it := range d.Items {
+		if it.Price <= 0 {
+			return nil, errors.New("price must be > 0")
+		}
+	}
+
+	d.UpdatedAt = time.Now()
+
+	if err := s.draftRepo.Save(ctx, *d); err != nil {
+		return nil, err
+	}
+
+	return d, nil
+}
+
+func (s *service) SaveDraft(
+	ctx context.Context,
+	draftID string,
+	userID string,
+	req m.NewDraftRequest,
+) (*m.DraftTxn, error) {
+
+	for _, it := range req.Items {
+		if it.Price <= 0 {
+			return nil, errors.New("price must be > 0")
+		}
+	}
+
+	d := &m.DraftTxn{
+		Title:     req.Title,
+		DraftID:   draftID,
+		UserID:    userID,
+		Status:    m.DraftStatusQueued,
+		Date:      req.Date,
+		Items:     req.Items,
+		Path:      req.Path,
+		CreatedAt: req.CreatedAt,
+		UpdatedAt: req.CreatedAt,
+	}
+
+	if err := s.draftRepo.Save(ctx, *d); err != nil {
+		return nil, err
+	}
+
+	return d, nil
+}
+
+func (s *service) ConfirmDraft(
+	ctx context.Context,
+	draftID string,
+	userID string,
+	req m.ConfirmRequest,
+) (*e.Transaction, error) {
+
+	d, err := s.draftRepo.Get(ctx, draftID)
+	if err != nil {
+		return nil, errors.New("draft not found")
+	}
+
+	if d.UserID != userID {
+		return nil, errors.New("not owner")
+	}
+
+	if d.Status != m.DraftStatusWaitingConfirm {
+		return nil, errors.New("draft not ready")
+	}
+
+	if len(req.Items) == 0 {
+		return nil, errors.New("cannot confirm empty draft")
+	}
+
+	for _, it := range req.Items {
+		if it.Price < 0 {
+			return nil, errors.New("price must be > 0")
+		}
+	}
+
+	input := mapper.MapConfirmDraftToCreateInput(&req)
+
+	tx, err := s.createInternal(userID, e.TransactionUpload, input)
+	if err != nil {
+		return nil, err
+	}
+
+	// ลบไฟล์ก่อน
+	if d.Path != "" {
+		if err := s.storage.Delete(ctx, d.Path); err != nil {
+			log.Printf("[CONFIRM %s] delete file error: %v", draftID, err)
+		}
+	}
+
+	// ค่อยลบ draft
+	_ = s.draftRepo.Delete(ctx, draftID)
+
+	return tx, nil
+
+}
+
+func (s *service) DeleteDraft(ctx context.Context, draftID, userID string) error {
+	d, err := s.draftRepo.Get(ctx, draftID)
+	if err != nil {
+		return errors.New("draft not found")
+	}
+	if d.UserID != userID {
+		return errors.New("not owner")
+	}
+	// ลบไฟล์ก่อน
+	if d.Path != "" {
+		if err := s.storage.Delete(ctx, d.Path); err != nil {
+			log.Printf("[DELETE %s] delete file error: %v", draftID, err)
+		}
+	}
+	return s.draftRepo.Delete(ctx, draftID)
+
+}
+
+func (s *service) GetDraftStats(ctx context.Context, userID string) (*m.DraftStats, error) {
+	return s.draftRepo.StatsByUser(ctx, userID)
+}
+
+func (s *service) GetDraftWithCategory(
+	ctx context.Context,
+	draftID, userID string,
+) (*m.DraftRes, error) {
+
+	d, err := s.GetDraft(ctx, draftID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := mapper.UniqueCategoryIDsFromDrafts([]m.DraftTxn{*d})
+
+	categoryMap, err := s.categoryRepo.FindByIDs(ctx, userID, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	res := mapper.BuildDraftRes(*d, categoryMap)
+	return &res, nil
+}
+
+func (s *service) ListDraftWithCategory(
+	ctx context.Context,
+	userID string,
+) ([]m.DraftRes, error) {
+
+	drafts, err := s.draftRepo.ListByUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(drafts) == 0 {
+		return []m.DraftRes{}, nil
+	}
+
+	ids := mapper.UniqueCategoryIDsFromDrafts(drafts)
+
+	categoryMap, err := s.categoryRepo.FindByIDs(ctx, userID, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]m.DraftRes, 0, len(drafts))
+
+	for _, d := range drafts {
+		result = append(result, mapper.BuildDraftRes(d, categoryMap))
+	}
+
+	return result, nil
+}
+
+func (s *service) GetDraftImageURL(
+	ctx context.Context,
+	draftID,
+	userID string,
+) (string, error) {
+
+	d, err := s.draftRepo.Get(ctx, draftID)
+	if err != nil {
+		return "", err
+	}
+
+	if d.UserID != userID {
+		return "", errors.New("not owner")
+	}
+
+	if d.Path == "" {
+		return "", errors.New("no image")
+	}
+
+	return s.storage.GenerateSignedURL(
+		d.Path,
+		5*time.Minute,
+		s.secret,
+	), nil
+}
