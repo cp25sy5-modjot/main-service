@@ -8,6 +8,13 @@ type TransactionSearchParams struct {
 	TransactionID string `json:"transaction_id"`
 	UserID        string `json:"user_id" validate:"required"`
 }
+
+type TransactionFixCostSearchParams struct {
+	UserID        string `json:"user_id" validate:"required"`
+	FixCostID    string `json:"fix_cost_id" validate:"required"`
+	RunDate      time.Time `json:"run_date" validate:"required"`
+}
+
 type TransactionItemReq struct {
 	Title      string  `json:"title" validate:"required,min=2,max=20"`
 	Price      float64 `json:"price" validate:"required"`

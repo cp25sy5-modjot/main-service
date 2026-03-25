@@ -163,3 +163,25 @@ func (r *Repository) UpdateFieldsTx(
 func (r *Repository) Delete(params *m.TransactionSearchParams) error {
 	return r.db.Delete(&e.Transaction{}, "transaction_id = ? AND user_id = ?", params.TransactionID, params.UserID).Error
 }
+
+func (r *Repository) FindByFixCostIDAndRunDate(
+	params *m.TransactionFixCostSearchParams,
+) (*e.Transaction, error) {
+
+	var tx e.Transaction
+
+	err := r.db.
+		Preload("Items").
+		Where("fix_cost_id = ? AND run_date = ? AND user_id = ?",
+			params.FixCostID,
+			params.RunDate,
+			params.UserID,
+		).
+		First(&tx).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &tx, nil
+}

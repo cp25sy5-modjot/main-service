@@ -396,8 +396,9 @@ func (s *service) saveNewTransactionV2(
 			return res.Error
 		}
 
-		// 🔥 ถ้า duplicate → skip items
+		// 🔥 duplicate → ถือว่าสำเร็จ
 		if res.RowsAffected == 0 {
+			log.Println("[FIXCOST] duplicate transaction")
 			return nil
 		}
 
@@ -408,9 +409,10 @@ func (s *service) saveNewTransactionV2(
 		return nil, err
 	}
 
-	return s.repo.FindByIDWithRelations(&m.TransactionSearchParams{
-		TransactionID: tx.TransactionID,
-		UserID:        tx.UserID,
+	return s.repo.FindByFixCostIDAndRunDate(&m.TransactionFixCostSearchParams{
+		FixCostID: *tx.FixCostID,
+		RunDate:   *tx.RunDate,
+		UserID:    tx.UserID,
 	})
 }
 
