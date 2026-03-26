@@ -111,14 +111,9 @@ func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) (*e.F
 	if input.IntervalValue != nil {
 		exists.IntervalValue = *input.IntervalValue
 	}
-
-	if input.EndDate != nil {
-		exists.EndDate = input.EndDate
-	}
-
-	if input.RemainingRuns != nil {
-		exists.RemainingRuns = input.RemainingRuns
-	}
+	
+	exists.EndDate = input.EndDate
+	exists.RemainingRuns = input.RemainingRuns
 
 	if input.Status != nil {
 		exists.Status = e.FixCostStatus(*input.Status)
