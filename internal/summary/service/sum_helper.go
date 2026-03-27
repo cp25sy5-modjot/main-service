@@ -47,7 +47,7 @@ func fillZero(period Period, start, end time.Time, data []m.ExpenseSummary) []m.
 			})
 		}
 
-	case Month:
+	case Year:
 
 		for i := 1; i <= 12; i++ {
 
@@ -61,7 +61,7 @@ func fillZero(period Period, start, end time.Time, data []m.ExpenseSummary) []m.
 			})
 		}
 
-	case Year:
+	case Last3Year:
 
 		for y := start.Year(); y < end.Year(); y++ {
 
