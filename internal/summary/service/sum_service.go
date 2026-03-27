@@ -97,14 +97,14 @@ func resolveExpensePeriodRange(period Period, ref time.Time) (
 		end = start.AddDate(0, 0, 7)
 		format = "YYYY-MM-DD"
 
-	case Month:
+	case Year:
 
 		start = startOfMonth(ref)
 		end = start.AddDate(1, 0, 0)
 
 		format = "MM"
 
-	case Year:
+	case Last3Year:
 
 		// 3 ปีล่าสุด
 		start = startOfLastNYear(ref, 2)

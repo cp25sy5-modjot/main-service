@@ -17,7 +17,7 @@ func NewHandler(service service.Service) *Handler {
 	return &Handler{service}
 }
 
-// GET /summary?period=week|month|year
+// GET /summary?period=week|year|last_3_year
 func (h *Handler) GetExpenseSummary(c *fiber.Ctx) error {
 	userID, err := jwt.GetUserIDFromClaims(c)
 	if err != nil {
@@ -44,7 +44,7 @@ func (h *Handler) GetExpenseSummary(c *fiber.Ctx) error {
 	return sresp.OK(c, summary, "Expense summary retrieved successfully")
 }
 
-// GET /summary/category?period=day|week|month|year|past_year&date=2024-01-01
+// GET /summary/category?period=day|week|month|year|last_3_year&date=2024-01-01
 func (h *Handler) GetCategorySummary(c *fiber.Ctx) error {
 
 	userID, err := jwt.GetUserIDFromClaims(c)
