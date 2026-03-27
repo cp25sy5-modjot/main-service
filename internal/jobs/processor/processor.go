@@ -319,8 +319,3 @@ func (p *Processor) processOne(ctx context.Context, fc *e.FixCost) error {
 	return p.fixCostRepo.Update(ctx, fc)
 }
 
-func sameUTCDate(a, b time.Time) bool {
-	ay, am, ad := a.UTC().Date()
-	by, bm, bd := b.UTC().Date()
-	return ay == by && am == bm && ad == bd
-}
