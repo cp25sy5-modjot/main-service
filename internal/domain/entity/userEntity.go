@@ -28,6 +28,4 @@ type User struct {
 
 type UserBinding struct {
 	GoogleID string
-	// FacebookID string
-	// AppleID    string
 }

@@ -520,52 +520,6 @@ func (_c *MockService_SoftDelete_Call) RunAndReturn(run func(string) error) *Moc
 	return _c
 }
 
-// TestSoftDelete provides a mock function with given fields: userID
-func (_m *MockService) TestSoftDelete(userID string) error {
-	ret := _m.Called(userID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for TestSoftDelete")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(userID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// MockService_TestSoftDelete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TestSoftDelete'
-type MockService_TestSoftDelete_Call struct {
-	*mock.Call
-}
-
-// TestSoftDelete is a helper method to define mock.On call
-//   - userID string
-func (_e *MockService_Expecter) TestSoftDelete(userID interface{}) *MockService_TestSoftDelete_Call {
-	return &MockService_TestSoftDelete_Call{Call: _e.mock.On("TestSoftDelete", userID)}
-}
-
-func (_c *MockService_TestSoftDelete_Call) Run(run func(userID string)) *MockService_TestSoftDelete_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
-	})
-	return _c
-}
-
-func (_c *MockService_TestSoftDelete_Call) Return(_a0 error) *MockService_TestSoftDelete_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockService_TestSoftDelete_Call) RunAndReturn(run func(string) error) *MockService_TestSoftDelete_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Update provides a mock function with given fields: userID, input
 func (_m *MockService) Update(userID string, input *model.UserUpdateInput) (*entity.User, error) {
 	ret := _m.Called(userID, input)

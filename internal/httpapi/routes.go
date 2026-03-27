@@ -80,7 +80,6 @@ func RegisterRoutes(s *fiberServer) {
 	repositories := initializeRepositories(s)
 	services := initializeServices(s, repositories)
 
-	// ⭐ สร้างครั้งเดียวตรงนี้
 	authMiddleware := jwt.Protected(
 		s.conf.Auth.AccessTokenSecret,
 		repositories.UserRepo,
@@ -150,7 +149,6 @@ func initializeServices(s *fiberServer, repositories *Repositories) *Services {
 		s.aiClient,
 	)
 
-	// 👇 สำคัญ: inject createInternal
 	draftSvc := dsvc.NewService(
 		draftRepo,
 		categoryRepo,

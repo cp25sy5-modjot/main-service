@@ -92,8 +92,6 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 		err = h.service.SoftDelete(userID)
 	case "hard":
 		err = h.service.Delete(userID)
-	case "test": // remove in prod
-		err = h.service.TestSoftDelete(userID)
 	default:
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid delete mode")
 	}
@@ -111,8 +109,6 @@ func buildUserResponse(user *e.User) *m.UserRes {
 		CreatedAt: user.CreatedAt,
 		UserBinding: m.UserBinding{
 			GoogleID: user.UserBinding.GoogleID,
-			// FacebookID: user.UserBinding.FacebookID,
-			// AppleID:    user.UserBinding.AppleID,
 		},
 	}
 }

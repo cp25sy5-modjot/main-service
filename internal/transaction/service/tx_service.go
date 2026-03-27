@@ -393,7 +393,7 @@ func (s *service) saveNewTransactionV2(
 			return res.Error
 		}
 
-		// 🔥 duplicate → ถือว่าสำเร็จ
+		//duplicate → ถือว่าสำเร็จ
 		if res.RowsAffected == 0 {
 			log.Println("[FIXCOST] duplicate transaction")
 			return nil
@@ -417,9 +417,8 @@ func (s *service) saveNewTransactionV2(
 	}
 
 	if txe == nil {
-		// ❗ ไม่ควรเกิด
 		log.Println("WARNING: tx not found after insert")
-		return nil, nil // หรือ return error ก็ได้
+		return nil, nil 
 	}
 
 	return tx, nil

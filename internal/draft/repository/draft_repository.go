@@ -44,7 +44,7 @@ func (r *repository) Save(ctx context.Context, d model.DraftTxn) error {
 
 	pipe.Set(ctx, k, b, 24*time.Hour)
 
-	// 👇 index user → draftID
+	//index user → draftID
 	userKey := fmt.Sprintf("txn:user:%s:drafts", d.UserID)
 	pipe.SAdd(ctx, userKey, d.DraftID)
 	pipe.Expire(ctx, userKey, 24*time.Hour)

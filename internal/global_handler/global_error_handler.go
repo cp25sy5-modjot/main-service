@@ -68,7 +68,7 @@ func GlobalErrorHandler(c *fiber.Ctx, err error) error {
 func safeDetail(err error) string {
 	if isProd {
 		log.Println("detail not shown in production:")
-		return "" // ปิด detail ใน prod
+		return ""
 	}
-	return err.Error() // โชว์ใน dev
+	return err.Error()
 }

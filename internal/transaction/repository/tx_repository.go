@@ -91,7 +91,6 @@ func (r *repository) FindAllByUserIDWithRelationsAndFiltered(
 			end,
 		)
 
-	// 👉 filter ด้วย multiple category จาก item
 	if len(categoryIDs) > 0 {
 		query = query.
 			Joins("JOIN transaction_items ON transaction_items.transaction_id = transactions.transaction_id").
@@ -200,7 +199,7 @@ func (r *repository) FindByFixCostIDAndRunDate(
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil // 🔥 สำคัญ
+			return nil, nil 
 		}
 		return nil, err
 	}

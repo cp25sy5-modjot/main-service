@@ -74,13 +74,13 @@ func TestTransactionHandler(t *testing.T) {
 			).
 			Return(&asynq.TaskInfo{}, nil)
 
-		// 🔥 FIX: multipart with Content-Type
+		//FIX: multipart with Content-Type
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
 
 		partHeader := make(textproto.MIMEHeader)
 		partHeader.Set("Content-Disposition", `form-data; name="image"; filename="test.png"`)
-		partHeader.Set("Content-Type", "image/png") // 🔥 สำคัญมาก
+		partHeader.Set("Content-Type", "image/png") 
 
 		part, _ := writer.CreatePart(partHeader)
 		part.Write([]byte("fake-image"))

@@ -95,7 +95,7 @@ func ParseAIDate(s string) (time.Time, error) {
 		return time.Time{}, errors.New("empty date string")
 	}
 
-	// 🧹 AI ชอบส่ง timezone มั่ว → ตัดทิ้งก่อน
+	//AI ส่ง timezone มั่ว → ตัดทิ้งก่อน
 	s = stripTimezone(s)
 
 	layouts := []string{

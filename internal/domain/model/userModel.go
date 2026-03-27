@@ -33,6 +33,4 @@ type UserRes struct {
 
 type UserBinding struct {
 	GoogleID string `json:"google_id"`
-	// FacebookID string `json:"facebook_id"`
-	// AppleID    string `json:"apple_id"`
 }

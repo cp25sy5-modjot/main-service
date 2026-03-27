@@ -94,7 +94,7 @@ func (p *Processor) handleBuildTransactionTask(ctx context.Context, t *asynq.Tas
 		return err
 	}
 
-	// ✅ IDEMPOTENT GUARD
+	// IDEMPOTENT GUARD
 	if exDraft.Status == m.DraftStatusWaitingConfirm {
 		log.Printf("[JOB %s] already done → skip", payload.DraftID)
 		return nil

@@ -17,7 +17,7 @@ import (
 )
 
 type Handler struct {
-	service      txsvc.Service // <- use interface, not *Service
+	service      txsvc.Service 
 	asynqClient  queue.Queue
 	storage      storage.Storage
 	draftService draft.Service

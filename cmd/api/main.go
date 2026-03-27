@@ -16,11 +16,6 @@ func main() {
 	conf := config.LoadConfig()
 	db := database.NewPostgresDatabase(conf)
 
-	// grpcConn, err := grpc.Dial(conf.AIService.Url, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	// if err != nil {
-	// 	log.Fatalf("Failed to connect to gRPC server: %v", err)
-	// }
-	// defer grpcConn.Close()
 	grpcConn, err := grpc.NewClient(
 		conf.AIService.Url,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),

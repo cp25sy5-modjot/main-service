@@ -66,7 +66,7 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	_, err = h.asynqClient.Enqueue(task,
-		asynq.TaskID(draftID), // 🔥 กัน enqueue ซ้ำ
+		asynq.TaskID(draftID), 
 		asynq.MaxRetry(3),
 		asynq.Timeout(10*time.Minute),
 		asynq.ProcessIn(3*time.Second),

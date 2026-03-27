@@ -64,18 +64,6 @@ func (r *repository) FindByGoogleID(googleID string) (*e.User, error) {
 	return &user, err
 }
 
-// func (r *Repository) FindByFacebookID(facebook_id string) (*e.User, error) {
-// 	var user e.User
-// 	err := r.db.Where("facebook_id = ?", facebook_id).First(&user).Error
-// 	return &user, err
-// }
-
-// func (r *Repository) FindByAppleID(apple_id string) (*e.User, error) {
-// 	var user e.User
-// 	err := r.db.Where("apple_id = ?", apple_id).First(&user).Error
-// 	return &user, err
-// }
-
 func (r *repository) Update(user *e.User) (*e.User, error) {
 	if err := r.db.Save(user).Error; err != nil {
 		return nil, err
