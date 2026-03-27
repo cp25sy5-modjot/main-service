@@ -27,6 +27,13 @@ type CategorySummary struct {
 }
 
 type CategorySummaryQuery struct {
-	Period string `query:"period" validate:"required,oneof=day week month year past_year"`
-	Date   string `query:"date"`
+	Period          string `query:"period" validate:"required,oneof=day week month year past_year"`
+	Date            string `query:"date" validate:"required"`
+	IsUseDateFilter bool   `query:"is_use_date"`
+}
+
+type ExpenseSummaryQuery struct {
+	Period          string `query:"period" validate:"required,oneof=week month year"`
+	Date            string `query:"date" validate:"required"`
+	IsUseDateFilter bool   `query:"is_use_date"`
 }

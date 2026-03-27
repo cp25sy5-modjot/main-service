@@ -26,12 +26,20 @@ func GenerateRandomColor() string {
 }
 
 func ConvertStringToTimeWithDefault(s string) *time.Time {
-	t, err := time.Parse(time.DateOnly, s)
-	if err != nil {
-		log.Printf("Failed to parse date: %v will use current date", err)
-		now := time.Now().UTC()
+	loc, _ := time.LoadLocation("Asia/Bangkok")
+
+	if s == "" {
+		now := time.Now().In(loc)
 		return &now
 	}
+
+	t, err := time.ParseInLocation(time.DateOnly, s, loc)
+	if err != nil {
+		log.Printf("Failed to parse date: %v will use current date", err)
+		now := time.Now().In(loc)
+		return &now
+	}
+
 	return &t
 }
 

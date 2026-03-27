@@ -1,6 +1,10 @@
 with-expecter: true
 inpackage: false
 
+resolve-type-alias: false
+disable-version-string: true
+issue-845-fix: true
+
 packages:
   github.com/cp25sy5-modjot/main-service/internal/fix_cost/service:
     config:

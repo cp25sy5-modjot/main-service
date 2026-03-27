@@ -14,8 +14,8 @@ type Repository interface {
 		ctx context.Context,
 		userID string,
 		format string,
-		start string,
-		end string,
+		start time.Time,
+		end time.Time,
 	) ([]m.ExpenseSummary, error)
 
 	CategorySummary(
@@ -36,16 +36,16 @@ func NewRepository(db *gorm.DB) Repository {
 
 func (r *repository) ExpenseSummary(
 	ctx context.Context,
-	userID string,
+	userID,
 	format string,
-	start string,
-	end string,
+	start time.Time,
+	end time.Time,
 ) ([]m.ExpenseSummary, error) {
 
 	var result []m.ExpenseSummary
 
 	selectClause := fmt.Sprintf(`
-		TO_CHAR(tr.date, '%s') AS key,
+		TO_CHAR(tr.date AT TIME ZONE 'Asia/Bangkok', '%s') AS key,
 		COALESCE(SUM(ti.price),0) AS total
 	`, format)
 

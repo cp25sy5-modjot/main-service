@@ -11,7 +11,7 @@ import (
 )
 
 type Service interface {
-	GetExpenseSummary(ctx context.Context, userID string, period Period) (m.ExpenseSummaryRes, error)
+	GetExpenseSummary(ctx context.Context, userID string, period Period, date *time.Time) (m.ExpenseSummaryRes, error)
 	GetCategorySummary(ctx context.Context, userID string, period Period, date *time.Time) (m.CategorySummaryRes, error)
 }
 
@@ -27,10 +27,9 @@ func (s *service) GetExpenseSummary(
 	ctx context.Context,
 	userID string,
 	period Period,
+	date   *time.Time,
 ) (m.ExpenseSummaryRes, error) {
-
-	now := time.Now().UTC()
-
+loc := date.Location()
 	var (
 		format string
 		start  time.Time
@@ -41,17 +40,17 @@ func (s *service) GetExpenseSummary(
 
 	case Week:
 
-		weekday := int(now.Weekday())
+		weekday := int(date.Weekday())
 		if weekday == 0 {
 			weekday = 7
 		}
 
 		start = time.Date(
-			now.Year(),
-			now.Month(),
-			now.Day()-weekday+1,
+			date.Year(),
+			date.Month(),
+			date.Day()-weekday+1,
 			0, 0, 0, 0,
-			time.UTC,
+			loc,
 		)
 
 		end = start.AddDate(0, 0, 7)
@@ -61,7 +60,7 @@ func (s *service) GetExpenseSummary(
 	case Month:
 
 		// ทุกเดือนของปีนี้
-		start = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
+		start = time.Date(date.Year(), 1, 1, 0, 0, 0, 0, loc)
 		end = start.AddDate(1, 0, 0)
 
 		format = "MM"
@@ -69,8 +68,8 @@ func (s *service) GetExpenseSummary(
 	case Year:
 
 		// 3 ปีล่าสุด
-		start = time.Date(now.Year()-2, 1, 1, 0, 0, 0, 0, time.UTC)
-		end = time.Date(now.Year()+1, 1, 1, 0, 0, 0, 0, time.UTC)
+		start = time.Date(date.Year()-2, 1, 1, 0, 0, 0, 0, loc)
+		end = time.Date(date.Year()+1, 1, 1, 0, 0, 0, 0, loc)
 
 		format = "YYYY"
 
@@ -78,7 +77,10 @@ func (s *service) GetExpenseSummary(
 		return m.ExpenseSummaryRes{}, errors.New("invalid period")
 	}
 
-	data, err := s.repo.ExpenseSummary(ctx, userID, format, start.Format(time.RFC3339), end.Format(time.RFC3339))
+	startUTC := start.UTC()
+	endUTC := end.UTC()
+
+	data, err := s.repo.ExpenseSummary(ctx, userID, format, startUTC, endUTC)
 	if err != nil {
 		return m.ExpenseSummaryRes{}, err
 	}

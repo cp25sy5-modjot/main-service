@@ -24,12 +24,19 @@ func (h *Handler) GetExpenseSummary(c *fiber.Ctx) error {
 		return err
 	}
 
-	period := c.Query("period")
-	if period == "" {
-		return fiber.ErrBadRequest
+	var q m.ExpenseSummaryQuery
+
+	if err := utils.ParseQueryAndValidate(c, &q); err != nil {
+		return err
 	}
 
-	summary, err := h.service.GetExpenseSummary(c.Context(), userID, service.Period(period))
+	summary, err := h.service.GetExpenseSummary(
+		c.Context(),
+		userID,
+		service.Period(q.Period),
+		utils.ConvertStringToTimeWithDefault(q.Date),
+	)
+
 	if err != nil {
 		return err
 	}
@@ -52,7 +59,7 @@ func (h *Handler) GetCategorySummary(c *fiber.Ctx) error {
 	}
 
 	period := service.Period(q.Period)
-	date := utils.ConvertStringToTime(q.Date)
+	date := utils.ConvertStringToTimeWithDefault(q.Date)
 
 	summary, err := h.service.GetCategorySummary(
 		c.Context(),
