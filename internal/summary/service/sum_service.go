@@ -27,59 +27,15 @@ func (s *service) GetExpenseSummary(
 	ctx context.Context,
 	userID string,
 	period Period,
-	date   *time.Time,
+	date *time.Time,
 ) (m.ExpenseSummaryRes, error) {
-loc := date.Location()
-	var (
-		format string
-		start  time.Time
-		end    time.Time
-	)
 
-	switch period {
-
-	case Week:
-
-		weekday := int(date.Weekday())
-		if weekday == 0 {
-			weekday = 7
-		}
-
-		start = time.Date(
-			date.Year(),
-			date.Month(),
-			date.Day()-weekday+1,
-			0, 0, 0, 0,
-			loc,
-		)
-
-		end = start.AddDate(0, 0, 7)
-
-		format = "YYYY-MM-DD"
-
-	case Month:
-
-		start = time.Date(date.Year(), 1, 1, 0, 0, 0, 0, loc)
-		end = start.AddDate(1, 0, 0)
-
-		format = "MM"
-
-	case Year:
-
-		// 3 ปีล่าสุด
-		start = time.Date(date.Year()-2, 1, 1, 0, 0, 0, 0, loc)
-		end = time.Date(date.Year()+1, 1, 1, 0, 0, 0, 0, loc)
-
-		format = "YYYY"
-
-	default:
-		return m.ExpenseSummaryRes{}, errors.New("invalid period")
+	start, end, format, err := resolveExpensePeriodRange(period, date.In(time.Local))
+	if err != nil {
+		return m.ExpenseSummaryRes{}, err
 	}
 
-	startUTC := start.UTC()
-	endUTC := end.UTC()
-
-	data, err := s.repo.ExpenseSummary(ctx, userID, format, startUTC, endUTC)
+	data, err := s.repo.ExpenseSummary(ctx, userID, format, start.UTC(), end.UTC())
 	if err != nil {
 		return m.ExpenseSummaryRes{}, err
 	}
@@ -99,19 +55,12 @@ func (s *service) GetCategorySummary(
 	date *time.Time,
 ) (m.CategorySummaryRes, error) {
 
-	loc := time.Local // ❗ หรือควร inject จาก client (ดีที่สุด)
-
-	ref := time.Now().In(loc)
-	if date != nil {
-		ref = date.In(loc)
-	}
-
-	start, end, units, err := resolvePeriodRange(period, ref)
+	start, end, units, err := resolveCategoryPeriodRange(period, date.In(time.Local))
 	if err != nil {
 		return m.CategorySummaryRes{}, err
 	}
 
-	data, err := s.repo.CategorySummary(ctx, userID, start, end)
+	data, err := s.repo.CategorySummary(ctx, userID, start.UTC(), end.UTC())
 	if err != nil {
 		return m.CategorySummaryRes{}, fmt.Errorf("get category summary: %w", err)
 	}
@@ -134,40 +83,77 @@ func (s *service) GetCategorySummary(
 	}, nil
 }
 
-func resolvePeriodRange(period Period, ref time.Time) (
-	start time.Time,
-	end time.Time,
-	units int,
+func resolveExpensePeriodRange(period Period, ref time.Time) (
+	start, end time.Time,
+	format string,
 	err error,
 ) {
 
 	switch period {
 
+	case Week:
+
+		start = startOfWeek(ref)
+		end = start.AddDate(0, 0, 7)
+		format = "YYYY-MM-DD"
+
+	case Month:
+
+		start = startOfMonth(ref)
+		end = start.AddDate(1, 0, 0)
+
+		format = "MM"
+
+	case Year:
+
+		// 3 ปีล่าสุด
+		start = startOfLastNYear(ref, 2)
+		end = startOfYear(ref.AddDate(1, 0, 0))
+
+		format = "YYYY"
+
+	default:
+		err = errors.New("invalid period")
+	}
+
+	return
+}
+
+func resolveCategoryPeriodRange(period Period, ref time.Time) (
+	start, end time.Time,
+	units int,
+	err error,
+) {
+
+	switch period {
+	// single: 1 day, 1 month
 	case Day:
 		start = startOfDay(ref)
 		end = start.AddDate(0, 0, 1)
 		units = 1
-
-	case Week:
-		start = startOfWeek(ref)
-		end = start.AddDate(0, 0, 7)
-		units = 7
 
 	case Month:
 		start = startOfMonth(ref)
 		end = start.AddDate(0, 1, 0)
 		units = int(end.Sub(start).Hours() / 24)
 
+	// multiple: 1 week (7 days), 1 year (12 months), and last 3 year (3 years)
+	case Week:
+
+		start = startOfWeek(ref)
+		end = start.AddDate(0, 0, 7)
+		units = 7
+
 	case Year:
 		start = startOfYear(ref)
 		end = start.AddDate(1, 0, 0)
 		units = 12
 
-	case PastYear:
-		const years = 3
-		start = startOfYear(ref.AddDate(-years+1, 0, 0))
+	case Last3Year:
+		const years = 2
+		start = startOfLastNYear(ref, years)
 		end = startOfYear(ref.AddDate(1, 0, 0))
-		units = years
+		units = years + 1
 
 	default:
 		err = fmt.Errorf("invalid period")

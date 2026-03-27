@@ -11,11 +11,14 @@ import (
 type Period string
 
 const (
-	Day      Period = "day"
-	Week     Period = "week"
-	Month    Period = "month"
-	Year     Period = "year"
-	PastYear Period = "past_year"
+	// for 1 day 1 month
+	Day   Period = "day"
+	Month Period = "month"
+
+	// for 1 week (7 days), 1 year (12 months), and last 3 year (3 years)
+	Week      Period = "week"
+	Year      Period = "year"
+	Last3Year Period = "last_3_year"
 )
 
 func fillZero(period Period, start, end time.Time, data []m.ExpenseSummary) []m.ExpenseSummary {
@@ -75,32 +78,8 @@ func fillZero(period Period, start, end time.Time, data []m.ExpenseSummary) []m.
 	return result
 }
 
-func (p Period) IsValid() bool {
-	switch p {
-	case Week, Month, Year:
-		return true
-	default:
-		return false
-	}
-}
-
-func ParsePeriod(s string) (Period, error) {
-	if s == "" {
-		return Week, nil
-	}
-
-	p := Period(s)
-
-	switch p {
-	case Week, Month, Year:
-		return p, nil
-	default:
-		return "", fmt.Errorf("invalid period")
-	}
-}
-
 func startOfDay(t time.Time) time.Time {
-	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 }
 
 func startOfWeek(t time.Time) time.Time {
@@ -108,14 +87,24 @@ func startOfWeek(t time.Time) time.Time {
 	if weekday == 0 {
 		weekday = 7
 	}
-	d := t.AddDate(0, 0, -weekday+1)
-	return startOfDay(d)
+
+	return time.Date(
+		t.Year(),
+		t.Month(),
+		t.Day()-weekday+1,
+		0, 0, 0, 0,
+		t.Location(),
+	)
 }
 
 func startOfMonth(t time.Time) time.Time {
-	return time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+	return time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
 }
 
 func startOfYear(t time.Time) time.Time {
-	return time.Date(t.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
+	return time.Date(t.Year(), 1, 1, 0, 0, 0, 0, t.Location())
+}
+
+func startOfLastNYear(t time.Time, n int) time.Time {
+	return time.Date(t.Year()-n, 1, 1, 0, 0, 0, 0, t.Location())
 }
