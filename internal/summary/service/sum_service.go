@@ -59,7 +59,6 @@ loc := date.Location()
 
 	case Month:
 
-		// ทุกเดือนของปีนี้
 		start = time.Date(date.Year(), 1, 1, 0, 0, 0, 0, loc)
 		end = start.AddDate(1, 0, 0)
 
@@ -100,9 +99,11 @@ func (s *service) GetCategorySummary(
 	date *time.Time,
 ) (m.CategorySummaryRes, error) {
 
-	ref := time.Now().UTC()
+	loc := time.Local // ❗ หรือควร inject จาก client (ดีที่สุด)
+
+	ref := time.Now().In(loc)
 	if date != nil {
-		ref = date.UTC()
+		ref = date.In(loc)
 	}
 
 	start, end, units, err := resolvePeriodRange(period, ref)

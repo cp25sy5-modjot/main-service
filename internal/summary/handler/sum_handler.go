@@ -58,14 +58,11 @@ func (h *Handler) GetCategorySummary(c *fiber.Ctx) error {
 		return err
 	}
 
-	period := service.Period(q.Period)
-	date := utils.ConvertStringToTimeWithDefault(q.Date)
-
 	summary, err := h.service.GetCategorySummary(
 		c.Context(),
 		userID,
-		period,
-		date,
+		service.Period(q.Period),
+		utils.ConvertStringToTimeWithDefault(q.Date),
 	)
 	if err != nil {
 		return err
