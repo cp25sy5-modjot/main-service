@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
@@ -35,6 +36,8 @@ func (s *service) GetExpenseSummary(
 		return m.ExpenseSummaryRes{}, err
 	}
 
+	log.Printf("[SummaryService] GetExpenseSummary: period=%s, date=%s, start=%s, end=%s",
+		period, date, start, end)
 	data, err := s.repo.ExpenseSummary(ctx, userID, format, start, end)
 	if err != nil {
 		return m.ExpenseSummaryRes{}, err
@@ -59,6 +62,9 @@ func (s *service) GetCategorySummary(
 	if err != nil {
 		return m.CategorySummaryRes{}, err
 	}
+	
+	log.Printf("[SummaryService] GetCategorySummary: period=%s, date=%s, start=%s, end=%s",
+		period, date, start, end)
 
 	data, err := s.repo.CategorySummary(ctx, userID, start, end)
 	if err != nil {

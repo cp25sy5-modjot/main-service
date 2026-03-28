@@ -141,6 +141,7 @@ func (s *service) GetAllComparePreviousMonthAndByUserIDWithFilter(
 	// --- Current Month ---
 	start, end := utils.GetStartAndEndOfMonth(*filter.Date)
 
+	log.Printf("[transaction query] start: %s, end: %s", start.Format(time.RFC3339), end.Format(time.RFC3339))
 	itemCount, err := s.repo.CountItemsByUserAndDateRange(
 		userID,
 		start,
@@ -418,7 +419,7 @@ func (s *service) saveNewTransactionV2(
 
 	if txe == nil {
 		log.Println("WARNING: tx not found after insert")
-		return nil, nil 
+		return nil, nil
 	}
 
 	return tx, nil
