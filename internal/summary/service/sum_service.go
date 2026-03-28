@@ -30,7 +30,7 @@ func (s *service) GetExpenseSummary(
 	date *time.Time,
 ) (m.ExpenseSummaryRes, error) {
 
-	start, end, format, err := resolveExpensePeriodRange(period, date.In(time.Local))
+	start, end, format, err := resolveExpensePeriodRange(period, *date)
 	if err != nil {
 		return m.ExpenseSummaryRes{}, err
 	}
@@ -55,7 +55,7 @@ func (s *service) GetCategorySummary(
 	date *time.Time,
 ) (m.CategorySummaryRes, error) {
 
-	start, end, units, err := resolveCategoryPeriodRange(period, date.In(time.Local))
+	start, end, units, err := resolveCategoryPeriodRange(period, *date)
 	if err != nil {
 		return m.CategorySummaryRes{}, err
 	}

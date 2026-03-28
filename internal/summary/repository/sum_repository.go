@@ -45,7 +45,7 @@ func (r *repository) ExpenseSummary(
 	var result []m.ExpenseSummary
 
 	selectClause := fmt.Sprintf(`
-		TO_CHAR(tr.date AT TIME ZONE 'Asia/Bangkok', '%s') AS key,
+		TO_CHAR(tr.date, '%s') AS key,
 		COALESCE(SUM(ti.price),0) AS total
 	`, format)
 
