@@ -26,7 +26,6 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db}
 }
 
-// --- Last N transactions (price already = price * quantity) ---
 func (r *repository) GetLastTransactions(userID string, limit int) ([]m.LastTransaction, error) {
 	var list []m.LastTransaction
 
@@ -54,7 +53,6 @@ func (r *repository) GetLastTransactions(userID string, limit int) ([]m.LastTran
 	return list, err
 }
 
-// --- Top categories by spending in month (budget_usage = % of budget) ---
 func (r *repository) GetTopCategoriesBySpending(
 	userID string,
 	start, end time.Time,
