@@ -35,7 +35,7 @@ func (s *service) GetExpenseSummary(
 		return m.ExpenseSummaryRes{}, err
 	}
 
-	data, err := s.repo.ExpenseSummary(ctx, userID, format, start.UTC(), end.UTC())
+	data, err := s.repo.ExpenseSummary(ctx, userID, format, start, end)
 	if err != nil {
 		return m.ExpenseSummaryRes{}, err
 	}
@@ -60,7 +60,7 @@ func (s *service) GetCategorySummary(
 		return m.CategorySummaryRes{}, err
 	}
 
-	data, err := s.repo.CategorySummary(ctx, userID, start.UTC(), end.UTC())
+	data, err := s.repo.CategorySummary(ctx, userID, start, end)
 	if err != nil {
 		return m.CategorySummaryRes{}, fmt.Errorf("get category summary: %w", err)
 	}
