@@ -30,13 +30,6 @@ func Validator() *validator.Validate {
 		return name
 	})
 
-	// ===== ตัวอย่าง custom tags =====
-	// ตัวอย่าง: ต้องเป็น oneof (male female other)
-	// _ = v.RegisterValidation("gender", func(fl validator.FieldLevel) bool {
-	// 	val := strings.ToLower(fl.Field().String())
-	// 	return val == "male" || val == "female" || val == "other"
-	// })
-
 	return v
 }
 
