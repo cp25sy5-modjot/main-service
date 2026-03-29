@@ -253,10 +253,8 @@ func (p *Processor) processOneByID(ctx context.Context, id string, date time.Tim
 		return err
 	}
 
-	// 🔥 normalize date ให้ตรง DB
 	runDate := date.UTC().Truncate(24 * time.Hour)
 
-	// 🔥 เช็ค transaction จริง
 	tx, err := p.txRepo.FindByFixCostIDAndRunDate(&m.TransactionFixCostSearchParams{
 		FixCostID: fc.FixCostID,
 		RunDate:   runDate,
@@ -305,7 +303,6 @@ func (p *Processor) processOne(ctx context.Context, fc *e.FixCost) error {
 		}
 	}
 
-	// ✅ update state
 	fc.LastRunAt = &fc.NextRunDate
 	fc.NextRunDate = next
 

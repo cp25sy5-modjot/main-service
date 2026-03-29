@@ -45,12 +45,6 @@ func (h *Handler) UploadImage(c *fiber.Ctx) error {
 			fmt.Sprintf("Failed to store image: %v", err))
 	}
 
-	// fullPath := filepath.Join("/uploads", path)
-
-	// if _, err := os.Stat(fullPath); err != nil {
-	// 	return fiber.NewError(500, "file not saved")
-	// }
-
 	_, err = h.draftService.SaveDraft(ctx, draftID, userID, m.NewDraftRequest{
 		Path:      path,
 		Items:     []m.DraftItem{},
