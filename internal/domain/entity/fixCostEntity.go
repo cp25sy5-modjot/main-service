@@ -26,9 +26,10 @@ type FixCost struct {
 	Price      float64
 	CategoryID string
 
-	StartDate     time.Time
-	EndDate       *time.Time
-	RemainingRuns *int // Number of remaining runs, if applicable
+	StartDate time.Time
+	EndDate   *time.Time
+	MaxRun    *int // Number of maximum runs (optional, nil means unlimited)
+	RunCount  int  // Number of times the fix cost has been processed
 
 	IntervalType  IntervalType // "daily", "weekly", "monthly", "yearly"
 	IntervalValue int          // Number of intervals between runs (e.g., every 2 weeks)
@@ -50,7 +51,7 @@ func (fc *FixCost) IsActive() bool {
 	if fc.EndDate != nil && now.After(*fc.EndDate) {
 		return false
 	}
-	if fc.RemainingRuns != nil && *fc.RemainingRuns <= 0 {
+	if fc.MaxRun != nil && *fc.MaxRun <= 0 {
 		return false
 	}
 	return true

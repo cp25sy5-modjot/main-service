@@ -2,6 +2,7 @@ package fixcostsvc
 
 import (
 	"context"
+	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
@@ -58,10 +59,11 @@ func (s *service) Create(ctx context.Context, input *m.FixCostCreateInput) (*e.F
 		StartDate:     input.StartDate,
 		EndDate:       input.EndDate,
 		NextRunDate:   input.StartDate, // first run is on start date
-		RemainingRuns: input.RemainingRuns,
+		MaxRun:        input.MaxRun,
+		RunCount:      0,
 		IntervalType:  e.IntervalType(input.IntervalType),
 		IntervalValue: input.IntervalValue,
-		Status:        calculateStatus(input.EndDate, input.RemainingRuns)}
+		Status:        calculateStatus(input.EndDate, input.MaxRun)}
 
 	err := s.repo.Create(ctx, &newfc)
 	if err != nil {
@@ -71,6 +73,12 @@ func (s *service) Create(ctx context.Context, input *m.FixCostCreateInput) (*e.F
 	fc, err := s.repo.FindByID(ctx, fcId, newfc.UserID)
 	if err != nil {
 		return nil, err
+	}
+
+	today := time.Now().UTC().Truncate(24 * time.Hour)
+
+	if fc.NextRunDate.Equal(today) || fc.NextRunDate.Before(today) {
+		
 	}
 
 	return fc, nil
@@ -88,6 +96,9 @@ func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) (*e.F
 	}
 
 	// update fields
+	exists.EndDate = input.EndDate
+	exists.MaxRun = input.MaxRun
+
 	if input.Title != nil {
 		exists.Title = *input.Title
 	}
@@ -100,10 +111,6 @@ func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) (*e.F
 		exists.Price = *input.Price
 	}
 
-	if input.StartDate != nil {
-		exists.StartDate = *input.StartDate
-	}
-
 	if input.IntervalType != nil {
 		exists.IntervalType = e.IntervalType(*input.IntervalType)
 	}
@@ -111,12 +118,14 @@ func (s *service) Update(ctx context.Context, input *m.FixCostUpdateInput) (*e.F
 	if input.IntervalValue != nil {
 		exists.IntervalValue = *input.IntervalValue
 	}
-	
-	exists.EndDate = input.EndDate
-	exists.RemainingRuns = input.RemainingRuns
 
 	if input.Status != nil {
 		exists.Status = e.FixCostStatus(*input.Status)
+	}
+
+	if input.StartDate != nil && !input.StartDate.Equal(exists.StartDate) {
+		exists.StartDate = *input.StartDate
+		exists.NextRunDate = CalculateNextRun(*exists)
 	}
 
 	err = s.repo.Update(ctx, exists)

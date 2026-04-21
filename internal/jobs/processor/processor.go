@@ -247,32 +247,6 @@ func (p *Processor) HandleFixCost(ctx context.Context, t *asynq.Task) error {
 	)
 }
 
-func (p *Processor) processOneByID(ctx context.Context, id string, date time.Time, userId string) error {
-	fc, err := p.fixCostRepo.FindByID(ctx, id, userId)
-	if err != nil {
-		return err
-	}
-
-	runDate := date.UTC().Truncate(24 * time.Hour)
-
-	tx, err := p.txRepo.FindByFixCostIDAndRunDate(&m.TransactionFixCostSearchParams{
-		FixCostID: fc.FixCostID,
-		RunDate:   runDate,
-		UserID:    fc.UserID,
-	})
-
-	if err != nil {
-		return err
-	}
-
-	if tx != nil {
-		log.Printf("[FIXCOST] skip (already exists) id=%s", fc.FixCostID)
-		return nil
-	}
-
-	return p.processOne(ctx, fc)
-}
-
 func (p *Processor) processOne(ctx context.Context, fc *e.FixCost) error {
 
 	_, err := p.txService.CreateFromFixCost(ctx, fc)
@@ -284,7 +258,7 @@ func (p *Processor) processOne(ctx context.Context, fc *e.FixCost) error {
 		)
 		return err
 	}
-
+	fc.RunCount += 1
 	next := fcsvc.CalculateNextRun(*fc)
 
 	if fc.EndDate != nil && next.After(*fc.EndDate) {
@@ -293,10 +267,8 @@ func (p *Processor) processOne(ctx context.Context, fc *e.FixCost) error {
 		return p.fixCostRepo.Update(ctx, fc)
 	}
 
-	if fc.RemainingRuns != nil {
-		*fc.RemainingRuns--
-
-		if *fc.RemainingRuns <= 0 {
+	if fc.MaxRun != nil {
+		if fc.RunCount >= *fc.MaxRun {
 			fc.Status = "finished"
 			fc.LastRunAt = &fc.NextRunDate
 			return p.fixCostRepo.Update(ctx, fc)
@@ -316,3 +288,59 @@ func (p *Processor) processOne(ctx context.Context, fc *e.FixCost) error {
 	return p.fixCostRepo.Update(ctx, fc)
 }
 
+func (p *Processor) processOneByID(
+	ctx context.Context,
+	id string,
+	date time.Time,
+	userId string,
+) error {
+
+	fc, err := p.fixCostRepo.FindByID(ctx, id, userId)
+	if err != nil {
+		return err
+	}
+
+	today := date.UTC().Truncate(24 * time.Hour)
+
+	for !fc.NextRunDate.After(today) {
+		runDate := fc.NextRunDate.UTC().Truncate(24 * time.Hour)
+
+		// กันซ้ำ
+		tx, err := p.txRepo.FindByFixCostIDAndRunDate(
+			&m.TransactionFixCostSearchParams{
+				FixCostID: fc.FixCostID,
+				RunDate:   runDate,
+				UserID:    fc.UserID,
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		if tx == nil {
+			if err := p.processOne(ctx, fc); err != nil {
+				return err
+			}
+		} else {
+			// ถ้ามี tx อยู่แล้ว แต่ nextrun ยังไม่ขยับ
+			fc.LastRunAt = &fc.NextRunDate
+			fc.NextRunDate = fcsvc.CalculateNextRun(*fc)
+
+			if err := p.fixCostRepo.Update(ctx, fc); err != nil {
+				return err
+			}
+		}
+
+		// reload ใหม่จาก db กัน state เพี้ยน
+		fc, err = p.fixCostRepo.FindByID(ctx, id, userId)
+		if err != nil {
+			return err
+		}
+
+		if fc.Status == "finished" {
+			break
+		}
+	}
+
+	return nil
+}

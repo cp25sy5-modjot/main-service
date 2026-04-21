@@ -9,9 +9,9 @@ type FixCostCreateReq struct {
 	Price      float64 `json:"price"`
 	CategoryID string  `json:"category_id"`
 
-	StartDate     time.Time  `json:"start_date"`
-	EndDate       *time.Time `json:"end_date,omitempty"`
-	RemainingRuns *int       `json:"remaining_runs,omitempty"`
+	StartDate time.Time  `json:"start_date"`
+	EndDate   *time.Time `json:"end_date,omitempty"`
+	MaxRun    *int       `json:"remaining_runs,omitempty"`
 
 	IntervalType  string `json:"interval_type" validate:"required,oneof=daily weekly monthly yearly"` // daily, weekly, monthly, yearly
 	IntervalValue int    `json:"interval_value" validate:"required,min=1"`                            // e.g., every 2 weeks
@@ -23,9 +23,9 @@ type FixCostCreateInput struct {
 	Price      float64
 	CategoryID string
 
-	StartDate     time.Time
-	EndDate       *time.Time
-	RemainingRuns *int
+	StartDate time.Time
+	EndDate   *time.Time
+	MaxRun    *int
 
 	IntervalType  string
 	IntervalValue int
@@ -36,10 +36,10 @@ type FixCostUpdateReq struct {
 	Price      *float64 `json:"price"`
 	CategoryID *string  `json:"category_id"`
 
-	StartDate     *time.Time `json:"start_date"`
-	EndDate       *time.Time `json:"end_date"`
-	RemainingRuns *int       `json:"remaining_runs"`
-	Status        *string    `json:"status" validate:"oneof=active paused finished"`
+	StartDate *time.Time `json:"start_date"`
+	EndDate   *time.Time `json:"end_date"`
+	MaxRun    *int       `json:"remaining_runs"`
+	Status    *string    `json:"status" validate:"oneof=active paused finished"`
 
 	IntervalType  *string `json:"interval_type" validate:"oneof=daily weekly monthly yearly"` // daily, weekly, monthly, yearly
 	IntervalValue *int    `json:"interval_value" validate:"min=1"`                            // e.g., every 2 weeks
@@ -53,10 +53,10 @@ type FixCostUpdateInput struct {
 	Price      *float64
 	CategoryID *string
 
-	StartDate     *time.Time
-	EndDate       *time.Time
-	RemainingRuns *int
-	Status        *string
+	StartDate *time.Time
+	EndDate   *time.Time
+	MaxRun    *int
+	Status    *string
 
 	IntervalType  *string
 	IntervalValue *int
@@ -68,16 +68,17 @@ type FixCostRes struct {
 	Price      float64 `json:"price"`
 	CategoryID string  `json:"category_id"`
 
-	StartDate     time.Time  `json:"start_date"`
-	EndDate       *time.Time `json:"end_date,omitempty"`
-	RemainingRuns *int       `json:"remaining_runs,omitempty"`
+	StartDate time.Time  `json:"start_date"`
+	EndDate   *time.Time `json:"end_date,omitempty"`
+	MaxRun    *int       `json:"max_run,omitempty"`
+	RunCount  int        `json:"run_count"`
 
 	IntervalType  string     `json:"interval_type"`  // daily, weekly, monthly, yearly
 	IntervalValue int        `json:"interval_value"` // e.g., every 2 weeks
 	NextRunDate   time.Time  `json:"next_run_date"`
 	LastRunAt     *time.Time `json:"last_run_at,omitempty"`
-	
-	Status        string     `json:"status"`
+
+	Status string `json:"status"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

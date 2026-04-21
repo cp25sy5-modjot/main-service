@@ -26,7 +26,7 @@ func CalculateNextRun(fc e.FixCost) time.Time {
 	}
 }
 
-func calculateStatus(endDate *time.Time, remainingRuns *int) e.FixCostStatus {
+func calculateStatus(endDate *time.Time, maxRun *int) e.FixCostStatus {
 	now := time.Now()
 
 	// 1. ถ้ามี EndDate และเลยแล้ว → หมดอายุ
@@ -34,8 +34,8 @@ func calculateStatus(endDate *time.Time, remainingRuns *int) e.FixCostStatus {
 		return e.FixCostStatusFinished
 	}
 
-	// 2. ถ้ามี RemainingRuns และเหลือ <= 0 → หมด
-	if remainingRuns != nil && *remainingRuns <= 0 {
+	// 2. ถ้ามี MaxRun และเหลือ <= 0 → หมด
+	if maxRun != nil && *maxRun <= 0 {
 		return e.FixCostStatusFinished
 	}
 
