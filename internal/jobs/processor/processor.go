@@ -309,51 +309,38 @@ func (p *Processor) processOneByID(
 	today := time.Now().In(loc).Truncate(24 * time.Hour)
 	nextRun := date.In(loc).Truncate(24 * time.Hour)
 
-	for i := 0; i < 100; i++ { // guard กัน loop ไม่จบ
+	log.Printf("rundate: %s, today: %s", nextRun, today)
 
-		log.Printf("rundate: %s, today: %s", nextRun, today)
-
-		// หยุดถ้ายังไม่ถึงวัน
-		if nextRun.After(today) {
-			break
-		}
-
-		// กันซ้ำ
-		tx, err := p.txRepo.FindByFixCostIDAndRunDate(
-			&m.TransactionFixCostSearchParams{
-				FixCostID: fc.FixCostID,
-				RunDate:   nextRun,
-				UserID:    fc.UserID,
-			},
-		)
-		if err != nil {
-			return err
-		}
-
-		if tx == nil {
-			if err := p.processOne(ctx, fc); err != nil {
-				return err
-			}
-		} else {
-			// ถ้ามี tx แล้ว → ขยับ next อย่างเดียว
-			fc.LastRunAt = &fc.NextRunDate
-			fc.NextRunDate = fcsvc.CalculateNextRun(*fc)
-
-			if err := p.fixCostRepo.Update(ctx, fc); err != nil {
-				return err
-			}
-		}
-
-		// reload state ใหม่
-		fc, err = p.fixCostRepo.FindByID(ctx, id, userId)
-		if err != nil {
-			return err
-		}
-
-		if fc.Status == "finished" {
-			break
-		}
+	// หยุดถ้ายังไม่ถึงวัน
+	if nextRun.After(today) {
+		return nil
 	}
 
+	// กันซ้ำ
+	tx, err := p.txRepo.FindByFixCostIDAndRunDate(
+		&m.TransactionFixCostSearchParams{
+			FixCostID: fc.FixCostID,
+			RunDate:   nextRun,
+			UserID:    fc.UserID,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	if tx == nil {
+		if err := p.processOne(ctx, fc); err != nil {
+			return err
+		}
+	} else {
+		// ถ้ามี tx แล้ว → ขยับ next อย่างเดียว
+		fc.LastRunAt = &fc.NextRunDate
+		fc.NextRunDate = fcsvc.CalculateNextRun(*fc)
+
+		if err := p.fixCostRepo.Update(ctx, fc); err != nil {
+			return err
+		}
+	}
+	
 	return nil
 }
