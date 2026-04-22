@@ -41,12 +41,20 @@ func calculateMonthly(fc e.FixCost) time.Time {
 
 	// หาวันสุดท้ายของเดือน
 	lastDay := lastDayOfMonth(year, time.Month(month))
-
 	if day > lastDay {
 		day = lastDay
 	}
 
-	return time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+	return time.Date(
+		year,
+		time.Month(month),
+		day,
+		base.Hour(),
+		base.Minute(),
+		base.Second(),
+		base.Nanosecond(),
+		time.UTC,
+	)
 }
 
 func lastDayOfMonth(year int, month time.Month) int {
@@ -60,9 +68,7 @@ func calculateYearly(fc e.FixCost) time.Time {
 	month := base.Month()
 	day := base.Day()
 
-	// handle leap year (Feb 29)
 	lastDay := lastDayOfMonth(targetYear, month)
-
 	if day > lastDay {
 		day = lastDay
 	}
@@ -71,7 +77,10 @@ func calculateYearly(fc e.FixCost) time.Time {
 		targetYear,
 		month,
 		day,
-		0, 0, 0, 0,
+		base.Hour(),
+		base.Minute(),
+		base.Second(),
+		base.Nanosecond(),
 		time.UTC,
 	)
 }
