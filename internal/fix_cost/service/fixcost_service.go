@@ -80,9 +80,11 @@ func (s *service) Create(ctx context.Context, input *m.FixCostCreateInput) (*e.F
 		return nil, err
 	}
 
-	today := time.Now().UTC().Truncate(24 * time.Hour)
+	today := time.Now().Truncate(24 * time.Hour)
+	next := fc.NextRunDate.Truncate(24 * time.Hour)
+	log.Printf("New fix cost created with ID: %s, NextRunDate: %s, Today: %s", fc.FixCostID, next, today)
 
-	if fc.NextRunDate.Equal(today) || fc.NextRunDate.Before(today) {
+	if next.Equal(today) || next.Before(today) {
 		// ถ้า next run date เป็นวันนี้หรือก่อนหน้า → สร้าง task ทันที
 
 		task, err := tasks.NewProcessFixCostTask(
