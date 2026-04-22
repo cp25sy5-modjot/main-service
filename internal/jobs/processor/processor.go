@@ -301,18 +301,19 @@ func (p *Processor) processOneByID(
 	}
 
 	today := date.Truncate(24 * time.Hour)
-	log.Printf("rundate: %s, today: %s", fc.NextRunDate, today)
+	runDate := fc.NextRunDate.Truncate(24 * time.Hour)
+	log.Printf("rundate: %s, today: %s", runDate, today)
 
-	for !fc.NextRunDate.After(today) {
-		runDate := fc.NextRunDate.UTC().Truncate(24 * time.Hour)
+	for !runDate.After(today) {
+		runDateQuery := fc.NextRunDate.UTC().Truncate(24 * time.Hour)
 
-		log.Printf("rundate: %s, today: %s", runDate, today)
+		log.Printf("rundate: %s, today: %s", runDateQuery, today)
 
 		// กันซ้ำ
 		tx, err := p.txRepo.FindByFixCostIDAndRunDate(
 			&m.TransactionFixCostSearchParams{
 				FixCostID: fc.FixCostID,
-				RunDate:   runDate,
+				RunDate:   runDateQuery,
 				UserID:    fc.UserID,
 			},
 		)
