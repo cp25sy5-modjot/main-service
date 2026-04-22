@@ -292,7 +292,6 @@ func (p *Processor) processOne(ctx context.Context, fc *e.FixCost) error {
 
 	return p.fixCostRepo.Update(ctx, fc)
 }
-
 func (p *Processor) processOneByID(
 	ctx context.Context,
 	id string,
@@ -305,46 +304,55 @@ func (p *Processor) processOneByID(
 		return err
 	}
 
-	today := date.Truncate(24 * time.Hour)
-	runDate := fc.NextRunDate.Truncate(24 * time.Hour)
-	log.Printf("rundate: %s, today: %s", runDate, today)
+	loc := time.UTC
+	today := date.In(loc).Truncate(24 * time.Hour)
 
-	runDateQuery := fc.NextRunDate.UTC().Truncate(24 * time.Hour)
+	for i := 0; i < 100; i++ { // guard กัน loop ไม่จบ
 
-	// กันซ้ำ
-	tx, err := p.txRepo.FindByFixCostIDAndRunDate(
-		&m.TransactionFixCostSearchParams{
-			FixCostID: fc.FixCostID,
-			RunDate:   runDateQuery,
-			UserID:    fc.UserID,
-		},
-	)
-	if err != nil {
-		return err
-	}
+		runDate := fc.NextRunDate.In(loc).Truncate(24 * time.Hour)
 
-	if tx == nil {
-		if err := p.processOne(ctx, fc); err != nil {
+		log.Printf("rundate: %s, today: %s", runDate, today)
+
+		// หยุดถ้ายังไม่ถึงวัน
+		if runDate.After(today) {
+			break
+		}
+
+		// กันซ้ำ
+		tx, err := p.txRepo.FindByFixCostIDAndRunDate(
+			&m.TransactionFixCostSearchParams{
+				FixCostID: fc.FixCostID,
+				RunDate:   runDate,
+				UserID:    fc.UserID,
+			},
+		)
+		if err != nil {
 			return err
 		}
-	} else {
-		// ถ้ามี tx อยู่แล้ว แต่ nextrun ยังไม่ขยับ
-		fc.LastRunAt = &fc.NextRunDate
-		fc.NextRunDate = fcsvc.CalculateNextRun(*fc)
 
-		if err := p.fixCostRepo.Update(ctx, fc); err != nil {
+		if tx == nil {
+			if err := p.processOne(ctx, fc); err != nil {
+				return err
+			}
+		} else {
+			// ถ้ามี tx แล้ว → ขยับ next อย่างเดียว
+			fc.LastRunAt = &fc.NextRunDate
+			fc.NextRunDate = fcsvc.CalculateNextRun(*fc)
+
+			if err := p.fixCostRepo.Update(ctx, fc); err != nil {
+				return err
+			}
+		}
+
+		// reload state ใหม่
+		fc, err = p.fixCostRepo.FindByID(ctx, id, userId)
+		if err != nil {
 			return err
 		}
-	}
 
-	// reload ใหม่จาก db กัน state เพี้ยน
-	fc, err = p.fixCostRepo.FindByID(ctx, id, userId)
-	if err != nil {
-		return err
-	}
-
-	if fc.Status == "finished" {
-		return nil
+		if fc.Status == "finished" {
+			break
+		}
 	}
 
 	return nil
