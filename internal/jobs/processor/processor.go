@@ -258,6 +258,7 @@ func (p *Processor) processOne(ctx context.Context, fc *e.FixCost) error {
 		)
 		return err
 	}
+
 	fc.RunCount += 1
 	next := fcsvc.CalculateNextRun(*fc)
 
@@ -308,46 +309,43 @@ func (p *Processor) processOneByID(
 	runDate := fc.NextRunDate.Truncate(24 * time.Hour)
 	log.Printf("rundate: %s, today: %s", runDate, today)
 
-	for !runDate.After(today) {
-		runDateQuery := fc.NextRunDate.UTC().Truncate(24 * time.Hour)
+	runDateQuery := fc.NextRunDate.UTC().Truncate(24 * time.Hour)
+	log.Printf("rundateQuery: %s, today: %s", runDateQuery, today)
 
-		log.Printf("rundate: %s, today: %s", runDateQuery, today)
+	// กันซ้ำ
+	tx, err := p.txRepo.FindByFixCostIDAndRunDate(
+		&m.TransactionFixCostSearchParams{
+			FixCostID: fc.FixCostID,
+			RunDate:   runDateQuery,
+			UserID:    fc.UserID,
+		},
+	)
+	if err != nil {
+		return err
+	}
 
-		// กันซ้ำ
-		tx, err := p.txRepo.FindByFixCostIDAndRunDate(
-			&m.TransactionFixCostSearchParams{
-				FixCostID: fc.FixCostID,
-				RunDate:   runDateQuery,
-				UserID:    fc.UserID,
-			},
-		)
-		if err != nil {
+	if tx == nil {
+		if err := p.processOne(ctx, fc); err != nil {
 			return err
 		}
+	} else {
+		// ถ้ามี tx อยู่แล้ว แต่ nextrun ยังไม่ขยับ
+		fc.LastRunAt = &fc.NextRunDate
+		fc.NextRunDate = fcsvc.CalculateNextRun(*fc)
 
-		if tx == nil {
-			if err := p.processOne(ctx, fc); err != nil {
-				return err
-			}
-		} else {
-			// ถ้ามี tx อยู่แล้ว แต่ nextrun ยังไม่ขยับ
-			fc.LastRunAt = &fc.NextRunDate
-			fc.NextRunDate = fcsvc.CalculateNextRun(*fc)
-
-			if err := p.fixCostRepo.Update(ctx, fc); err != nil {
-				return err
-			}
-		}
-
-		// reload ใหม่จาก db กัน state เพี้ยน
-		fc, err = p.fixCostRepo.FindByID(ctx, id, userId)
-		if err != nil {
+		if err := p.fixCostRepo.Update(ctx, fc); err != nil {
 			return err
 		}
+	}
 
-		if fc.Status == "finished" {
-			break
-		}
+	// reload ใหม่จาก db กัน state เพี้ยน
+	fc, err = p.fixCostRepo.FindByID(ctx, id, userId)
+	if err != nil {
+		return err
+	}
+
+	if fc.Status == "finished" {
+		return nil
 	}
 
 	return nil
