@@ -300,10 +300,11 @@ func (p *Processor) processOneByID(
 		return err
 	}
 
-	today := date.UTC().Truncate(24 * time.Hour)
+	today := date.Truncate(24 * time.Hour)
+	log.Printf("rundate: %s, today: %s", fc.NextRunDate, today)
 
 	for !fc.NextRunDate.After(today) {
-		runDate := fc.NextRunDate.Truncate(24 * time.Hour)
+		runDate := fc.NextRunDate.UTC().Truncate(24 * time.Hour)
 
 		log.Printf("rundate: %s, today: %s", runDate, today)
 
