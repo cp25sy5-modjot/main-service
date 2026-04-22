@@ -93,7 +93,7 @@ func (r *repository) FindAllByUserID(ctx context.Context, userID string) ([]*e.F
 func (r *repository) FindDueFixCosts(ctx context.Context) ([]*e.FixCost, error) {
 	var fcs []*e.FixCost
 
-	today := time.Now().UTC()
+	today := time.Now()
 	log.Printf("Finding due fix costs at %s", today)
 
 	err := r.db.WithContext(ctx).
