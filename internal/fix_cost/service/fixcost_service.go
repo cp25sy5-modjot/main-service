@@ -2,11 +2,13 @@ package fixcostsvc
 
 import (
 	"context"
+	"log"
 	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
 	m "github.com/cp25sy5-modjot/main-service/internal/domain/model"
 	fcrepo "github.com/cp25sy5-modjot/main-service/internal/fix_cost/repository"
+	"github.com/cp25sy5-modjot/main-service/internal/jobs/tasks"
 	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
 	"gorm.io/gorm"
@@ -23,11 +25,14 @@ type Service interface {
 type service struct {
 	repo     fcrepo.Repository
 	redisOpt asynq.RedisClientOpt
+	client   *asynq.Client
 }
 
-func NewService(repo fcrepo.Repository) Service {
+func NewService(repo fcrepo.Repository, redisOpt asynq.RedisClientOpt, client *asynq.Client) Service {
 	return &service{
-		repo: repo,
+		repo:     repo,
+		redisOpt: redisOpt,
+		client:   client,
 	}
 }
 
@@ -78,7 +83,25 @@ func (s *service) Create(ctx context.Context, input *m.FixCostCreateInput) (*e.F
 	today := time.Now().UTC().Truncate(24 * time.Hour)
 
 	if fc.NextRunDate.Equal(today) || fc.NextRunDate.Before(today) {
-		
+		// ถ้า next run date เป็นวันนี้หรือก่อนหน้า → สร้าง task ทันที
+
+		task, err := tasks.NewProcessFixCostTask(
+			fc.FixCostID,
+			fc.NextRunDate,
+			fc.UserID,
+		)
+		if err != nil {
+			log.Printf("create task error: %v", err)
+		}
+
+		_, err = s.client.Enqueue(
+			task,
+			asynq.Unique(24*time.Hour),
+		)
+		if err != nil {
+			log.Printf("enqueue error: %v", err)
+		}
+
 	}
 
 	return fc, nil
