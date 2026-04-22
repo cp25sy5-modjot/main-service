@@ -93,11 +93,11 @@ func (r *repository) FindAllByUserID(ctx context.Context, userID string) ([]*e.F
 func (r *repository) FindDueFixCosts(ctx context.Context) ([]*e.FixCost, error) {
 	var fcs []*e.FixCost
 
-	today := time.Now()
+	today := time.Now().UTC().Truncate(24 * time.Hour)
 	log.Printf("Finding due fix costs at %s", today)
 
 	err := r.db.WithContext(ctx).
-		Where("status = ? AND next_run_date <= ?", "active", today).
+		Where("status = ? AND next_run_date::date <= ?", "active", today).
 		Order("next_run_date ASC").
 		Limit(100).
 		Find(&fcs).Error
