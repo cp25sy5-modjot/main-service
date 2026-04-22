@@ -1,6 +1,7 @@
 package fixcostsvc
 
 import (
+	"log"
 	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
@@ -10,15 +11,19 @@ func CalculateNextRun(fc e.FixCost) time.Time {
 	switch fc.IntervalType {
 
 	case "daily":
+		log.Printf("Calculating next run for daily fix cost. StartDate: %s, RunCount: %d, IntervalValue: %d", fc.StartDate, fc.RunCount, fc.IntervalValue)
 		return fc.StartDate.AddDate(0, 0, fc.RunCount*fc.IntervalValue)
 
 	case "weekly":
+		log.Printf("Calculating next run for weekly fix cost. StartDate: %s, RunCount: %d, IntervalValue: %d", fc.StartDate, fc.RunCount, fc.IntervalValue)
 		return fc.StartDate.AddDate(0, 0, 7*fc.RunCount*fc.IntervalValue)
 
 	case "monthly":
+		log.Printf("Calculating next run for monthly fix cost. StartDate: %s, RunCount: %d, IntervalValue: %d", fc.StartDate, fc.RunCount, fc.IntervalValue)
 		return calculateMonthly(fc)
 
 	case "yearly":
+		log.Printf("Calculating next run for yearly fix cost. StartDate: %s, RunCount: %d, IntervalValue: %d", fc.StartDate, fc.RunCount, fc.IntervalValue)
 		return calculateYearly(fc)
 
 	default:

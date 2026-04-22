@@ -261,10 +261,14 @@ func (p *Processor) processOne(ctx context.Context, fc *e.FixCost) error {
 	fc.RunCount += 1
 	next := fcsvc.CalculateNextRun(*fc)
 
-	if fc.EndDate != nil && next.After(*fc.EndDate) {
-		fc.Status = "finished"
-		fc.LastRunAt = &fc.NextRunDate
-		return p.fixCostRepo.Update(ctx, fc)
+	if fc.EndDate != nil {
+		nextTruncate := next.Truncate(24 * time.Hour)
+		endTruncate := fc.EndDate.Truncate(24 * time.Hour)
+		if nextTruncate.After(endTruncate) {
+			fc.Status = "finished"
+			fc.LastRunAt = &fc.NextRunDate
+			return p.fixCostRepo.Update(ctx, fc)
+		}
 	}
 
 	if fc.MaxRun != nil {
