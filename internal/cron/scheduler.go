@@ -26,6 +26,7 @@ func (s *Scheduler) Start() {
 	c.AddFunc("@every 1m", func() {
 		ctx := context.Background()
 
+		log.Println("Checking for due fix costs...")
 		fcs, err := s.repo.FindDueFixCosts(ctx)
 		if err != nil {
 			log.Printf("find due error: %v", err)

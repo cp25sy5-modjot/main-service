@@ -2,6 +2,7 @@ package fixcostrepo
 
 import (
 	"context"
+	"log"
 	"time"
 
 	e "github.com/cp25sy5-modjot/main-service/internal/domain/entity"
@@ -92,8 +93,11 @@ func (r *repository) FindAllByUserID(ctx context.Context, userID string) ([]*e.F
 func (r *repository) FindDueFixCosts(ctx context.Context) ([]*e.FixCost, error) {
 	var fcs []*e.FixCost
 
+	today := time.Now().Truncate(24 * time.Hour)
+	log.Printf("Finding due fix costs at %s", today)
+	
 	err := r.db.WithContext(ctx).
-		Where("status = ? AND next_run_date <= ?", "active", time.Now().UTC()).
+		Where("status = ? AND next_run_date <= ?", "active", today).
 		Order("next_run_date ASC").
 		Limit(100).
 		Find(&fcs).Error

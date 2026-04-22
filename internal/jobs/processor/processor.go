@@ -310,7 +310,6 @@ func (p *Processor) processOneByID(
 	log.Printf("rundate: %s, today: %s", runDate, today)
 
 	runDateQuery := fc.NextRunDate.UTC().Truncate(24 * time.Hour)
-	log.Printf("rundateQuery: %s, today: %s", runDateQuery, today)
 
 	// กันซ้ำ
 	tx, err := p.txRepo.FindByFixCostIDAndRunDate(
