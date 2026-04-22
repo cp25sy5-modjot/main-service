@@ -292,6 +292,7 @@ func (p *Processor) processOne(ctx context.Context, fc *e.FixCost) error {
 
 	return p.fixCostRepo.Update(ctx, fc)
 }
+
 func (p *Processor) processOneByID(
 	ctx context.Context,
 	id string,
@@ -305,16 +306,15 @@ func (p *Processor) processOneByID(
 	}
 
 	loc := time.UTC
-	today := date.In(loc).Truncate(24 * time.Hour)
+	today := time.Now().In(loc).Truncate(24 * time.Hour)
+	nextRun := date.In(loc).Truncate(24 * time.Hour)
 
 	for i := 0; i < 100; i++ { // guard กัน loop ไม่จบ
 
-		runDate := fc.NextRunDate.In(loc).Truncate(24 * time.Hour)
-
-		log.Printf("rundate: %s, today: %s", runDate, today)
+		log.Printf("rundate: %s, today: %s", nextRun, today)
 
 		// หยุดถ้ายังไม่ถึงวัน
-		if runDate.After(today) {
+		if nextRun.After(today) {
 			break
 		}
 
@@ -322,7 +322,7 @@ func (p *Processor) processOneByID(
 		tx, err := p.txRepo.FindByFixCostIDAndRunDate(
 			&m.TransactionFixCostSearchParams{
 				FixCostID: fc.FixCostID,
-				RunDate:   runDate,
+				RunDate:   nextRun,
 				UserID:    fc.UserID,
 			},
 		)
