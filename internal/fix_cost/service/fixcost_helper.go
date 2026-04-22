@@ -10,20 +10,70 @@ func CalculateNextRun(fc e.FixCost) time.Time {
 	switch fc.IntervalType {
 
 	case "daily":
-		return fc.NextRunDate.AddDate(0, 0, fc.IntervalValue)
+		return fc.StartDate.AddDate(0, 0, fc.RunCount*fc.IntervalValue)
 
 	case "weekly":
-		return fc.NextRunDate.AddDate(0, 0, 7*fc.IntervalValue)
+		return fc.StartDate.AddDate(0, 0, 7*fc.RunCount*fc.IntervalValue)
 
 	case "monthly":
-		return fc.NextRunDate.AddDate(0, fc.IntervalValue, 0)
+		return calculateMonthly(fc)
 
 	case "yearly":
-		return fc.NextRunDate.AddDate(fc.IntervalValue, 0, 0)
+		return calculateYearly(fc)
 
 	default:
 		return fc.NextRunDate
 	}
+}
+
+func calculateMonthly(fc e.FixCost) time.Time {
+	targetMonth := fc.RunCount * fc.IntervalValue
+
+	base := fc.StartDate
+	year := base.Year()
+	month := int(base.Month()) + targetMonth
+
+	// normalize year/month
+	year += (month - 1) / 12
+	month = (month-1)%12 + 1
+
+	day := base.Day()
+
+	// หาวันสุดท้ายของเดือน
+	lastDay := lastDayOfMonth(year, time.Month(month))
+
+	if day > lastDay {
+		day = lastDay
+	}
+
+	return time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+}
+
+func lastDayOfMonth(year int, month time.Month) int {
+	return time.Date(year, month+1, 0, 0, 0, 0, 0, time.UTC).Day()
+}
+
+func calculateYearly(fc e.FixCost) time.Time {
+	base := fc.StartDate
+
+	targetYear := base.Year() + (fc.RunCount * fc.IntervalValue)
+	month := base.Month()
+	day := base.Day()
+
+	// handle leap year (Feb 29)
+	lastDay := lastDayOfMonth(targetYear, month)
+
+	if day > lastDay {
+		day = lastDay
+	}
+
+	return time.Date(
+		targetYear,
+		month,
+		day,
+		0, 0, 0, 0,
+		time.UTC,
+	)
 }
 
 func calculateStatus(endDate *time.Time, maxRun *int) e.FixCostStatus {
