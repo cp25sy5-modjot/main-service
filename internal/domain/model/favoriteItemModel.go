@@ -3,13 +3,13 @@ package model
 import "time"
 
 type FavoriteItemInsertReq struct {
-	Title      string  `json:"title" validate:"required,min=1,max=50"`
+	Title      string  `json:"title" validate:"required,min=1,max=20"`
 	Price      float64 `json:"price" validate:"required,min=0"`
 	CategoryID string  `json:"category_id" validate:"required"`
 }
 
 type FavoriteItemUpdateReq struct {
-	Title      *string  `json:"title" validate:"required,min=1,max=50"`
+	Title      *string  `json:"title" validate:"required,min=1,max=20"`
 	Price      *float64 `json:"price" validate:"required,min=0"`
 	CategoryID *string  `json:"category_id" validate:"required"`
 }

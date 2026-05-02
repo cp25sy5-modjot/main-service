@@ -27,9 +27,6 @@ import (
 	overviewhandler "github.com/cp25sy5-modjot/main-service/internal/overview/handler"
 	overviewrepo "github.com/cp25sy5-modjot/main-service/internal/overview/repository"
 	overviewsvc "github.com/cp25sy5-modjot/main-service/internal/overview/service"
-	pushhandler "github.com/cp25sy5-modjot/main-service/internal/push_tokens/handler"
-	pushrepo "github.com/cp25sy5-modjot/main-service/internal/push_tokens/repository"
-	pushsvc "github.com/cp25sy5-modjot/main-service/internal/push_tokens/service"
 	r "github.com/cp25sy5-modjot/main-service/internal/shared/response/success"
 	sumhandler "github.com/cp25sy5-modjot/main-service/internal/summary/handler"
 	sumrepo "github.com/cp25sy5-modjot/main-service/internal/summary/repository"
@@ -58,7 +55,6 @@ type Services struct {
 	FavoriteService favsvc.Service
 	FixCostService  fcsvc.Service
 	SummaryService  sumsvc.Service
-	PushService     pushsvc.Service
 }
 
 type Repositories struct {
@@ -72,7 +68,6 @@ type Repositories struct {
 	FavoriteRepo favrepo.Repository
 	FixCostRepo  fcrepo.Repository
 	SummaryRepo  sumrepo.Repository
-	PushRepo     pushrepo.Repository
 }
 
 func RegisterRoutes(s *fiberServer) {
@@ -97,7 +92,6 @@ func RegisterRoutes(s *fiberServer) {
 	initializeFavoriteRoutes(s, services, authMiddleware)
 	initializeFixCostRoutes(s, services, authMiddleware)
 	initializeSummaryRoutes(s, services, authMiddleware)
-	initializePushTokenRoutes(s, services, authMiddleware)
 }
 
 func initializeRepositories(s *fiberServer) *Repositories {
@@ -111,7 +105,6 @@ func initializeRepositories(s *fiberServer) *Repositories {
 	draftRepo := drepo.NewDraftRepository(s.rdb)
 	favRepo := favrepo.NewRepository(s.db.GetDb())
 	sumRepo := sumrepo.NewRepository(s.db.GetDb())
-	pushRepo := pushrepo.NewRepository(s.db.GetDb())
 
 	return &Repositories{
 		UserRepo:            userRepo,
@@ -124,7 +117,6 @@ func initializeRepositories(s *fiberServer) *Repositories {
 		FavoriteRepo: favRepo,
 		FixCostRepo:  fixCostRepo,
 		SummaryRepo:  sumRepo,
-		PushRepo:     pushRepo,
 	}
 }
 
@@ -139,7 +131,6 @@ func initializeServices(s *fiberServer, repositories *Repositories) *Services {
 	draftRepo := repositories.DraftRepo
 	favRepo := repositories.FavoriteRepo
 	sumRepo := repositories.SummaryRepo
-	pushRepo := repositories.PushRepo
 
 	transactionSvc := txsvc.NewService(
 		s.db.GetDb(),
@@ -170,7 +161,6 @@ func initializeServices(s *fiberServer, repositories *Repositories) *Services {
 	overviewSvc := overviewsvc.NewService(overviewRepo)
 	fixCostSvc := fcsvc.NewService(fixCostRepo, s.redisOpt, s.asynqClient)
 	sumSvc := sumsvc.NewService(sumRepo)
-	pushSvc := pushsvc.NewService(pushRepo)
 
 	return &Services{
 		UserService:            userSvc,
@@ -183,7 +173,6 @@ func initializeServices(s *fiberServer, repositories *Repositories) *Services {
 		FavoriteService: favSvc,
 		FixCostService:  fixCostSvc,
 		SummaryService:  sumSvc,
-		PushService:     pushSvc,
 	}
 }
 
@@ -392,13 +381,3 @@ func initializeSummaryRoutes(s *fiberServer, services *Services, authMiddleware 
 	api.Get("/category", summaryHandler.GetCategorySummary)
 }
 
-func initializePushTokenRoutes(s *fiberServer, services *Services, authMiddleware fiber.Handler) {
-	pushHandler := pushhandler.NewHandler(services.PushService)
-
-	// Register routes
-	api := s.app.Group("/v1/push")
-	api.Use(authMiddleware)
-
-	api.Post("/register", pushHandler.Register)
-	api.Post("/test", pushHandler.TestSend)
-}
